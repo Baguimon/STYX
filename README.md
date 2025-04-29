@@ -87,4 +87,12 @@ STYX/
 ├── docker/            → docker-compose + MySQL
 ```
 
+---
 
+## 🚀 API disponible
+
+| Méthode | URL              | Description                        |
+|:--------|:-----------------|:-----------------------------------|
+| GET     | `/api/users`      | Récupérer la liste des utilisateurs |
+
+---
