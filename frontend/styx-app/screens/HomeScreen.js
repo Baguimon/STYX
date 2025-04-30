@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { getUsers } from '../services/api';
 
 export default function HomeScreen() {
   const [users, setUsers] = useState([]);
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetchUsers();
@@ -15,10 +17,12 @@ export default function HomeScreen() {
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <Text style={styles.username}>{item.username}</Text>
-      <Text>{item.email}</Text>
-    </View>
+    <TouchableOpacity onPress={() => navigation.navigate('UserDetails', { user: item })}>
+      <View style={styles.item}>
+        <Text style={styles.username}>{item.username}</Text>
+        <Text>{item.email}</Text>
+      </View>
+    </TouchableOpacity>
   );
 
   return (
