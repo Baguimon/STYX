@@ -26,59 +26,77 @@ cd STYX
 
 ---
 
-### 2. Lancer la base de données avec Docker
+## STYX – Guide de démarrage local 🏁
 
-> Assurez-vous d’avoir Docker Desktop installé.
+### 1. Cloner le projet
+
+```bash
+git clone <URL_DU_REPO_GITHUB>
+cd STYX
+```
+
+### 2. Lancer l’environnement Docker
 
 ```bash
 cd docker
-docker-compose up -d
+docker compose up -d
 ```
 
-La base de données sera disponible sur :  
-`localhost:3309`  
-Base de données : `styxdb`  
-Utilisateur : `styx`  
-Mot de passe : `styxpass`
+### Vérification :
+- phpMyAdmin : http://localhost:8080  
+- MySQL : accessible sur le port **3309**  
+- Fichier `.env` du backend :
 
----
-
-### 3. Installer le backend Symfony
-
-```bash
-cd ../backend
-composer install
-```
-
-Créez un fichier `.env.local` si besoin, ou modifiez le `.env` :
-
-```dotenv
+```ini
 DATABASE_URL="mysql://styx:styxpass@127.0.0.1:3309/styxdb?serverVersion=8.0"
 ```
 
-➡️ Puis créez la base si ce n’est pas déjà fait :
+### 3. Générer les clés JWT (si manquantes)
 
 ```bash
-php bin/console doctrine:database:create
-php bin/console doctrine:migrations:migrate
+cd backend
+mkdir -p config/jwt
+openssl genrsa -out config/jwt/private.pem 4096
+openssl rsa -pubout -in config/jwt/private.pem -out config/jwt/public.pem
 ```
 
----
+### Vérifie le `.env` :
 
-### 4. Installer le frontend avec Expo
+```dotenv
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+JWT_PASSPHRASE=styxpassphrase
+```
+
+### 4. Installer les dépendances Symfony
 
 ```bash
-cd ../frontend/styx-app
+cd backend
+composer install
+```
+
+### 5. Lancer le serveur Symfony
+
+```bash
+symfony serve --no-tls --allow-http --port=8000
+```
+
+- API accessible sur : http://127.0.0.1:8000
+
+### 6. Lancer le frontend React Native
+
+```bash
+cd frontend/styx-app
 npm install
 npx expo start
 ```
 
-➡️ Utilisez l’app **Expo Go** sur votre smartphone pour scanner le QR code  
-➡️ Ou ouvrez le simulateur Android/iOS depuis l’interface Expo
+- Scanner le **QR Code** avec **Expo Go** (sur mobile)
+- Vérifie que les services pointent bien vers l’URL backend correcte.
 
 ---
 
-## 📁 Structure du projet
+##  Structure du projet
 
 ```
 STYX/
@@ -89,7 +107,7 @@ STYX/
 
 ---
 
-## 🚀 API disponible
+##  API disponible
 
 | Méthode | URL              | Description                        |
 |:--------|:-----------------|:-----------------------------------|
