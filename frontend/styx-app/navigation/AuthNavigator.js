@@ -1,27 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import HomeScreen from '../screens/HomeScreen';
 import UserDetailsScreen from '../screens/UserDetailsScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import { AuthContext } from '../contexts/AuthContext';
 
 const Stack = createNativeStackNavigator();
 
 export default function AuthNavigator() {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const { isAuthenticated } = useContext(AuthContext);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = await AsyncStorage.getItem('token');
-      setIsAuthenticated(!!token);
-    };
-    checkAuth();
-  }, []);
-
-  if (isAuthenticated === null) return null; // ou écran de chargement
+  if (isAuthenticated === null) return null; // Écran de chargement si nécessaire
 
   return (
     <NavigationContainer>
@@ -41,3 +33,4 @@ export default function AuthNavigator() {
     </NavigationContainer>
   );
 }
+
