@@ -5,9 +5,11 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -26,7 +28,7 @@ class User
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $createdAt = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $clubId = null;
 
     #[ORM\Column(length: 100)]
@@ -93,7 +95,7 @@ class User
         return $this->clubId;
     }
 
-    public function setClubId(int $clubId): static
+    public function setClubId(?int $clubId): static
     {
         $this->clubId = $clubId;
 
@@ -122,5 +124,22 @@ class User
         $this->level = $level;
 
         return $this;
+    }
+
+    // Obligatoire pour l'interface UserInterface
+
+    public function getRoles(): array
+    {
+        return [$this->role ?? 'ROLE_USER'];
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
+    }
+
+    public function eraseCredentials(): void
+    {
+        // Pour stock des infos sensibles, les effacer ici
     }
 }
