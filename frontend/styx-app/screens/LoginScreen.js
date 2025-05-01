@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,13 @@ import {
   Alert,
   TouchableOpacity
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { AuthContext } from '../contexts/AuthContext';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async () => {
     try {
@@ -24,14 +25,13 @@ export default function LoginScreen({ navigation }) {
 
       const token = response.data.token;
 
-      // Stocker le token localement
-      await AsyncStorage.setItem('token', token);
+      // ✅ Utilisation du contexte
+      await login(token);
 
-      Alert.alert('Connexion réussie');
-      navigation.navigate('Home');
+      Alert.alert('✅ Connexion réussie');
     } catch (error) {
       console.error(error);
-      Alert.alert('Erreur', 'Identifiants invalides ou serveur indisponible.');
+      Alert.alert('❌ Erreur', 'Identifiants invalides ou serveur indisponible.');
     }
   };
 

@@ -1,19 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, useContext } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Button,
+  TouchableOpacity
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getUsers } from '../services/api';
+import { AuthContext } from '../contexts/AuthContext';
 
 export default function HomeScreen() {
   const [users, setUsers] = useState([]);
   const navigation = useNavigation();
+  const { logout } = useContext(AuthContext);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
-    const data = await getUsers();
-    setUsers(data);
+    try {
+      const data = await getUsers();
+      setUsers(data);
+    } catch (error) {
+      console.error('Erreur de chargement des utilisateurs', error);
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -32,6 +45,9 @@ export default function HomeScreen() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
       />
+      <View style={styles.logoutContainer}>
+        <Button title="Déconnexion" onPress={logout} color="#D9534F" />
+      </View>
     </View>
   );
 }
@@ -39,7 +55,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 50,
+    paddingTop: 50,
     paddingHorizontal: 20,
   },
   item: {
@@ -52,4 +68,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  logoutContainer: {
+    marginTop: 20,
+    marginBottom: 40,
+  },
 });
+
+
