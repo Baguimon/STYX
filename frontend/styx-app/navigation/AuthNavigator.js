@@ -2,10 +2,9 @@ import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import HomeScreen from '../screens/HomeScreen';
-import UserDetailsScreen from '../screens/UserDetailsScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import BottomTabNavigator from './BottomTabNavigator'; // ta bottom nav
 import { AuthContext } from '../contexts/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -13,11 +12,11 @@ const Stack = createNativeStackNavigator();
 export default function AuthNavigator() {
   const { isAuthenticated } = useContext(AuthContext);
 
-  if (isAuthenticated === null) return null; // Écran de chargement si nécessaire
+  if (isAuthenticated === null) return null; // Écran de chargement si besoin
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName={isAuthenticated ? 'Home' : 'Login'}>
+      <Stack.Navigator initialRouteName={isAuthenticated ? 'Main' : 'Login'} screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
@@ -25,12 +24,10 @@ export default function AuthNavigator() {
           </>
         ) : (
           <>
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="UserDetails" component={UserDetailsScreen} />
+            <Stack.Screen name="Main" component={BottomTabNavigator} />
           </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
