@@ -25,6 +25,12 @@ export const createGame = async (form) => {
   return api.post('/games', form);
 };
 
+export const getGames = async () => {
+  const response = await api.get('/games');
+  return response.data;
+};
+
+
 export default api;
 
 

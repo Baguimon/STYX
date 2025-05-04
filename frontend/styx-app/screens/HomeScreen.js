@@ -8,48 +8,48 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { getUsers } from '../services/api';
+import { getGames } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 
 export default function HomeScreen() {
-  const [users, setUsers] = useState([]);
+  const [games, setGames] = useState([]);
   const navigation = useNavigation();
   const { logout } = useContext(AuthContext);
 
   useEffect(() => {
-    fetchUsers();
+    fetchGames();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchGames = async () => {
     try {
-      const data = await getUsers();
-      setUsers(data);
+      const data = await getGames();
+      setGames(data);
     } catch (error) {
-      console.error('Erreur de chargement des utilisateurs', error);
+      console.error('Erreur de chargement des matchs', error);
     }
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('UserDetails', { user: item })}>
-      <View style={styles.item}>
-        <Text style={styles.username}>{item.username}</Text>
-        <Text>{item.email}</Text>
-      </View>
-    </TouchableOpacity>
+    <View style={styles.item}>
+      <Text style={styles.title}>{item.location}</Text>
+      <Text>Date : {new Date(item.date).toLocaleString()}</Text>
+      <Text>Joueurs : {item.playerCount}/{item.maxPlayers}</Text>
+      <Text>Status : {item.status}</Text>
+      <Text>Club : {item.isClubMatch ? 'Oui' : 'Non'}</Text>
+    </View>
   );
 
   return (
     <View style={styles.container}>
-      {}
       <TouchableOpacity
         style={styles.createMatchButton}
         onPress={() => navigation.navigate('CreateMatch')}
       >
         <Text style={styles.createMatchText}>+ Ajouter un match</Text>
       </TouchableOpacity>
-      
+
       <FlatList
-        data={users}
+        data={games}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
       />
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 5,
   },
-  username: {
+  title: {
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -94,3 +94,4 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
 });
+
