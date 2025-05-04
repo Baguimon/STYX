@@ -5,7 +5,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+
 import MainNavigator from './MainNavigator'; // ✅ Nouveau fichier qui contient Tabs + autres écrans
+
 import { AuthContext } from '../contexts/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -13,7 +15,9 @@ const Stack = createNativeStackNavigator();
 export default function AuthNavigator() {
   const { isAuthenticated } = useContext(AuthContext);
 
+
   if (isAuthenticated === null) return null; // Optionnel : écran de chargement
+
 
   return (
     <NavigationContainer>

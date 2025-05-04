@@ -45,6 +45,7 @@ export default function BottomTabNavigator() {
               color={color}
               focused={focused}
               image={image} 
+
             />
           );
         },

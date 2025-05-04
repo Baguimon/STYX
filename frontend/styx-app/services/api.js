@@ -6,7 +6,26 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
+
 // Aucun token injecté : API publique
+
+
+api.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem('token');
+
+
+  const publicRoutes = ['/register', '/login', '/users'];
+
+
+  const isPublic = publicRoutes.some(route => config.url.includes(route));
+
+  if (token && !isPublic) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 
 export const getUsers = async () => {
   const response = await api.get('/users');

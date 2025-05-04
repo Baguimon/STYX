@@ -2,13 +2,12 @@ import React, { useRef, useEffect } from 'react';
 import { View, Animated, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-// 👇 Crée l'AnimatedIcon
+
 const AnimatedIcon = Animated.createAnimatedComponent(Icon);
 
 export default function TabBarIcon({ name, size, color, focused, image }) {
   const baseSize = size;
 
-  // Animation de grossissement
   const scaleAnim = useRef(new Animated.Value(focused ? 1.3 : 1)).current;
 
   useEffect(() => {
