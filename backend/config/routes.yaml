@@ -4,6 +4,3 @@ controllers:
         namespace: App\Controller
     type: attribute
 
-# Route nécessaire pour l'authentification JWT
-api_login:
-    path: /api/login

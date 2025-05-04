@@ -21,6 +21,10 @@ class AuthController extends AbstractController
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
+        if (!isset($data['email'], $data['password'], $data['username'])) {
+            return $this->json(['error' => 'Email, username et password sont requis.'], Response::HTTP_BAD_REQUEST);
+        }
+
         $user = new User();
         $user->setEmail($data['email']);
         $user->setUsername($data['username']);
@@ -36,5 +40,14 @@ class AuthController extends AbstractController
         $em->flush();
 
         return $this->json(['message' => 'Utilisateur créé avec succès'], Response::HTTP_CREATED);
+    }
+
+    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
+    public function login(): JsonResponse
+    {
+        // Cette méthode ne sera jamais exécutée car le firewall intercepte la requête
+        return $this->json([
+            'message' => 'Ce point de terminaison est géré automatiquement par Symfony.'
+        ], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
 }

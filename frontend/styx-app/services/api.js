@@ -7,12 +7,20 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Intercepteur pour ajouter le token à chaque requête
+// Intercepteur pour ajouter le token à chaque requête, sauf pour les routes publiques
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
-  if (token) {
+
+  // Liste des routes publiques
+  const publicRoutes = ['/register', '/login', '/users'];
+
+  // Ne pas ajouter le token pour les routes publiques
+  const isPublic = publicRoutes.some(route => config.url.includes(route));
+
+  if (token && !isPublic) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
@@ -30,4 +38,5 @@ export const loginUser = async (form) => {
 };
 
 export default api;
+
 
