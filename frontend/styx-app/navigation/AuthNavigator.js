@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
-import BottomTabNavigator from './BottomTabNavigator'; // ta bottom nav
+import BottomTabNavigator from './BottomTabNavigator'; 
 import { AuthContext } from '../contexts/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -12,7 +12,7 @@ const Stack = createNativeStackNavigator();
 export default function AuthNavigator() {
   const { isAuthenticated } = useContext(AuthContext);
 
-  if (isAuthenticated === null) return null; // Écran de chargement si besoin
+  if (isAuthenticated === null) return null; 
 
   return (
     <NavigationContainer>
