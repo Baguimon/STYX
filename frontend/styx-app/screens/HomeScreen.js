@@ -40,11 +40,20 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {}
+      <TouchableOpacity
+        style={styles.createMatchButton}
+        onPress={() => navigation.navigate('CreateMatch')}
+      >
+        <Text style={styles.createMatchText}>+ Ajouter un match</Text>
+      </TouchableOpacity>
+      
       <FlatList
         data={users}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
       />
+
       <View style={styles.logoutContainer}>
         <Button title="Déconnexion" onPress={logout} color="#D9534F" />
       </View>
@@ -57,6 +66,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 50,
     paddingHorizontal: 20,
+  },
+  createMatchButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  createMatchText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   item: {
     backgroundColor: '#e0e0e0',
@@ -73,5 +94,3 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
 });
-
-
