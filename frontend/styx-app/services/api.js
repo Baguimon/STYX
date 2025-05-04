@@ -7,14 +7,14 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Intercepteur pour ajouter le token à chaque requête, sauf pour les routes publiques
+
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
 
-  // Liste des routes publiques
+
   const publicRoutes = ['/register', '/login', '/users'];
 
-  // Ne pas ajouter le token pour les routes publiques
+
   const isPublic = publicRoutes.some(route => config.url.includes(route));
 
   if (token && !isPublic) {

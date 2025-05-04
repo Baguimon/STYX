@@ -5,7 +5,6 @@ import ClubScreen from '../screens/ClubScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import TabBarIcon from '../components/TabBarIcon';
 
-// 👇 Import de l’image pour Accueil
 import HomeIconImage from '../assets/home-icon.png';
 import ClubIconImage from '../assets/club-icon.png';
 import ProfileIconImage from '../assets/profile-icon.png';
@@ -31,7 +30,6 @@ export default function BottomTabNavigator() {
           let image = null;
 
           if (route.name === 'Accueil') {
-            // 👇 On utilise ton image pour Accueil
             image = HomeIconImage;
           } else if (route.name === 'Club') {
             image = ClubIconImage;
@@ -45,7 +43,7 @@ export default function BottomTabNavigator() {
               size={size * 1.4}
               color={color}
               focused={focused}
-              image={image} // 👈 On passe l'image si c'est Accueil
+              image={image}
             />
           );
         },
