@@ -1,9 +1,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Ionicons';
 import HomeScreen from '../screens/HomeScreen';
 import ClubScreen from '../screens/ClubScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import TabBarIcon from '../components/TabBarIcon';
+
+// 👇 Import de l’image pour Accueil
+import HomeIconImage from '../assets/home-icon.png';
+import ClubIconImage from '../assets/club-icon.png';
+import ProfileIconImage from '../assets/profile-icon.png';
 
 const Tab = createBottomTabNavigator();
 
@@ -12,19 +17,37 @@ export default function BottomTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#151515' },
-        tabBarActiveTintColor: '#6BDFFD',
-        tabBarInactiveTintColor: '#6BDFFD',
-        tabBarIcon: ({ color, size }) => {
+        tabBarStyle: { 
+            backgroundColor: '#000', 
+            height: 90,
+            paddingBottom: 20,
+            paddingTop: 10,
+        },        
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: '#00d9ff',
+        tabBarInactiveTintColor: '#00d9ff',
+        tabBarIcon: ({ color, size, focused }) => {
           let iconName;
+          let image = null;
+
           if (route.name === 'Accueil') {
-            iconName = 'home-outline';
+            // 👇 On utilise ton image pour Accueil
+            image = HomeIconImage;
           } else if (route.name === 'Club') {
-            iconName = 'people-outline';
+            image = ClubIconImage;
           } else if (route.name === 'Profil') {
-            iconName = 'person-outline';
+            image = ProfileIconImage;
           }
-          return <Icon name={iconName} size={size} color={color} />;
+
+          return (
+            <TabBarIcon
+              name={iconName}
+              size={size * 1.4}
+              color={color}
+              focused={focused}
+              image={image} // 👈 On passe l'image si c'est Accueil
+            />
+          );
         },
       })}
     >
