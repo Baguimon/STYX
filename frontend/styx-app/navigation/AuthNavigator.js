@@ -1,6 +1,5 @@
-// AuthNavigator.js
+// navigation/AuthNavigator.js
 import React, { useContext } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -15,9 +14,11 @@ const Stack = createNativeStackNavigator();
 export default function AuthNavigator() {
   const { isAuthenticated } = useContext(AuthContext);
 
+  // On n'affiche rien tant que l'authentification n'est pas déterminée
+  if (isAuthenticated === null) return null;
 
-  if (isAuthenticated === null) return null; // Optionnel : écran de chargement
-
+  // Si déjà connecté, RootNavigator gère la redirection vers "Main"
+  if (isAuthenticated) return null;
 
   return (
     <NavigationContainer>
