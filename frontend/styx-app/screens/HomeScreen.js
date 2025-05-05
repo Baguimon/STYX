@@ -43,7 +43,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.createMatchButton}
-        onPress={() => navigation.navigate('CreateMatch')}
+        onPress={() => navigation.navigate('CreateGame')}
       >
         <Text style={styles.createMatchText}>+ Ajouter un match</Text>
       </TouchableOpacity>

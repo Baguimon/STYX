@@ -1,15 +1,23 @@
-import React, { useState } from 'react';
+// screens/RegisterScreen.js
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
   TextInput,
-  Button,
-  StyleSheet,
-  Alert
+  Image,
+  TouchableOpacity,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet
 } from 'react-native';
 import axios from 'axios';
+import { AuthContext } from '../contexts/AuthContext';
+
+import styxLogo from '../assets/styx-logo.png';
 
 export default function RegisterScreen({ navigation }) {
+  const { register } = useContext(AuthContext);
   const [form, setForm] = useState({
     email: '',
     username: '',
@@ -22,67 +30,138 @@ export default function RegisterScreen({ navigation }) {
 
   const handleRegister = async () => {
     try {
-      const response = await axios.post('http://10.0.0.27:8000/api/register', form);
-      Alert.alert('✅ Succès', response.data.message);
-      navigation.navigate('Login');
+      const { data } = await axios.post(
+        'http://10.0.0.27:8000/api/register',
+        form
+      );
+      Alert.alert('✅ Succès', data.message);
+      navigation.replace('Login');
     } catch (error) {
       console.error(error);
-      Alert.alert('❌ Erreur', 'Une erreur est survenue lors de l\'inscription.');
+      Alert.alert(
+        '❌ Erreur',
+        'Une erreur est survenue lors de l\'inscription.'
+      );
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Inscription</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={styles.logoContainer}>
+        <Image source={styxLogo} style={styles.logo} />
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={form.email}
-        onChangeText={(value) => handleChange('email', value)}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+      <View style={styles.card}>
+        <Text style={styles.title}>Inscription</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Nom d'utilisateur"
-        value={form.username}
-        onChangeText={(value) => handleChange('username', value)}
-        autoCapitalize="none"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#AAA"
+          value={form.email}
+          onChangeText={(v) => handleChange('email', v)}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Mot de passe"
-        value={form.password}
-        onChangeText={(value) => handleChange('password', value)}
-        secureTextEntry
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Nom d'utilisateur"
+          placeholderTextColor="#AAA"
+          value={form.username}
+          onChangeText={(v) => handleChange('username', v)}
+          autoCapitalize="none"
+        />
 
-      <Button title="S'inscrire" onPress={handleRegister} />
-    </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Mot de passe"
+          placeholderTextColor="#AAA"
+          secureTextEntry
+          value={form.password}
+          onChangeText={(v) => handleChange('password', v)}
+        />
+
+        <TouchableOpacity style={styles.button} onPress={handleRegister}>
+          <Text style={styles.buttonText}>S'inscrire</Text>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        onPress={() => navigation.replace('Login')}
+        style={styles.loginLink}
+      >
+        <Text style={styles.link}>Déjà un compte ? Se connecter</Text>
+      </TouchableOpacity>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#050A23',
     justifyContent: 'center',
-    paddingHorizontal: 25,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 300,
+    height: 120,
+    resizeMode: 'contain',
+  },
+  card: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    marginBottom: 15,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 25,
+    fontWeight: '600',
+    color: '#050A23',
     textAlign: 'center',
+    marginBottom: 20,
   },
   input: {
-    height: 45,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    paddingHorizontal: 10,
+    backgroundColor: '#ECECEC',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
     marginBottom: 15,
-    borderRadius: 6,
+    fontSize: 16,
+    color: '#050A23',
+  },
+  button: {
+    backgroundColor: '#8BEAFF',
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#050A23',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loginLink: {
+    marginTop: 10,
+  },
+  link: {
+    color: '#8BEAFF',
+    fontSize: 16,
+    textDecorationLine: 'underline',
+    textAlign: 'center',
   },
 });
