@@ -1,4 +1,3 @@
-// screens/CreateMatchScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -8,14 +7,17 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  Switch,
+  Platform
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { createGame } from '../services/api';
 
 export default function CreateGameScreen() {
   const navigation = useNavigation();
   const [form, setForm] = useState({
-    date: '',
+    date: new Date(),
     location: '',
     maxPlayers: '',
     playerCount: '',
@@ -23,21 +25,33 @@ export default function CreateGameScreen() {
     isClubMatch: false,
   });
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   const handleChange = (name, value) => {
     setForm({ ...form, [name]: value });
   };
 
-  const handleSubmit = async () => {
-    try {
-      const payload = {
-        ...form,
-        maxPlayers: parseInt(form.maxPlayers, 10),
-        playerCount: parseInt(form.playerCount, 10),
-        date: new Date(form.date).toISOString(),
-        createdAt: new Date().toISOString(),
-        isClubMatch: form.isClubMatch === 'true' || form.isClubMatch === true,
-      };
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || form.date;
+    setShowDatePicker(Platform.OS === 'ios');
+    setForm({ ...form, date: currentDate });
+  };
 
+  const handleSubmit = async () => {
+    if (!form.location || !form.maxPlayers || !form.playerCount || !form.status) {
+      Alert.alert('Erreur', 'Tous les champs doivent être remplis');
+      return;
+    }
+
+    const payload = {
+      ...form,
+      maxPlayers: parseInt(form.maxPlayers),
+      playerCount: parseInt(form.playerCount),
+      date: form.date.toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
       await createGame(payload);
       Alert.alert('Succès', 'Match créé avec succès');
       navigation.goBack();
@@ -53,13 +67,18 @@ export default function CreateGameScreen() {
         <Text style={styles.backButtonText}>← Retour</Text>
       </TouchableOpacity>
 
-      <Text style={styles.label}>Date (YYYY-MM-DD HH:MM)</Text>
-      <TextInput
-        style={styles.input}
-        value={form.date}
-        onChangeText={(text) => handleChange('date', text)}
-        placeholder="2025-05-04 18:00"
-      />
+      <Text style={styles.label}>Date du match</Text>
+      <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateInput}>
+        <Text>{form.date.toLocaleString()}</Text>
+      </TouchableOpacity>
+      {showDatePicker && (
+        <DateTimePicker
+          value={form.date}
+          mode="datetime"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
 
       <Text style={styles.label}>Lieu</Text>
       <TextInput
@@ -85,21 +104,21 @@ export default function CreateGameScreen() {
         keyboardType="numeric"
       />
 
-      <Text style={styles.label}>Statut</Text>
+      <Text style={styles.label}>Statut (ouvert / fermé)</Text>
       <TextInput
         style={styles.input}
         value={form.status}
         onChangeText={(text) => handleChange('status', text)}
-        placeholder="Ouvert / Fermé"
+        placeholder="Ex: Ouvert"
       />
 
-      <Text style={styles.label}>Match de club ? (true/false)</Text>
-      <TextInput
-        style={styles.input}
-        value={form.isClubMatch.toString()}
-        onChangeText={(text) => handleChange('isClubMatch', text)}
-        placeholder="true ou false"
-      />
+      <View style={styles.switchRow}>
+        <Text style={styles.label}>Match de club ?</Text>
+        <Switch
+          value={form.isClubMatch}
+          onValueChange={(value) => handleChange('isClubMatch', value)}
+        />
+      </View>
 
       <Button title="Créer le match" onPress={handleSubmit} />
     </View>
@@ -128,5 +147,19 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginTop: 5,
+  },
+  dateInput: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 15,
+    marginBottom: 20,
   },
 });

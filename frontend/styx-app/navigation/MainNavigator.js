@@ -15,7 +15,7 @@ export default function MainNavigator() {
       <Stack.Screen
         name="Tabs"
         component={BottomTabNavigator}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
 
       {/* Écran “Créer un match” */}
