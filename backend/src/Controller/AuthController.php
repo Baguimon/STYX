@@ -25,6 +25,11 @@ class AuthController extends AbstractController
             return $this->json(['error' => 'Email, username et password sont requis.'], Response::HTTP_BAD_REQUEST);
         }
 
+        $existing = $em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+        if ($existing) {
+            return $this->json(['error' => 'Email déjà utilisé.'], Response::HTTP_CONFLICT);
+        }
+
         $user = new User();
         $user->setEmail($data['email']);
         $user->setUsername($data['username']);
@@ -43,11 +48,34 @@ class AuthController extends AbstractController
     }
 
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
-    public function login(): JsonResponse
-    {
-        // Cette méthode ne sera jamais exécutée car le firewall intercepte la requête
+    public function login(
+        Request $request,
+        EntityManagerInterface $em,
+        UserPasswordHasherInterface $passwordHasher
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['email'], $data['password'])) {
+            return $this->json(['error' => 'Email et mot de passe requis.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur non trouvé.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!$passwordHasher->isPasswordValid($user, $data['password'])) {
+            return $this->json(['error' => 'Mot de passe incorrect.'], Response::HTTP_UNAUTHORIZED);
+        }
+
         return $this->json([
-            'message' => 'Ce point de terminaison est géré automatiquement par Symfony.'
-        ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            'message' => 'Connexion réussie.',
+            'user' => [
+                'id' => $user->getId(),
+                'username' => $user->getUsername(),
+                'email' => $user->getEmail(),
+            ]
+        ]);
     }
 }
