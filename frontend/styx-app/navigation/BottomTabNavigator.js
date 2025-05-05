@@ -5,6 +5,7 @@ import ClubScreen from '../screens/ClubScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import TabBarIcon from '../components/TabBarIcon';
 
+
 import HomeIconImage from '../assets/home-icon.png';
 import ClubIconImage from '../assets/club-icon.png';
 import ProfileIconImage from '../assets/profile-icon.png';
@@ -43,7 +44,8 @@ export default function BottomTabNavigator() {
               size={size * 1.4}
               color={color}
               focused={focused}
-              image={image}
+              image={image} 
+
             />
           );
         },

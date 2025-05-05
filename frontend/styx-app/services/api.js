@@ -8,6 +8,9 @@ const api = axios.create({
 });
 
 
+// Aucun token injecté : API publique
+
+
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
 
@@ -24,6 +27,7 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+
 export const getUsers = async () => {
   const response = await api.get('/users');
   return response.data;
@@ -36,6 +40,16 @@ export const registerUser = async (form) => {
 export const loginUser = async (form) => {
   return api.post('/login', form);
 };
+
+export const createGame = async (form) => {
+  return api.post('/games', form);
+};
+
+export const getGames = async () => {
+  const response = await api.get('/games');
+  return response.data;
+};
+
 
 export default api;
 
