@@ -1,38 +1,24 @@
-import React, { useContext } from 'react';
+// navigation/AuthNavigator.js
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
-
-import MainNavigator from './MainNavigator'; // ✅ Nouveau fichier qui contient Tabs + autres écrans
-
-import { AuthContext } from '../contexts/AuthContext';
+// import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'; // à créer plus tard si besoin
 
 const Stack = createNativeStackNavigator();
 
 export default function AuthNavigator() {
-  const { isAuthenticated } = useContext(AuthContext);
-
-  // On n'affiche rien tant que l'authentification n'est pas déterminée
-  if (isAuthenticated === null) return null;
-
-  // Si déjà connecté, RootNavigator gère la redirection vers "Main"
-  if (isAuthenticated) return null;
-
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName={isAuthenticated ? 'Main' : 'Login'} screenOptions={{ headerShown: true }}>
-        {!isAuthenticated ? (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: true }} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {/* Écran de connexion */}
+      <Stack.Screen name="Login" component={LoginScreen} />
+
+      {/* Écran d'inscription */}
+      <Stack.Screen name="Register" component={RegisterScreen} />
+
+      {/* Si tu ajoutes ForgotPasswordScreen : */}
+      {/* <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} /> */}
+    </Stack.Navigator>
   );
 }

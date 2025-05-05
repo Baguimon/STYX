@@ -30,12 +30,11 @@ export default function RegisterScreen({ navigation }) {
 
   const handleRegister = async () => {
     try {
-      const response = await axios.post(
+      const { data } = await axios.post(
         'http://10.0.0.27:8000/api/register',
         form
       );
-      Alert.alert('✅ Succès', response.data.message);
-      // Redirige vers l'écran Login
+      Alert.alert('✅ Succès', data.message);
       navigation.replace('Login');
     } catch (error) {
       console.error(error);
@@ -51,7 +50,6 @@ export default function RegisterScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Logo centré */}
       <View style={styles.logoContainer}>
         <Image source={styxLogo} style={styles.logo} />
       </View>
@@ -92,7 +90,6 @@ export default function RegisterScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Lien vers l'écran Login */}
       <TouchableOpacity
         onPress={() => navigation.replace('Login')}
         style={styles.loginLink}
