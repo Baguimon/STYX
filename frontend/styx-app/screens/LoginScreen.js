@@ -1,4 +1,4 @@
-// screens/LoginScreen.js
+// LoginScreen.js
 import React, { useState, useContext } from 'react';
 import {
   View,
@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
-
 import styxLogo from '../assets/styx-logo.png';
 
 export default function LoginScreen({ navigation }) {
@@ -23,19 +22,25 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      const { data } = await axios.post(
-        'http://10.0.0.27:8000/api/login',
-        { email, password }
-      );
-      await login(data.token);
+      const { data } = await axios.post('http://10.0.0.27:8000/api/login', {
+        email,
+        password
+      });
+
+      if (!data.user) {
+        Alert.alert('Erreur', 'Réponse du serveur invalide.');
+        return;
+      }
+
+      await login(data.user);
       Alert.alert('✅ Connexion réussie');
-      // Le RootNavigator bascule automatiquement sur Main
     } catch (error) {
       console.error(error);
-      Alert.alert(
-        '❌ Erreur',
-        'Identifiants invalides ou serveur indisponible.'
-      );
+      if (error.response?.status === 401) {
+        Alert.alert('❌ Identifiants incorrects');
+      } else {
+        Alert.alert('❌ Erreur', 'Réponse du serveur invalide');
+      }
     }
   };
 
@@ -69,14 +74,6 @@ export default function LoginScreen({ navigation }) {
           value={password}
           onChangeText={setPassword}
         />
-
-        {/* Si tu crées ForgotPasswordScreen, décommente : */}
-        {/* <TouchableOpacity
-          style={styles.forgotContainer}
-          onPress={() => navigation.navigate('ForgotPassword')}
-        >
-          <Text style={styles.forgot}>Mot de passe oublié ?</Text>
-        </TouchableOpacity> */}
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Se connecter</Text>
@@ -135,16 +132,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
     color: '#050A23',
-  },
-  /* forgotContainer / forgot décommenter si utilisé */
-  forgotContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 10,
-  },
-  forgot: {
-    fontSize: 14,
-    color: '#8BEAFF',
-    textDecorationLine: 'underline',
   },
   button: {
     backgroundColor: '#8BEAFF',
