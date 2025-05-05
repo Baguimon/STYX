@@ -1,3 +1,4 @@
+// screens/CreateMatchScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -11,7 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { createGame } from '../services/api';
 
-export default function CreateMatchScreen() {
+export default function CreateGameScreen() {
   const navigation = useNavigation();
   const [form, setForm] = useState({
     date: '',
@@ -30,8 +31,8 @@ export default function CreateMatchScreen() {
     try {
       const payload = {
         ...form,
-        maxPlayers: parseInt(form.maxPlayers),
-        playerCount: parseInt(form.playerCount),
+        maxPlayers: parseInt(form.maxPlayers, 10),
+        playerCount: parseInt(form.playerCount, 10),
         date: new Date(form.date).toISOString(),
         createdAt: new Date().toISOString(),
         isClubMatch: form.isClubMatch === 'true' || form.isClubMatch === true,
@@ -48,7 +49,6 @@ export default function CreateMatchScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Bouton Retour personnalisé */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Text style={styles.backButtonText}>← Retour</Text>
       </TouchableOpacity>

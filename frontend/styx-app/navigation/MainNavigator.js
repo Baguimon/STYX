@@ -1,5 +1,7 @@
+// navigation/MainNavigator.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import BottomTabNavigator from './BottomTabNavigator';
 import CreateGameScreen from '../screens/CreateGameScreen';
 import UserDetailsScreen from '../screens/UserDetailsScreen';
@@ -9,25 +11,25 @@ const Stack = createNativeStackNavigator();
 export default function MainNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {/* Tab bar sans header */}
+      {/* Barre d’onglets */}
       <Stack.Screen
         name="Tabs"
         component={BottomTabNavigator}
         options={{ headerShown: false }}
       />
 
-      {/* Écran pour créer un match */}
+      {/* Écran “Créer un match” */}
       <Stack.Screen
-        name="CreateMatch"
+        name="CreateGame"
         component={CreateGameScreen}
-        options={{ title: 'Créer un Match' }}
+        options={{ title: 'Créer un Match', headerShown: true }}
       />
 
       {/* Détail utilisateur */}
       <Stack.Screen
         name="UserDetails"
         component={UserDetailsScreen}
-        options={{ title: 'Détail Utilisateur' }}
+        options={{ title: 'Détail Utilisateur', headerShown: true }}
       />
     </Stack.Navigator>
   );

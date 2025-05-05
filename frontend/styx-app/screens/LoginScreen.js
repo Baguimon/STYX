@@ -23,14 +23,13 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post(
+      const { data } = await axios.post(
         'http://10.0.0.27:8000/api/login',
         { email, password }
       );
-      await login(response.data.token);
-      // Plus besoin de navigation.replace("Main") : 
-      // RootNavigator bascule automatiquement sur Main via isAuthenticated
+      await login(data.token);
       Alert.alert('✅ Connexion réussie');
+      // Le RootNavigator bascule automatiquement sur Main
     } catch (error) {
       console.error(error);
       Alert.alert(
@@ -45,7 +44,6 @@ export default function LoginScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Logo */}
       <View style={styles.logoContainer}>
         <Image source={styxLogo} style={styles.logo} />
       </View>
@@ -72,23 +70,22 @@ export default function LoginScreen({ navigation }) {
           onChangeText={setPassword}
         />
 
-        {/* Mot de passe oublié */}
-        <TouchableOpacity
+        {/* Si tu crées ForgotPasswordScreen, décommente : */}
+        {/* <TouchableOpacity
           style={styles.forgotContainer}
           onPress={() => navigation.navigate('ForgotPassword')}
         >
           <Text style={styles.forgot}>Mot de passe oublié ?</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Se connecter</Text>
         </TouchableOpacity>
       </View>
 
-      {/* S’inscrire */}
       <TouchableOpacity
-        onPress={() => navigation.replace('Register')}
         style={styles.registerLink}
+        onPress={() => navigation.navigate('Register')}
       >
         <Text style={styles.link}>Pas encore de compte ? S’inscrire</Text>
       </TouchableOpacity>
@@ -139,6 +136,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#050A23',
   },
+  /* forgotContainer / forgot décommenter si utilisé */
   forgotContainer: {
     alignItems: 'flex-end',
     marginBottom: 10,
