@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon:           { width: 24, height: 24, marginTop: -28, tintColor: '#FFF' },
-  logo:           { width: 300, height: 140, marginTop: -33,resizeMode: 'contain' },
+  logo:           { width: 300, height: 140, marginTop: -38,resizeMode: 'contain' },
   arrowContainer: { position: 'absolute', bottom: 120, left: 0, right: 0, alignItems: 'center' },
   arrow:          { fontSize: 32, color: '#FFF' },
 
