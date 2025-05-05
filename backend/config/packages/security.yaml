@@ -27,10 +27,11 @@ security:
         api:
             pattern: ^/api
             stateless: true
-            jwt: ~
 
     access_control:
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/games, roles: PUBLIC_ACCESS }
         - { path: ^/api,       roles: PUBLIC_ACCESS }
+        
 
