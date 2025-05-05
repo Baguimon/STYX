@@ -130,7 +130,7 @@ export default function HomeScreen() {
                 bg={bgProfile}
                 label="Profil"
                 subtitle=""
-                onPress={() => navigation.navigate('Profile')}
+                onPress={() => navigation.navigate('Profil')}
               />
             </View>
           </View>
