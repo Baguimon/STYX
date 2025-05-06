@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import BottomTabNavigator from './BottomTabNavigator';
 import CreateGameScreen from '../screens/CreateGameScreen';
 import UserDetailsScreen from '../screens/UserDetailsScreen';
+import GameSearchScreen from '../screens/GameSearchScreen'; // ✅ Ajout de l'import
 
 const Stack = createNativeStackNavigator();
 
@@ -23,6 +24,13 @@ export default function MainNavigator() {
         name="CreateGame"
         component={CreateGameScreen}
         options={{ title: 'Créer un Match', headerShown: true }}
+      />
+
+      {/* Écran “Rejoindre un match” */}
+      <Stack.Screen
+        name="GameSearch"
+        component={GameSearchScreen}
+        options={{ title: 'Rejoindre un Match', headerShown: false }}
       />
 
       {/* Détail utilisateur */}
