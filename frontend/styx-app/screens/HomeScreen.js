@@ -116,7 +116,7 @@ export default function HomeScreen() {
                 bg={bgJoin}
                 label="Rejoindre"
                 subtitle="un match"
-                onPress={() => navigation.navigate('JoinGame')}
+                onPress={() => navigation.navigate('GameSearch')}
               />
             </View>
             <View style={styles.row}>
