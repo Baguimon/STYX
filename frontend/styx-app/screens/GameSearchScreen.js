@@ -4,86 +4,80 @@ import {
   Text,
   TextInput,
   FlatList,
-  Pressable,
   StyleSheet,
+  Pressable,
   Image,
+  Modal,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getGames } from '../services/api';
-import ballIcon from '../assets/balls-pattern.png';
 
 export default function GameSearchScreen() {
   const navigation = useNavigation();
   const [games, setGames] = useState([]);
   const [searchCity, setSearchCity] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Toutes');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedGameId, setSelectedGameId] = useState(null);
 
   useEffect(() => {
-    const fetchGames = async () => {
-      try {
-        const data = await getGames();
-        setGames(data);
-      } catch (error) {
-        console.error('Erreur lors du chargement des matchs :', error);
-      }
-    };
-    fetchGames();
+    getGames().then(setGames).catch(console.error);
   }, []);
 
-  const filteredGames = games.filter((game) => {
-    const city = game.city || '';
-    return (
-      (searchCity === '' || city.toLowerCase().includes(searchCity.toLowerCase())) &&
+  const filteredGames = games.filter(
+    (game) =>
+      (searchCity === '' || (game.location && game.location.toLowerCase().includes(searchCity.toLowerCase()))) &&
       (selectedCategory === 'Toutes' ||
         (selectedCategory === 'Foot débutant' && game.status?.toLowerCase().includes('débutant')) ||
         (selectedCategory === 'Foot compétitif' && game.status?.toLowerCase().includes('compétitif')))
-    );
-  });
+  );
 
-  const formatDate = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleString('fr-FR', {
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('fr-FR', {
       weekday: 'long',
       day: '2-digit',
       month: 'long',
       hour: '2-digit',
       minute: '2-digit',
-    });
+    }).format(date);
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Image source={ballIcon} style={styles.icon} />
-        <View style={styles.details}>
-          <Text style={styles.title}>{item.location}</Text>
-          <Text style={styles.subtitle}>{item.city || 'Ville inconnue'}</Text>
+    <View style={styles.item}>
+      <View style={styles.header}>
+        <Image source={require('../assets/balls-pattern.png')} style={styles.ballIcon} />
+        <View style={styles.headerText}>
+          <Text style={styles.location}>{item.location}</Text>
+          <Text style={styles.city}>Paris 16e</Text>
+          <Text style={styles.date}>{formatDate(item.date)}</Text>
         </View>
-        <View style={styles.statusBlock}>
+        <View style={styles.right}>
           <Text style={styles.players}>{item.playerCount}/{item.maxPlayers}</Text>
-          {item.status?.toLowerCase() === 'ouvert' && <View style={styles.statusDot} />}
+          {item.status === 'ouvert' && <View style={styles.statusDot} />}
         </View>
       </View>
 
-      <Text style={styles.date}>{formatDate(item.date)}</Text>
-
       <Pressable
-        onPress={() => console.log('Match ID:', item.id)}
-        style={({ pressed }) => [
-          styles.joinButton,
-          { backgroundColor: pressed ? '#329CB6' : '#46B3D0' },
-        ]}
+        style={({ pressed }) => [styles.button, { backgroundColor: pressed ? '#329CB6' : '#46B3D0' }]}
+        onPress={() => {
+          setSelectedGameId(item.id);
+          setModalVisible(true);
+        }}
       >
-        <Text style={styles.joinText}>Rejoindre</Text>
+        <Text style={styles.buttonText}>Rejoindre</Text>
       </Pressable>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={() => navigation.goBack()}>
-        <Text style={styles.back}>← Retour</Text>
-      </Pressable>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Text style={styles.backText}>← Retour</Text>
+      </TouchableOpacity>
+
+      <Image source={require('../assets/styx-logo.png')} style={styles.banner} />
 
       <TextInput
         style={styles.searchBar}
@@ -93,27 +87,41 @@ export default function GameSearchScreen() {
         onChangeText={setSearchCity}
       />
 
-      <View style={styles.filterContainer}>
-        {['Toutes', 'Foot débutant', 'Foot compétitif'].map((category) => (
-          <Pressable
-            key={category}
-            onPress={() => setSelectedCategory(category)}
-            style={[
-              styles.filterButton,
-              selectedCategory === category && styles.activeFilter,
-            ]}
-          >
-            <Text style={styles.filterText}>{category}</Text>
-          </Pressable>
-        ))}
-      </View>
-
       <FlatList
         data={filteredGames}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
       />
+
+      {/* POPUP */}
+      <Modal transparent visible={modalVisible} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+              <Text style={{ fontSize: 18, color: '#ccc' }}>✕</Text>
+            </TouchableOpacity>
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => {
+                console.log('Rejoindre avec le Club');
+                setModalVisible(false);
+              }}
+            >
+              <Text style={styles.modalButtonText}>Rejoindre avec le Club</Text>
+            </Pressable>
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => {
+                console.log('Rejoindre Seul');
+                setModalVisible(false);
+              }}
+            >
+              <Text style={styles.modalButtonText}>Rejoindre Seul</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -121,30 +129,38 @@ export default function GameSearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#121212',
     paddingHorizontal: 16,
-    paddingTop: 45,
+    paddingTop: 40,
   },
-  back: {
+  backButton: {
+    marginBottom: 10,
+  },
+  backText: {
     color: '#46B3D0',
     fontSize: 16,
-    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  banner: {
+    width: '100%',
+    height: 90,
+    resizeMode: 'contain',
+    marginBottom: 10,
   },
   searchBar: {
     backgroundColor: '#222',
     color: '#fff',
     padding: 10,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   filterContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 10,
     gap: 10,
   },
   filterButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    padding: 6,
     backgroundColor: '#666',
     borderRadius: 5,
   },
@@ -153,37 +169,46 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: '#fff',
+    fontSize: 12,
     fontWeight: 'bold',
   },
-  card: {
-    backgroundColor: '#2a2a2a',
-    padding: 16,
+  item: {
+    padding: 15,
+    marginVertical: 8,
     borderRadius: 12,
-    marginBottom: 16,
+    backgroundColor: '#1e1e1e',
+    borderWidth: 1,
+    borderColor: '#666',
   },
-  cardHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  icon: {
+  ballIcon: {
     width: 42,
     height: 42,
-    marginRight: 12,
+    resizeMode: 'contain',
+    marginRight: 10,
   },
-  details: {
+  headerText: {
     flex: 1,
   },
-  title: {
-    color: '#fff',
-    fontWeight: 'bold',
+  location: {
     fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
   },
-  subtitle: {
+  city: {
+    fontSize: 13,
     color: '#ccc',
-    fontSize: 12,
   },
-  statusBlock: {
+  date: {
+    fontSize: 13,
+    color: '#fff',
+    marginTop: 4,
+  },
+  right: {
     alignItems: 'flex-end',
   },
   players: {
@@ -191,27 +216,56 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    backgroundColor: '#0f0',
-    borderRadius: 4,
-    marginTop: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#4cd137',
+    marginTop: 6,
   },
-  date: {
+  button: {
+    alignSelf: 'center',
+    marginTop: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  buttonText: {
     color: '#fff',
-    textAlign: 'center',
     fontWeight: 'bold',
-    marginBottom: 10,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBox: {
+    backgroundColor: '#121212',
+    padding: 20,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#46B3D0',
+    alignItems: 'center',
+    width: '75%',
+  },
+  modalButton: {
+    marginTop: 15,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#46B3D0',
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+  },
+  modalButtonText: {
+    color: '#fff',
     fontSize: 16,
   },
-  joinButton: {
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-  },
-  joinText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  closeBtn: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
   },
 });
