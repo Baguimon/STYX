@@ -4,14 +4,13 @@ import {
   Text,
   TextInput,
   FlatList,
-  StyleSheet,
   Pressable,
-  StatusBar,
+  StyleSheet,
   Image,
-  TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getGames } from '../services/api';
+import ballIcon from '../assets/balls-pattern.png';
 
 export default function GameSearchScreen() {
   const navigation = useNavigation();
@@ -20,56 +19,71 @@ export default function GameSearchScreen() {
   const [selectedCategory, setSelectedCategory] = useState('Toutes');
 
   useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const data = await getGames();
+        setGames(data);
+      } catch (error) {
+        console.error('Erreur lors du chargement des matchs :', error);
+      }
+    };
     fetchGames();
   }, []);
 
-  const fetchGames = async () => {
-    try {
-      const data = await getGames();
-      setGames(data);
-    } catch (error) {
-      console.error('Erreur lors du chargement des matchs :', error);
-    }
-  };
-
-  const filteredGames = games.filter(
-    (game) =>
-      (searchCity === '' || (game.location && game.location.toLowerCase().includes(searchCity.toLowerCase()))) &&
+  const filteredGames = games.filter((game) => {
+    const city = game.city || '';
+    return (
+      (searchCity === '' || city.toLowerCase().includes(searchCity.toLowerCase())) &&
       (selectedCategory === 'Toutes' ||
         (selectedCategory === 'Foot débutant' && game.status?.toLowerCase().includes('débutant')) ||
         (selectedCategory === 'Foot compétitif' && game.status?.toLowerCase().includes('compétitif')))
-  );
+    );
+  });
+
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleString('fr-FR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <View style={styles.header}>
-        <View style={styles.locationContainer}>
-          <Text style={styles.location}>{item.location}</Text>
-          <Text style={styles.city}> • Ville inconnue</Text>
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Image source={ballIcon} style={styles.icon} />
+        <View style={styles.details}>
+          <Text style={styles.title}>{item.location}</Text>
+          <Text style={styles.subtitle}>{item.city || 'Ville inconnue'}</Text>
         </View>
-        <Text style={styles.players}>
-          {item.playerCount}/{item.maxPlayers}
-        </Text>
+        <View style={styles.statusBlock}>
+          <Text style={styles.players}>{item.playerCount}/{item.maxPlayers}</Text>
+          {item.status?.toLowerCase() === 'ouvert' && <View style={styles.statusDot} />}
+        </View>
       </View>
-      <Text style={styles.category}>{item.status}</Text>
-      <Text style={styles.date}>{new Date(item.date).toLocaleString()}</Text>
+
+      <Text style={styles.date}>{formatDate(item.date)}</Text>
+
       <Pressable
-        style={({ pressed }) => [styles.button, { backgroundColor: pressed ? '#329CB6' : '#46B3D0' }]}
-        onPress={() => console.log(`Match ID: ${item.id}`)}
+        onPress={() => console.log('Match ID:', item.id)}
+        style={({ pressed }) => [
+          styles.joinButton,
+          { backgroundColor: pressed ? '#329CB6' : '#46B3D0' },
+        ]}
       >
-        <Text style={styles.buttonText}>Rejoindre</Text>
+        <Text style={styles.joinText}>Rejoindre</Text>
       </Pressable>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <View style={styles.topRow}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>← Retour</Text>
-        </TouchableOpacity>
-        <Image source={require('../assets/styx-logo.png')} style={styles.banner} />
-      </View>
+      <Pressable onPress={() => navigation.goBack()}>
+        <Text style={styles.back}>← Retour</Text>
+      </Pressable>
 
       <TextInput
         style={styles.searchBar}
@@ -83,8 +97,11 @@ export default function GameSearchScreen() {
         {['Toutes', 'Foot débutant', 'Foot compétitif'].map((category) => (
           <Pressable
             key={category}
-            style={[styles.filterButton, selectedCategory === category && styles.activeFilter]}
             onPress={() => setSelectedCategory(category)}
+            style={[
+              styles.filterButton,
+              selectedCategory === category && styles.activeFilter,
+            ]}
           >
             <Text style={styles.filterText}>{category}</Text>
           </Pressable>
@@ -95,6 +112,7 @@ export default function GameSearchScreen() {
         data={filteredGames}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 20 }}
       />
     </View>
   );
@@ -103,40 +121,30 @@ export default function GameSearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: StatusBar.currentHeight || 0,
-    backgroundColor: '#121212',
+    backgroundColor: '#000',
     paddingHorizontal: 16,
+    paddingTop: 45,
   },
-  topRow: {
-    marginTop: 40,
-    marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  backButtonText: {
+  back: {
     color: '#46B3D0',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  banner: {
-    height: 45,
-    resizeMode: 'contain',
+    marginBottom: 20,
   },
   searchBar: {
     backgroundColor: '#222',
     color: '#fff',
     padding: 10,
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   filterContainer: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 20,
     gap: 10,
   },
   filterButton: {
-    padding: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     backgroundColor: '#666',
     borderRadius: 5,
   },
@@ -145,60 +153,65 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: '#fff',
-    fontSize: 12,
     fontWeight: 'bold',
   },
-  item: {
-    padding: 15,
-    marginVertical: 8,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#808080',
-    backgroundColor: 'transparent',
+  card: {
+    backgroundColor: '#2a2a2a',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
   },
-  header: {
+  cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 5,
-    alignItems: 'baseline',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+  icon: {
+    width: 42,
+    height: 42,
+    marginRight: 12,
   },
-  location: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  details: {
+    flex: 1,
+  },
+  title: {
     color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
-  city: {
-    fontSize: 16,
-    color: '#aaa',
+  subtitle: {
+    color: '#ccc',
+    fontSize: 12,
+  },
+  statusBlock: {
+    alignItems: 'flex-end',
   },
   players: {
-    fontSize: 16,
-    fontWeight: 'bold',
     color: '#fff',
+    fontWeight: 'bold',
   },
-  category: {
-    fontSize: 14,
-    color: '#ccc',
-    marginBottom: 5,
+  statusDot: {
+    width: 8,
+    height: 8,
+    backgroundColor: '#0f0',
+    borderRadius: 4,
+    marginTop: 4,
   },
   date: {
-    fontSize: 14,
     color: '#fff',
-    marginBottom: 10,
-  },
-  button: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    alignSelf: 'flex-end',
-  },
-  buttonText: {
-    fontSize: 14,
+    textAlign: 'center',
     fontWeight: 'bold',
+    marginBottom: 10,
+    fontSize: 16,
+  },
+  joinButton: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+  },
+  joinText: {
     color: '#fff',
+    fontWeight: 'bold',
   },
 });
