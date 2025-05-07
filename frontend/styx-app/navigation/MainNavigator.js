@@ -23,7 +23,7 @@ export default function MainNavigator() {
       <Stack.Screen
         name="CreateGame"
         component={CreateGameScreen}
-        options={{ title: 'Créer un Match', headerShown: true }}
+        options={{ title: 'Créer un Match', headerShown: false }}
       />
 
       {/* Écran “Rejoindre un match” */}
