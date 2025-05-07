@@ -201,30 +201,58 @@ export default function CreateGameScreen() {
       content: (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Statut</Text>
-          <TextInput
-            style={styles.input}
-            value={form.status}
-            onChangeText={t => handleChange('status', t)}
-            placeholder="Ouvert / Fermé"
-            placeholderTextColor="#888"
-          />
+          <View style={styles.toggleContainer}>
+            {['Ouvert', 'Fermé'].map(option => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.toggleButton,
+                  form.status === option && styles.toggleButtonActive
+                ]}
+                onPress={() => handleChange('status', option)}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    form.status === option && styles.toggleTextActive
+                  ]}
+                >
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      ),
+      )
     },
     {
       title: 'Match de club ?',
       content: (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Match de club ?</Text>
-          <TextInput
-            style={styles.input}
-            value={form.isClubMatch}
-            onChangeText={t => handleChange('isClubMatch', t)}
-            placeholder="true ou false"
-            placeholderTextColor="#888"
-          />
+          <View style={styles.toggleContainer}>
+            {['Oui', 'Non'].map(option => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.toggleButton,
+                  form.isClubMatch === option && styles.toggleButtonActive
+                ]}
+                onPress={() => handleChange('isClubMatch', option)}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    form.isClubMatch === option && styles.toggleTextActive
+                  ]}
+                >
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      ),
+      )
     },
     {
       title: 'Récapitulatif',
@@ -404,5 +432,30 @@ const styles = StyleSheet.create({
     color: '#050A23',
     fontSize: 16,
     fontWeight: '600',
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 8,
+  },
+  toggleButton: {
+    borderWidth: 1,
+    borderColor: '#AAD4E0',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'transparent',
+  },
+  toggleButtonActive: {
+    backgroundColor: '#00D9FF',
+    borderColor: '#00D9FF',
+  },
+  toggleText: {
+    color: '#AAD4E0',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  toggleTextActive: {
+    color: '#050A23',
   },
 });
