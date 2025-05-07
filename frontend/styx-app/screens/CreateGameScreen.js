@@ -246,6 +246,14 @@ export default function CreateGameScreen() {
 
   return (
     <View style={styles.container}>
+            {/* ← ANNULER */}
+      <TouchableOpacity
+        style={styles.cancelBtn}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.cancelText}>Annuler</Text>
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <Text style={styles.stepTitle}>{steps[step].title}</Text>
         {steps[step].content}
@@ -275,8 +283,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#050A23',
     // on iOS on ajoute un paddingTop pour la notch et un paddingBottom pour le safe-area
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 16,
+    paddingTop: Platform.OS === 'ios' ? 120 : 16,
     paddingBottom: Platform.OS === 'ios' ? 30 : 16,
+  },
+  cancelBtn: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 16,  // décale sous la notch sur iOS
+    left: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    zIndex: 10,
+  },
+  cancelText: {
+    color: '#AAD4E0',
+    fontSize: 16,
+    fontWeight: '600',
   },
   stepTitle: {
     color: '#00D9FF',
