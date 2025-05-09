@@ -3,16 +3,12 @@ type: "php:8.2"
 build:
     flavor: none
 
-dependencies:
-    php:
-        composer/composer: "^2.0"
-
 web:
     locations:
         "/":
             root: "public"
-            index: "index.php"
-            passthru: "/index.php"
+            index: index.php
+            passthru: /index.php
 
 mounts:
     "/var": "shared:files"
