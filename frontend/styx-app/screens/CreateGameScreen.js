@@ -1,5 +1,5 @@
 // screens/CreateGameScreen.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,8 +19,8 @@ export default function CreateGameScreen() {
 
   // Date complète et flags inline
   const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(true);
+  const [showTimePicker, setShowTimePicker] = useState(true);
 
   // Autres champs du formulaire
   const [form, setForm] = useState({
@@ -75,7 +75,7 @@ export default function CreateGameScreen() {
               <DateTimePicker
                 value={date}
                 mode="date"
-                display="inline"
+                display="spinner"
                 onChange={(_, selected) => {
                   if (selected) setDate(selected);
                 }}
@@ -106,48 +106,34 @@ export default function CreateGameScreen() {
     {
       title: 'Sélectionnez l’heure',
       content: (
-        <>
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => setShowTimePicker(true)}
-          >
-            <Text style={styles.cardTitle}>Heure</Text>
-            <Text style={styles.cardValue}>
-              {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-          </TouchableOpacity>
-          {showTimePicker && Platform.OS === 'ios' && (
-            <View style={styles.pickerInlineContainer}>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Heure du match</Text>
+
+          <View style={styles.timePickerWrapper}>
+            {showTimePicker && (
               <DateTimePicker
                 value={date}
                 mode="time"
-                display="inline"
+                display="spinner"
                 onChange={(_, selected) => {
+                  setShowTimePicker(false);
                   if (selected) setDate(selected);
                 }}
-                style={styles.pickerInline}
+                style={styles.timePicker}
               />
-              <TouchableOpacity
-                style={styles.pickerDone}
-                onPress={() => setShowTimePicker(false)}
-              >
-                <Text style={styles.pickerDoneText}>Valider</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          {showTimePicker && Platform.OS !== 'ios' && (
-            <DateTimePicker
-              value={date}
-              mode="time"
-              display="default"
-              onChange={(_, selected) => {
-                setShowTimePicker(false);
-                if (selected) setDate(selected);
-              }}
-            />
-          )}
-        </>
-      ),
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={styles.pickerDone}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Text style={styles.pickerDoneText}>
+              {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )
     },
     {
       title: 'Lieu',
@@ -311,12 +297,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#050A23',
     // on iOS on ajoute un paddingTop pour la notch et un paddingBottom pour le safe-area
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 120 : 16,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 16,
+    paddingTop: Platform.OS === 'ios' ? 130 : 16,
+    paddingBottom: Platform.OS === 'ios' ? 50 : 16,
   },
   cancelBtn: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 16,  // décale sous la notch sur iOS
+    top: Platform.OS === 'ios' ? 70 : 16,  // décale sous la notch sur iOS
     left: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -329,7 +315,7 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     color: '#00D9FF',
-    fontSize: 22,
+    fontSize: 25,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 24,
@@ -337,7 +323,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#1A1F3D',
     borderRadius: 16,
-    padding: 24,
+    padding: 35,
     marginBottom: 24,
     borderLeftWidth: 4,
     borderLeftColor: '#00D9FF',
@@ -349,13 +335,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
   },
   cardValue: {
     color: '#AAD4E0',
-    fontSize: 15,
+    fontSize: 17,
   },
   input: {
     backgroundColor: '#2A2A40',
@@ -389,6 +375,35 @@ const styles = StyleSheet.create({
     color: '#AAD4E0',
     fontSize: 14,
     marginBottom: 8,
+  },
+  timePickerWrapper: {
+    backgroundColor: '#FFFF',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  timePicker: {
+    width: '100%',
+  },
+  pickerDone: {
+    backgroundColor: '#00D9FF',
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignSelf: 'center',
+    marginTop: 8,
+  },
+  pickerDoneText: {
+    color: '#050A23',
+    fontSize: 16,
+    fontWeight: '600',
   },
   nav: {
     flexDirection: 'row',
