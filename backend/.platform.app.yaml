@@ -1,16 +1,9 @@
 name: app
-type: "php:8.2"
-build:
-    flavor: none
-
-web:
-    locations:
-        "/":
-            root: "public"
-            index: index.php
-            passthru: /index.php
+type: 'php:8.4'
 
 mounts:
-    "/var": "shared:files"
+  'web/uploads':
+    source: local
+    source_path: uploads
 
-disk: 512
+disk: 2048
