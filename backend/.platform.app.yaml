@@ -1,9 +1,31 @@
-name: app
-type: 'php:8.4'
+# backend/.platform.app.yaml
+
+name: php-backend
+type: 'php:8.2'
+
+disk: 512
+
+web:
+  locations:
+    "/":
+      root: "public"
+      index: "index.php"
+      passthru: "/index.php"
+      scripts: true
+      allow: true
 
 mounts:
-  'web/uploads':
-    source: local
-    source_path: uploads
+  "/var": "shared:files"
 
-disk: 2048
+hooks:
+  build: |
+    set -e
+    composer install --prefer-dist --no-dev --no-progress --no-interaction --optimize-autoloader
+
+dependencies:
+  php:
+    composer/composer: "^2"
+
+# Ajoute ton service MySQL ici si tu en as un
+relationships:
+  mysql: 'mysql:mysql'
