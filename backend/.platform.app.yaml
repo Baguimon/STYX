@@ -23,7 +23,7 @@ mounts:
 hooks:
   build: |
     set -e
-    composer install --prefer-dist --no-dev --no-progress --no-interaction --optimize-autoloader
+    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
 dependencies:
   php:
