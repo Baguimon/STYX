@@ -4,20 +4,19 @@ use Symfony\Component\Dotenv\Dotenv;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-if (file_exists(dirname(__DIR__) . '/config/preload.php')) {
-    require dirname(__DIR__) . '/config/preload.php';
+if (!isset($_SERVER['APP_ENV']) && !isset($_ENV['APP_ENV'])) {
+    (new Dotenv())->load(dirname(__DIR__) . '/.env');
 }
 
-(new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
-
-if ($_ENV['APP_ENV'] === 'prod' && isset($_ENV['PLATFORM_RELATIONSHIPS'])) {
+// Inject Platform.sh DATABASE_URL from relationships
+if (isset($_ENV['PLATFORM_RELATIONSHIPS'])) {
     $relationships = json_decode(base64_decode($_ENV['PLATFORM_RELATIONSHIPS']), true);
 
-    if (isset($relationships['database'][0])) {
-        $database = $relationships['database'][0];
-        $dsn = sprintf(
-            '%s://%s:%s@%s:%s/%s',
-            $database['scheme'],
+    if (!empty($relationships['mysql'])) {
+        $database = $relationships['mysql'][0];
+
+        $databaseUrl = sprintf(
+            'mysql://%s:%s@%s:%s/%s',
             $database['username'],
             $database['password'],
             $database['host'],
@@ -25,8 +24,7 @@ if ($_ENV['APP_ENV'] === 'prod' && isset($_ENV['PLATFORM_RELATIONSHIPS'])) {
             ltrim($database['path'], '/')
         );
 
-        $_ENV['DATABASE_URL'] = $dsn;
-        $_SERVER['DATABASE_URL'] = $dsn;
-        putenv("DATABASE_URL=$dsn");
+        $_ENV['DATABASE_URL'] = $databaseUrl;
+        $_SERVER['DATABASE_URL'] = $databaseUrl;
     }
 }
