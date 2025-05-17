@@ -9,7 +9,8 @@ web:
   locations:
     "/":
       root: "public"
-      index: "index.php"
+      index:
+        - index.php
       passthru: "/index.php"
       scripts: true
       allow: true
