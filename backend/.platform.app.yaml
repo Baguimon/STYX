@@ -1,9 +1,11 @@
-# backend/.platform.app.yaml
-
 name: php-backend
 type: 'php:8.2'
 
 disk: 512
+
+runtime:
+  extensions:
+    - sodium
 
 web:
   locations:
@@ -27,6 +29,5 @@ dependencies:
   php:
     composer/composer: "^2"
 
-# Ajoute ton service MySQL ici si tu en as un
 relationships:
   mysql: 'mysql:mysql'
