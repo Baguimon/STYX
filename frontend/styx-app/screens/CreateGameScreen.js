@@ -1,10 +1,9 @@
-// screens/CreateGameScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
   Alert,
   ScrollView,
@@ -13,18 +12,20 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { createGame } from '../services/api';
+import LocationInput from '../components/LocationInput';
+
 
 export default function CreateGameScreen() {
   const navigation = useNavigation();
-
-  // Date complète et flags inline
   const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(true);
-  const [showTimePicker, setShowTimePicker] = useState(true);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [tempTime, setTempTime] = useState(date);
 
-  // Autres champs du formulaire
   const [form, setForm] = useState({
     location: '',
+    latitude: null,
+    longitude: null,
     maxPlayers: '',
     playerCount: '',
     status: '',
@@ -39,12 +40,14 @@ export default function CreateGameScreen() {
     try {
       const payload = {
         date: date.toISOString(),
-        createdAt: new Date().toISOString(),
+        location: form.location,
+        latitude: form.latitude,
+        longitude: form.longitude,
         maxPlayers: parseInt(form.maxPlayers, 10),
         playerCount: parseInt(form.playerCount, 10),
         isClubMatch: form.isClubMatch === 'true',
         status: form.status,
-        location: form.location,
+        createdAt: new Date().toISOString(),
       };
       await createGame(payload);
       Alert.alert('Succès', 'Match créé avec succès');
@@ -55,7 +58,6 @@ export default function CreateGameScreen() {
     }
   };
 
-  // Définition des étapes
   const steps = [
     {
       title: 'Sélectionnez la date',
@@ -66,10 +68,9 @@ export default function CreateGameScreen() {
             onPress={() => setShowDatePicker(true)}
           >
             <Text style={styles.cardTitle}>Date</Text>
-            <Text style={styles.cardValue}>
-              {date.toLocaleDateString()}
-            </Text>
+            <Text style={styles.cardValue}>{date.toLocaleDateString()}</Text>
           </TouchableOpacity>
+
           {showDatePicker && Platform.OS === 'ios' && (
             <View style={styles.pickerInlineContainer}>
               <DateTimePicker
@@ -106,33 +107,64 @@ export default function CreateGameScreen() {
     {
       title: 'Sélectionnez l’heure',
       content: (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Heure du match</Text>
-
-          <View style={styles.timePickerWrapper}>
-            {showTimePicker && (
-              <DateTimePicker
-                value={date}
-                mode="time"
-                display="spinner"
-                onChange={(_, selected) => {
-                  setShowTimePicker(false);
-                  if (selected) setDate(selected);
-                }}
-                style={styles.timePicker}
-              />
-            )}
-          </View>
-
+        <>
           <TouchableOpacity
-            style={styles.pickerDone}
-            onPress={() => setShowTimePicker(true)}
+            style={styles.card}
+            onPress={() => {
+              setTempTime(date);
+              setShowTimePicker(true);
+            }}
           >
-            <Text style={styles.pickerDoneText}>
+            <Text style={styles.cardTitle}>Heure du match</Text>
+            <Text style={styles.cardValue}>
               {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </TouchableOpacity>
-        </View>
+
+          {showTimePicker && Platform.OS === 'ios' && (
+            <View style={styles.pickerInlineContainer}>
+              <DateTimePicker
+                value={tempTime}
+                mode="time"
+                display="spinner"
+                onChange={(_, selected) => {
+                  if (selected) setTempTime(selected);
+                }}
+                style={styles.pickerInline}
+              />
+              <TouchableOpacity
+                style={styles.pickerDone}
+                onPress={() => {
+                  setDate(tempTime);
+                  setShowTimePicker(false);
+                }}
+              >
+                <Text style={styles.pickerDoneText}>Valider</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {showTimePicker && Platform.OS !== 'ios' && (
+            <>
+              <DateTimePicker
+                value={tempTime}
+                mode="time"
+                display="default"
+                onChange={(_, selected) => {
+                  if (selected) setTempTime(selected);
+                }}
+              />
+              <TouchableOpacity
+                style={styles.pickerDone}
+                onPress={() => {
+                  setDate(tempTime);
+                  setShowTimePicker(false);
+                }}
+              >
+                <Text style={styles.pickerDoneText}>Valider</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </>
       )
     },
     {
@@ -140,12 +172,13 @@ export default function CreateGameScreen() {
       content: (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Lieu</Text>
-          <TextInput
-            style={styles.input}
+          <LocationInput
             value={form.location}
-            onChangeText={t => handleChange('location', t)}
-            placeholder="Ex : Parc des sports"
-            placeholderTextColor="#888"
+            onSelect={({ name, lat, lon }) => {
+              handleChange('location', name);
+              handleChange('latitude', lat);
+              handleChange('longitude', lon);
+            }}
           />
         </View>
       ),
@@ -247,7 +280,7 @@ export default function CreateGameScreen() {
           {Object.entries({ date, ...form }).map(([k, v]) => (
             <Text key={k} style={styles.summaryText}>
               <Text style={{ fontWeight: '600' }}>{k}:</Text>{' '}
-              {k === 'date' ? date.toLocaleString() : v.toString()}
+              {k === 'date' ? date.toLocaleString() : v?.toString()}
             </Text>
           ))}
         </View>
@@ -260,7 +293,6 @@ export default function CreateGameScreen() {
 
   return (
     <View style={styles.container}>
-            {/* ← ANNULER */}
       <TouchableOpacity
         style={styles.cancelBtn}
         onPress={() => navigation.goBack()}
@@ -272,6 +304,7 @@ export default function CreateGameScreen() {
         <Text style={styles.stepTitle}>{steps[step].title}</Text>
         {steps[step].content}
       </ScrollView>
+
       <View style={[styles.nav, step === 0 && styles.navCenter]}>
         {step > 0 && (
           <TouchableOpacity onPress={() => setStep(s => s - 1)}>
@@ -295,14 +328,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#050A23',
-    // on iOS on ajoute un paddingTop pour la notch et un paddingBottom pour le safe-area
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 130 : 16,
     paddingBottom: Platform.OS === 'ios' ? 50 : 16,
   },
   cancelBtn: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 70 : 16,  // décale sous la notch sur iOS
+    top: Platform.OS === 'ios' ? 70 : 16,
     left: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -376,35 +408,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 8,
   },
-  timePickerWrapper: {
-    backgroundColor: '#FFFF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  timePicker: {
-    width: '100%',
-  },
-  pickerDone: {
-    backgroundColor: '#00D9FF',
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignSelf: 'center',
-    marginTop: 8,
-  },
-  pickerDoneText: {
-    color: '#050A23',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   nav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -417,12 +420,6 @@ const styles = StyleSheet.create({
   },
   navCenter: {
     justifyContent: 'center',
-  },
-  prevBtn: {
-    backgroundColor: '#2A2A40',
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
   },
   prevText: {
     color: '#00D9FF',
@@ -438,10 +435,6 @@ const styles = StyleSheet.create({
   submitBtn: {
     flex: 1,
     alignItems: 'center',
-  },
-  nextSolo: {
-    width: '60%',
-    alignSelf: 'center',
   },
   nextText: {
     color: '#050A23',
