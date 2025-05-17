@@ -12,8 +12,8 @@ if (file_exists(dirname(__DIR__).'/.env')) {
 if (getenv('PLATFORM_RELATIONSHIPS')) {
     $relationships = json_decode(base64_decode(getenv('PLATFORM_RELATIONSHIPS')), true);
 
-    if (isset($relationships['mysql'][0])) {
-        $database = $relationships['mysql'][0];
+    if (isset($relationships['database'][0])) {
+        $database = $relationships['database'][0];
 
         $user = $database['username'];
         $pass = $database['password'];
