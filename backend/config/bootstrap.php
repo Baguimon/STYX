@@ -2,15 +2,16 @@
 
 use Symfony\Component\Dotenv\Dotenv;
 
-require dirname(__DIR__).'/vendor/autoload.php';
+require dirname(__DIR__) . '/vendor/autoload.php';
 
-if (file_exists(dirname(__DIR__).'/.env')) {
-    (new Dotenv())->usePutenv()->loadEnv(dirname(__DIR__).'/.env');
+$envFile = dirname(__DIR__) . '/.env';
+if (file_exists($envFile)) {
+    (new Dotenv())->usePutenv()->loadEnv($envFile);
 }
 
-// Corrigé : Utilise bien le nom 'mysql' comme dans Platform.sh
-if (getenv('PLATFORM_RELATIONSHIPS')) {
-    $relationships = json_decode(base64_decode(getenv('PLATFORM_RELATIONSHIPS')), true);
+// Ajout automatique de la DATABASE_URL depuis Platform.sh
+if (isset($_ENV['PLATFORM_RELATIONSHIPS'])) {
+    $relationships = json_decode(base64_decode($_ENV['PLATFORM_RELATIONSHIPS']), true);
 
     if (isset($relationships['mysql'][0])) {
         $database = $relationships['mysql'][0];
