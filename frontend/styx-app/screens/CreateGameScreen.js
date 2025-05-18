@@ -1,3 +1,5 @@
+// screens/CreateGameScreen.js
+
 import React, { useState } from 'react';
 import {
   View,
@@ -6,14 +8,13 @@ import {
   TextInput,
   StyleSheet,
   Alert,
-  ScrollView,
-  Platform
+  Platform,
+  FlatList
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { createGame } from '../services/api';
 import LocationInput from '../components/LocationInput';
-
 
 export default function CreateGameScreen() {
   const navigation = useNavigation();
@@ -68,9 +69,10 @@ export default function CreateGameScreen() {
             onPress={() => setShowDatePicker(true)}
           >
             <Text style={styles.cardTitle}>Date</Text>
-            <Text style={styles.cardValue}>{date.toLocaleDateString()}</Text>
+            <Text style={styles.cardValue}>
+              {date.toLocaleDateString()}
+            </Text>
           </TouchableOpacity>
-
           {showDatePicker && Platform.OS === 'ios' && (
             <View style={styles.pickerInlineContainer}>
               <DateTimePicker
@@ -120,7 +122,6 @@ export default function CreateGameScreen() {
               {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </TouchableOpacity>
-
           {showTimePicker && Platform.OS === 'ios' && (
             <View style={styles.pickerInlineContainer}>
               <DateTimePicker
@@ -300,10 +301,19 @@ export default function CreateGameScreen() {
         <Text style={styles.cancelText}>Annuler</Text>
       </TouchableOpacity>
 
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <Text style={styles.stepTitle}>{steps[step].title}</Text>
-        {steps[step].content}
-      </ScrollView>
+      <FlatList
+        data={[steps[step]]}
+        keyExtractor={(_, index) => index.toString()}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 1 }}
+        renderItem={({ item }) => (
+          <>
+            <Text style={styles.stepTitle}>{item.title}</Text>
+            {item.content}
+          </>
+        )}
+      />
 
       <View style={[styles.nav, step === 0 && styles.navCenter]}>
         {step > 0 && (
@@ -359,6 +369,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderLeftWidth: 4,
     borderLeftColor: '#00D9FF',
+    overflow: 'visible',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
