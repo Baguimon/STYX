@@ -30,4 +30,4 @@ dependencies:
     composer/composer: "^2"
 
 relationships:
-  database: 'mysql:mysql'
+  mysql: 'mysql:mysql'
