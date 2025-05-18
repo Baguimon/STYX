@@ -2,18 +2,18 @@
 
 use Symfony\Component\Dotenv\Dotenv;
 
-require dirname(__DIR__).'/vendor/autoload.php';
+require dirname(__DIR__) . '/vendor/autoload.php';
 
-if (file_exists(dirname(__DIR__).'/.env')) {
-    (new Dotenv())->usePutenv()->loadEnv(dirname(__DIR__).'/.env');
+if (file_exists(dirname(__DIR__) . '/.env')) {
+    (new Dotenv())->usePutenv()->loadEnv(dirname(__DIR__) . '/.env');
 }
 
-// Ajout automatique de la DATABASE_URL depuis Platform.sh
+// Configuration dynamique Platform.sh
 if (getenv('PLATFORM_RELATIONSHIPS')) {
     $relationships = json_decode(base64_decode(getenv('PLATFORM_RELATIONSHIPS')), true);
 
-    if (isset($relationships['database'][0])) {
-        $database = $relationships['database'][0];
+    if (isset($relationships['mysql'][0])) { // 🔁 Doit correspondre à .platform.app.yaml
+        $database = $relationships['mysql'][0];
 
         $user = $database['username'];
         $pass = $database['password'];
@@ -21,8 +21,10 @@ if (getenv('PLATFORM_RELATIONSHIPS')) {
         $port = $database['port'];
         $name = $database['path'];
 
-        putenv("DATABASE_URL=mysql://$user:$pass@$host:$port/$name");
-        $_ENV['DATABASE_URL'] = "mysql://$user:$pass@$host:$port/$name";
-        $_SERVER['DATABASE_URL'] = "mysql://$user:$pass@$host:$port/$name";
+        $dsn = "mysql://$user:$pass@$host:$port/$name";
+
+        putenv("DATABASE_URL=$dsn");
+        $_ENV['DATABASE_URL'] = $dsn;
+        $_SERVER['DATABASE_URL'] = $dsn;
     }
 }
