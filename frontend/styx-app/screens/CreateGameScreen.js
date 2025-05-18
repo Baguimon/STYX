@@ -15,6 +15,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { createGame } from '../services/api';
 import LocationInput from '../components/LocationInput';
+import EvenNumberPicker from '../components/EvenNumberPicker';
 
 export default function CreateGameScreen() {
   const navigation = useNavigation();
@@ -189,13 +190,11 @@ export default function CreateGameScreen() {
       content: (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Joueurs max</Text>
-          <TextInput
-            style={styles.input}
-            value={form.maxPlayers}
-            onChangeText={t => handleChange('maxPlayers', t)}
-            keyboardType="numeric"
-            placeholder="Ex : 10"
-            placeholderTextColor="#888"
+          <EvenNumberPicker
+            value={parseInt(form.maxPlayers, 10) || 0}
+            min={2}
+            max={20}
+            onChange={val => handleChange('maxPlayers', val.toString())}
           />
         </View>
       ),
@@ -210,7 +209,7 @@ export default function CreateGameScreen() {
             value={form.playerCount}
             onChangeText={t => handleChange('playerCount', t)}
             keyboardType="numeric"
-            placeholder="Ex : 1"
+            placeholder="Ex : 3"
             placeholderTextColor="#888"
           />
         </View>
@@ -277,16 +276,43 @@ export default function CreateGameScreen() {
     {
       title: 'Récapitulatif',
       content: (
-        <View style={styles.card}>
-          {Object.entries({ date, ...form }).map(([k, v]) => (
-            <Text key={k} style={styles.summaryText}>
-              <Text style={{ fontWeight: '600' }}>{k}:</Text>{' '}
-              {k === 'date' ? date.toLocaleString() : v?.toString()}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryCardTitle}>Récapitulatif du match</Text>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Date & Heure</Text>
+            <Text style={styles.summaryValue}>
+              {date.toLocaleDateString()} à{' '}
+              {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
-          ))}
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Lieu</Text>
+            <Text style={styles.summaryValue}>{form.location}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Joueurs</Text>
+            <Text style={styles.summaryValue}>
+              {form.playerCount} / {form.maxPlayers}
+            </Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Statut</Text>
+            <Text style={styles.summaryValue}>{form.status}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Club</Text>
+            <Text style={styles.summaryValue}>
+              {form.isClubMatch === 'true' ? 'Oui' : 'Non'}
+            </Text>
+          </View>
         </View>
       ),
-    },
+    }
   ];
 
   const [step, setStep] = useState(0);
@@ -322,7 +348,7 @@ export default function CreateGameScreen() {
           </TouchableOpacity>
         )}
         <TouchableOpacity
-          style={[styles.nextBtn, isLast && styles.submitBtn]}
+          style={styles.nextBtn} 
           onPress={() => (isLast ? handleSubmit() : setStep(s => s + 1))}
         >
           <Text style={styles.nextText}>
@@ -476,5 +502,38 @@ const styles = StyleSheet.create({
   },
   toggleTextActive: {
     color: '#050A23',
+  },
+  summaryCard: {
+    backgroundColor: '#2A2A40',
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  summaryCardTitle: {
+    color: '#00D9FF',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  summaryLabel: {
+    color: '#AAD4E0',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  summaryValue: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
