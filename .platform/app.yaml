@@ -28,17 +28,20 @@ mounts:
 hooks:
   build: |
     set -e
-    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
+    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --no-scripts
 
 dependencies:
   php:
     composer/composer: "^2"
 
 relationships:
-  # Doit matcher le service défini dans .platform/services.yaml
+  # Le nom "database" doit correspondre à votre service MySQL dans .platform/services.yaml
   database: "mysql:mysql"
 
 variables:
   env:
-    # Reconstruit DATABASE_URL en TCP (évite le socket UNIX → “No such file or directory”)
-    DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_PATH}?serverVersion=11.0"
+    # On reconstruit ici la DATABASE_URL en TCP (pas socket UNIX)
+    DATABASE_URL: >-
+      mysql://${database_USERNAME}:${database_PASSWORD}
+      @tcp(${database_HOST}:${database_PORT})/${database_PATH}
+      ?serverVersion=11.0
