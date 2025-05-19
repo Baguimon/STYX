@@ -3,6 +3,13 @@ name: php-backend
 type: 'php:8.2'
 disk: 512
 
+source:
+  root: backend
+
+build:
+  flavor: composer
+
+
 runtime:
   extensions:
     - sodium
