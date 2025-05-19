@@ -29,7 +29,7 @@ mounts:
 hooks:
   build: |
     set -e
-    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
+    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader 
 
 dependencies:
   php:
@@ -37,3 +37,8 @@ dependencies:
 
 relationships:
   database: "mysql:mysql"
+
+variables:
+  env:
+    # Connexion TCP à MySQL (évite le socket UNIX)
+   DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_DATABASE}?serverVersion=11.0"
