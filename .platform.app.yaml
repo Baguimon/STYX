@@ -24,7 +24,7 @@ hooks:
     composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader --no-scripts
 
 relationships:
-  database: "mysql:database"   # <— on prend le service 'mysql' et on l’appelle 'database'
+  database: "mysql:mysql"  # <— on prend le service 'mysql' et on l’appelle 'database'
 
 variables:
   env:
