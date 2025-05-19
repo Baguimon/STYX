@@ -35,13 +35,13 @@ dependencies:
     composer/composer: "^2"
 
 relationships:
-  # nom de la relation que tu as défini pour MySQL
+  # nom de la relation = database
   database: "mysql:mysql"
 
 variables:
   env:
-    # On reconstruit le DATABASE_URL en TCP (pas socket UNIX)
+    # On reconstruit DATABASE_URL en TCP (pas socket UNIX) :
     DATABASE_URL: >-
-      mysql://${database_USERNAME}:${database_PASSWORD}
-      @tcp(${database_HOST}:${database_PORT})/${database_PATH}
+      mysql://${styx}:${styxpass}
+      @tcp(${localhost}:${3309})/${styxdb}
       ?serverVersion=11.0
