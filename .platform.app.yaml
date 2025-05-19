@@ -9,10 +9,6 @@ source:
 build:
   flavor: composer
 
-runtime:
-  extensions:
-    - sodium
-
 web:
   locations:
     "/":
@@ -22,25 +18,14 @@ web:
       scripts: true
       allow: true
 
-mounts:
-  "/var": "shared:files"
-
 hooks:
   build: |
     set -e
-    # Installe sans lancer les scripts Symfony
-    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --no-scripts
-    # (Optionnel) Précuit le cache sans DB
-    php backend/bin/console cache:warmup --env=prod --no-debug || true
-
-dependencies:
-  php:
-    composer/composer: "^2"
+    composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader --no-scripts
 
 relationships:
-  database: "mysql:mysql"
+  database: "mysql:database"   # <— on prend le service 'mysql' et on l’appelle 'database'
 
 variables:
   env:
-    # Connexion TCP à MySQL (évite le socket UNIX)
     DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_PATH}?serverVersion=11.0"
