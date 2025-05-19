@@ -1,4 +1,4 @@
-# .platform/services.yaml
+# .platform.services.yaml
 mysql:
   type: mysql:11.0
   disk: 256
