@@ -1,4 +1,4 @@
-# .platform/app.yaml
+# .platform.app.yaml
 name: php-backend
 type: 'php:8.2'
 disk: 512
@@ -28,10 +28,10 @@ mounts:
 hooks:
   build: |
     set -e
-    # Pas d'auto-scripts Symfony en build
+    # Installe sans lancer les scripts Symfony
     composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --no-scripts
-    # (Optionnel) Précuire le cache sans DB
-    php bin/console cache:warmup --env=prod --no-debug || true
+    # (Optionnel) Précuit le cache sans DB
+    php backend/bin/console cache:warmup --env=prod --no-debug || true
 
 dependencies:
   php:
