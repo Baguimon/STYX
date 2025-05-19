@@ -1,5 +1,0 @@
-"https://{default}/":
-  type: upstream
-  upstream: "php-backend:http"
-  cache:
-    enabled: false
