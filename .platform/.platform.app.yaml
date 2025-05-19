@@ -1,4 +1,3 @@
-# .platform/app.yaml
 name: php-backend
 type: 'php:8.2'
 disk: 512
@@ -10,8 +9,7 @@ build:
   flavor: composer
 
 runtime:
-  extensions:
-    - sodium
+  extensions: [ sodium ]
 
 web:
   locations:
@@ -28,16 +26,7 @@ mounts:
 hooks:
   build: |
     set -e
-    echo "→ DEBUG ENV VARS →"
-    echo "database_HOST     = ${database_HOST}"
-    echo "database_PORT     = ${database_PORT}"
-    echo "database_USERNAME = ${database_USERNAME}"
-    echo "database_PASSWORD = ${database_PASSWORD}"
-    echo "database_DATABASE = ${database_DATABASE}"
-    echo "→ Constructed DSN →"
-    echo "DATABASE_URL = ${DATABASE_URL}"
-    composer install --no-dev --prefer-dist --no-progress \
-      --no-interaction --optimize-autoloader --no-scripts
+    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --no-scripts
 
 dependencies:
   php:
@@ -48,5 +37,4 @@ relationships:
 
 variables:
   env:
-    # Note bien : ${database_DATABASE} et non ${database_PATH}
-    DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_DATABASE}?serverVersion=11.0"
+    DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_PATH}?serverVersion=11.0"
