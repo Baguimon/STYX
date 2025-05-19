@@ -1,4 +1,4 @@
-# .platform/app.yaml
+# .platform/app.yaml  (placez ce fichier dans .platform/app.yaml et supprimez l’ancien .platform.app.yaml)
 name: php-backend
 type: 'php:8.2'
 disk: 512
@@ -28,20 +28,25 @@ mounts:
 hooks:
   build: |
     set -e
-    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --no-scripts
+    # Installe sans lancer les auto-scripts (cache:clear etc.)
+    composer install \
+      --no-dev \
+      --prefer-dist \
+      --no-progress \
+      --no-interaction \
+      --optimize-autoloader \
+      --no-scripts
+    # Facultatif : précuisine le cache sans DB
+    php backend/bin/console cache:warmup --env=prod --no-debug || true
 
 dependencies:
   php:
     composer/composer: "^2"
 
 relationships:
-  # Le nom "database" doit correspondre à votre service MySQL dans .platform/services.yaml
   database: "mysql:mysql"
 
 variables:
   env:
-    # On reconstruit ici la DATABASE_URL en TCP (pas socket UNIX)
-    DATABASE_URL: >-
-      mysql://${database_USERNAME}:${database_PASSWORD}
-      @tcp(${database_HOST}:${database_PORT})/${database_PATH}
-      ?serverVersion=11.0
+    # URL de connexion TCP à MySQL (évite le socket UNIX)
+    DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_PATH}?serverVersion=11.0"
