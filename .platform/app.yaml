@@ -4,7 +4,7 @@ type: 'php:8.2'
 disk: 512
 
 source:
-  root: backend     # Permet d’installer les dépendances dans backend/
+  root: backend
 
 build:
   flavor: composer
@@ -17,7 +17,7 @@ web:
   locations:
     "/":
       root: "public"
-      index: ["index.php"]
+      index: [ "index.php" ]
       passthru: "/index.php"
       scripts: true
       allow: true
@@ -36,20 +36,16 @@ hooks:
     echo "DATABASE_DATABASE = $DATABASE_DATABASE"
     echo "→ Constructed DSN →"
     echo "DATABASE_URL = $DATABASE_URL"
-    # Puis on installe comme d’hab…
-    composer install --no-dev --prefer-dist --no-progress --no-interaction \
-      --optimize-autoloader --no-scripts
-
+    composer install --no-dev --prefer-dist --no-progress \
+      --no-interaction --optimize-autoloader --no-scripts
 
 dependencies:
   php:
     composer/composer: "^2"
 
 relationships:
-  # Lie le service 'mysql' (défini dans .platform/services.yaml) sous l’alias 'database'
   database: "mysql:mysql"
 
 variables:
   env:
-    # Utilise la vraie variable ${database_DATABASE} pour le nom de la base
     DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_DATABASE}?serverVersion=11.0"
