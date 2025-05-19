@@ -1,0 +1,46 @@
+# .platform.app.yaml
+name: php-backend
+type: 'php:8.2'
+disk: 512
+
+source:
+  root: backend
+
+build:
+  flavor: composer
+
+runtime:
+  extensions:
+    - sodium
+
+web:
+  locations:
+    "/":
+      root: "public"
+      index: ["index.php"]
+      passthru: "/index.php"
+      scripts: true
+      allow: true
+
+mounts:
+  "/var": "shared:files"
+
+hooks:
+  build: |
+    set -e
+    # Installe sans lancer les scripts Symfony
+    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --no-scripts
+    # (Optionnel) Précuit le cache sans DB
+    php backend/bin/console cache:warmup --env=prod --no-debug || true
+
+dependencies:
+  php:
+    composer/composer: "^2"
+
+relationships:
+  database: "mysql:mysql"
+
+variables:
+  env:
+    # Connexion TCP à MySQL (évite le socket UNIX)
+    DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_PATH}?serverVersion=11.0"
