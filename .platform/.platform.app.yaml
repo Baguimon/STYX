@@ -1,4 +1,4 @@
-# .platform/app.yaml  (placez ce fichier dans .platform/app.yaml et supprimez l’ancien .platform.app.yaml)
+# .platform/app.yaml
 name: php-backend
 type: 'php:8.2'
 disk: 512
@@ -28,16 +28,10 @@ mounts:
 hooks:
   build: |
     set -e
-    # Installe sans lancer les auto-scripts (cache:clear etc.)
-    composer install \
-      --no-dev \
-      --prefer-dist \
-      --no-progress \
-      --no-interaction \
-      --optimize-autoloader \
-      --no-scripts
-    # Facultatif : précuisine le cache sans DB
-    php backend/bin/console cache:warmup --env=prod --no-debug || true
+    # Pas d'auto-scripts Symfony en build
+    composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --no-scripts
+    # (Optionnel) Précuire le cache sans DB
+    php bin/console cache:warmup --env=prod --no-debug || true
 
 dependencies:
   php:
@@ -48,5 +42,5 @@ relationships:
 
 variables:
   env:
-    # URL de connexion TCP à MySQL (évite le socket UNIX)
+    # Connexion TCP à MySQL (évite le socket UNIX)
     DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_PATH}?serverVersion=11.0"
