@@ -41,4 +41,4 @@ relationships:
 variables:
   env:
     # Connexion TCP à MySQL (évite le socket UNIX)
-   DATABASE_URL: "mysql://${database_USERNAME}:${database_PASSWORD}@tcp(${database_HOST}:${database_PORT})/${database_DATABASE}?serverVersion=11.0"
+   DATABASE_URL: "mysql://${styx}:${styxpass}@tcp(${database_HOST}:${database_PORT})/${styxdb}?serverVersion=11.0"
