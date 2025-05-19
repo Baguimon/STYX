@@ -41,9 +41,6 @@ dependencies:
   php:
     composer/composer: "^2"
 
-relationships:
-  # Lie le service 'mysql' (défini dans .platform/services.yaml) sous l’alias 'database'
-  database: "mysql:mysql"
 
 variables:
   env:
