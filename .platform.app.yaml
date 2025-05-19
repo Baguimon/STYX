@@ -35,14 +35,13 @@ dependencies:
     composer/composer: "^2"
 
 relationships:
-  # nom de la relation = database
+  # Le nom "database" doit correspondre à votre service MySQL dans .platform/services.yaml
   database: "mysql:mysql"
 
 variables:
   env:
-    # On reconstruit DATABASE_URL en TCP (pas socket UNIX) :
+    # On reconstruit ici la DATABASE_URL en TCP (pas socket UNIX)
     DATABASE_URL: >-
-      mysql://${styx}:${styxpass}
-      @tcp(${localhost}:${3309})/${styxdb}
+      mysql://${database_USERNAME}:${database_PASSWORD}
+      @tcp(${database_HOST}:${database_PORT})/${database_PATH}
       ?serverVersion=11.0
-  
