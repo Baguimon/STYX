@@ -38,7 +38,3 @@ dependencies:
 relationships:
   database: "mysql:mysql"
 
-variables:
-  env:
-    # Connexion TCP à MySQL (évite le socket UNIX)
-   DATABASE_URL: "mysql://${styx}:${styxpass}@tcp(${database_HOST}:${database_PORT})/${styxdb}?serverVersion=11.0"
