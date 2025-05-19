@@ -9,7 +9,6 @@ source:
 build:
   flavor: composer
 
-
 runtime:
   extensions:
     - sodium
@@ -18,7 +17,7 @@ web:
   locations:
     "/":
       root: "public"
-      index: [ "index.php" ]
+      index: ["index.php"]
       passthru: "/index.php"
       scripts: true
       allow: true
@@ -36,4 +35,13 @@ dependencies:
     composer/composer: "^2"
 
 relationships:
+  # nom de la relation que tu as défini pour MySQL
   database: "mysql:mysql"
+
+variables:
+  env:
+    # On reconstruit le DATABASE_URL en TCP (pas socket UNIX)
+    DATABASE_URL: >-
+      mysql://${database_USERNAME}:${database_PASSWORD}
+      @tcp(${database_HOST}:${database_PORT})/${database_PATH}
+      ?serverVersion=11.0
