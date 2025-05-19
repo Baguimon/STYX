@@ -11,7 +11,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 
-#[Route('/api/games')]
+#[Route('/api/game')]
 class GameController extends AbstractController
 {
     #[Route('', name: 'game_index', methods: ['GET'])]
