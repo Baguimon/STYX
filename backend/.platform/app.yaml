@@ -1,0 +1,13 @@
+# .platform/app.yaml
+applications:
+  app:
+    type: "php:8.1"
+    build:
+      flavor: composer
+      commands:
+        - "composer install --no-dev --optimize-autoloader"
+    web:
+      locations:
+        "/":
+          root: "public"
+          index: ["index.php"]
