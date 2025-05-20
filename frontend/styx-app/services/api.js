@@ -14,7 +14,7 @@ api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
 
 
-  const publicRoutes = ['/register', '/login', '/users'];
+  const publicRoutes = ['/register', '/login', '/users','/games'];
 
 
   const isPublic = publicRoutes.some(route => config.url.includes(route));
