@@ -317,6 +317,26 @@ export default function CreateGameScreen() {
 
   const [step, setStep] = useState(0);
   const isLast = step === steps.length - 1;
+const isStepValid = () => {
+  switch (step) {
+    case 0: // Date
+      return !!date;
+    case 1: // Heure
+      return !!date; // la date contient aussi l'heure sélectionnée
+    case 2: // Lieu
+      return !!form.location && form.location.trim().length > 0;
+    case 3: // Joueurs max
+      return form.maxPlayers && parseInt(form.maxPlayers, 10) >= 2;
+    case 4: // Joueurs actuels
+      return form.playerCount && parseInt(form.playerCount, 10) >= 0;
+    case 5: // Statut
+      return !!form.status;
+    case 6: // Match de club
+      return form.isClubMatch === 'Oui' || form.isClubMatch === 'Non' || form.isClubMatch === 'true' || form.isClubMatch === 'false';
+    default:
+      return true;
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -347,14 +367,24 @@ export default function CreateGameScreen() {
             <Text style={styles.prevText}>Précédent</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity
-          style={styles.nextBtn} 
-          onPress={() => (isLast ? handleSubmit() : setStep(s => s + 1))}
-        >
-          <Text style={styles.nextText}>
-            {isLast ? 'Valider' : 'Suivant'}
-          </Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.nextBtn}
+        onPress={() => {
+          if (!isStepValid()) {
+            Alert.alert('Attention', 'Merci de compléter ce champ avant de continuer.');
+            return;
+          }
+          if (isLast) {
+            handleSubmit();
+          } else {
+            setStep(s => s + 1);
+          }
+        }}
+      >
+        <Text style={styles.nextText}>
+          {isLast ? 'Valider' : 'Suivant'}
+        </Text>
+      </TouchableOpacity>
       </View>
     </View>
   );
