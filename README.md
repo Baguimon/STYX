@@ -1,23 +1,23 @@
 # STYX 
 
-Projet d’application fullstack pour organiser des événements sportifs entre amis.  
-Développé en Symfony (backend) et React Native via Expo (frontend), avec MySQL via Docker.
+Application fullstack pour organiser et rejoindre des événements sportifs entre amis.  
+Développée avec **Symfony** (backend), **React Native via Expo** (frontend), et **MySQL** via Docker.
 
 ---
 
 ## Technologies utilisées
 
-- ⚙️ Backend : Symfony 6.x
-- 📱 Frontend : React Native (Expo)
-- 🐳 Docker + MySQL
-- 🐘 PHP 8.1+
-- 🧠 Node.js + npm
+- 🐘 **PHP 8.1+**
+- ⚙️ **Symfony 6.x** (API REST)
+- 📱 **React Native** (Expo)
+- 🐳 **Docker** + **MySQL**
+- 🌐 **ngrok** (accès mobile local)
 
 ---
 
 ## Installation du projet
 
-### 1. Cloner le dépôt
+### 1. Cloner le projet
 
 ```bash
 git clone https://github.com/Baguimon/STYX.git
@@ -26,91 +26,101 @@ cd STYX
 
 ---
 
-## STYX – Guide de démarrage local 🏁
-
-### 1. Cloner le projet
-
-```bash
-git clone <URL_DU_REPO_GITHUB>
-cd STYX
-```
-
-### 2. Lancer l’environnement Docker
+### 2. Lancer l’environnement Docker (base de données)
 
 ```bash
 cd docker
 docker compose up -d
 ```
 
-### Vérification :
+Vérification rapide :
 - phpMyAdmin : http://localhost:8080  
-- MySQL : accessible sur le port **3309**  
-- Fichier `.env` du backend :
+- MySQL dispo sur le port `3309`  
+- Exemple de `DATABASE_URL` (dans `.env` ou `.env.local`) :
 
-```ini
+```dotenv
 DATABASE_URL="mysql://styx:styxpass@127.0.0.1:3309/styxdb?serverVersion=8.0"
 ```
 
-### 3. Générer les clés JWT (si manquantes)
+---
 
-```bash
-cd backend
-mkdir -p config/jwt
-openssl genrsa -out config/jwt/private.pem 4096
-openssl rsa -pubout -in config/jwt/private.pem -out config/jwt/public.pem
-```
-
-### Vérifie le `.env` :
-
-```dotenv
-JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
-JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
-JWT_PASSPHRASE=styxpassphrase
-```
-
-### 4. Installer les dépendances Symfony
+### 3. Installer les dépendances backend
 
 ```bash
 cd backend
 composer install
 ```
 
-### 5. Lancer le serveur Symfony
+---
+
+### 4. Lancer le serveur Symfony
 
 ```bash
 symfony serve --no-tls --allow-http --port=8000
 ```
 
-- API accessible sur : http://127.0.0.1:8000
+L'API est alors dispo sur : http://127.0.0.1:8000
 
-### 6. Lancer le frontend React Native
+---
+
+## Accès depuis mobile (React Native)
+
+### 5. Installer et configurer ngrok
+
+```bash
+npm install -g ngrok
+ngrok http 8000
+```
+
+🔗 Copie l’URL générée par ngrok (ex: `https://xxxx.ngrok-free.app`)  
+Et remplace la constante `API_URL` dans `frontend/styx-app/api.js` :
+
+```js
+const API_URL = 'https://xxxx.ngrok-free.app/api';
+```
+
+Vérifie aussi que `CORS_ALLOW_ORIGIN` dans `.env` backend est bien :
+
+```dotenv
+CORS_ALLOW_ORIGIN=https://xxxx.ngrok-free.app
+```
+
+---
+
+### 6. Lancer l’application mobile
 
 ```bash
 cd frontend/styx-app
-npm install
-npx expo start
+npm install @react-navigation/native
+npm install @react-navigation/bottom-tabs
+npm install @react-navigation/native-stack
+npx expo start --tunnel
 ```
 
-- Scanner le **QR Code** avec **Expo Go** (sur mobile)
-- Vérifie que les services pointent bien vers l’URL backend correcte.
+Scanne le QR Code avec **Expo Go** sur ton téléphone.  
+L’authentification et l’accès API doivent maintenant fonctionner via l'URL ngrok.
 
 ---
 
-##  Structure du projet
+## Structure du projet
 
 ```
 STYX/
-├── backend/           → Symfony (API)
+├── backend/           → Symfony API
 ├── frontend/styx-app/ → React Native (Expo)
-├── docker/            → docker-compose + MySQL
+├── docker/            → Docker & MySQL
 ```
 
 ---
 
-##  API disponible
+## Endpoints API disponibles
 
-| Méthode | URL              | Description                        |
-|:--------|:-----------------|:-----------------------------------|
-| GET     | `/api/users`      | Récupérer la liste des utilisateurs |
+| Méthode | URL              | Description                          |
+|:--------|:-----------------|:-------------------------------------|
+| GET     | `/api/users`     | Liste des utilisateurs               |
+| POST    | `/api/register`  | Créer un nouvel utilisateur          |
+| POST    | `/api/login`     | Se connecter                         |
+| GET     | `/api/games`     | Liste des matchs disponibles         |
+| POST    | `/api/games`     | Créer un nouveau match               |
 
 ---

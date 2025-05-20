@@ -11,38 +11,84 @@ import {
   Platform,
   StyleSheet
 } from 'react-native';
-import axios from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
-
+import { registerUser } from '../services/api';
 import styxLogo from '../assets/styx-logo.png';
+
+const LEVELS = ['Débutant', 'Amateur', 'Expérimenté'];
+const USERNAME_REGEX = /^[A-Za-z0-9._-]+$/;
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*\W).{8,}$/;
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useContext(AuthContext);
+
+  const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    email: '',
     username: '',
+    level: null,
+    email: '',
     password: ''
   });
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
   };
 
-  const handleRegister = async () => {
-    try {
-      const { data } = await axios.post(
-        'http://10.0.0.27:8000/api/register',
-        form
-      );
-      Alert.alert('✅ Succès', data.message);
-      navigation.replace('Login');
-    } catch (error) {
-      console.error(error);
-      Alert.alert(
-        '❌ Erreur',
-        'Une erreur est survenue lors de l\'inscription.'
-      );
+  const nextStep = async () => {
+    // Étape 1 : username
+    if (step === 0) {
+      if (!form.username.trim()) {
+        return Alert.alert('⚠️', 'Veuillez saisir un nom d’utilisateur');
+      }
+      if (!USERNAME_REGEX.test(form.username)) {
+        return Alert.alert(
+          '⚠️',
+          'Le nom d’utilisateur ne peut contenir que lettres, chiffres, ".", "_" ou "-"'
+        );
+      }
     }
+
+    // Étape 2 : niveau
+    if (step === 1 && !form.level) {
+      return Alert.alert('⚠️', 'Veuillez choisir votre niveau');
+    }
+
+    // Étape 3 : email
+    if (step === 2) {
+      if (!form.email.match(/^[^@ ]+@[^@ ]+\.[^@ ]+$/)) {
+        return Alert.alert('⚠️', 'Veuillez saisir un email valide');
+      }
+    }
+
+    // Étape 4 : mot de passe
+    if (step === 3) {
+      if (!PASSWORD_REGEX.test(form.password)) {
+        return Alert.alert(
+          '⚠️',
+          'Le mot de passe doit avoir 8 caractères min., 1 majuscule, 1 chiffre et 1 symbole'
+        );
+      }
+      if (form.password !== confirmPassword) {
+        return Alert.alert('⚠️', 'Les mots de passe ne correspondent pas');
+      }
+      // Envoi
+      try {
+        const { data } = await registerUser(form);
+        Alert.alert('✅', data.message || 'Inscription réussie');
+        navigation.replace('Login');
+      } catch (err) {
+        console.error(err);
+        Alert.alert('❌ Erreur', err.response?.data?.message || 'Échec de l’inscription');
+      }
+      return;
+    }
+
+    setStep(step + 1);
+  };
+
+  const prevStep = () => {
+    if (step > 0) setStep(step - 1);
   };
 
   return (
@@ -57,37 +103,104 @@ export default function RegisterScreen({ navigation }) {
       <View style={styles.card}>
         <Text style={styles.title}>Inscription</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#AAA"
-          value={form.email}
-          onChangeText={(v) => handleChange('email', v)}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        {step === 0 && (
+          <TextInput
+            style={styles.input}
+            placeholder="Nom d'utilisateur"
+            placeholderTextColor="#AAA"
+            value={form.username}
+            onChangeText={v => handleChange('username', v)}
+            autoCapitalize="none"
+          />
+        )}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Nom d'utilisateur"
-          placeholderTextColor="#AAA"
-          value={form.username}
-          onChangeText={(v) => handleChange('username', v)}
-          autoCapitalize="none"
-        />
+        {step === 1 && (
+          <View style={styles.levelContainer}>
+            {LEVELS.map(lv => (
+              <TouchableOpacity
+                key={lv}
+                style={[
+                  styles.levelButton,
+                  form.level === lv && styles.levelButtonActive
+                ]}
+                onPress={() => handleChange('level', lv)}
+              >
+                <Text
+                  style={[
+                    styles.levelText,
+                    form.level === lv && styles.levelTextActive
+                  ]}
+                >
+                  {lv}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Mot de passe"
-          placeholderTextColor="#AAA"
-          secureTextEntry
-          value={form.password}
-          onChangeText={(v) => handleChange('password', v)}
-        />
+        {step === 2 && (
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#AAA"
+            value={form.email}
+            onChangeText={v => handleChange('email', v)}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+        )}
 
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>S'inscrire</Text>
-        </TouchableOpacity>
+        {step === 3 && (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Mot de passe"
+              placeholderTextColor="#AAA"
+              secureTextEntry
+              value={form.password}
+              onChangeText={v => handleChange('password', v)}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirmer le mot de passe"
+              placeholderTextColor="#AAA"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+          </>
+        )}
+
+        <View style={styles.progressContainer}>
+          {[0,1,2,3].map(i => (
+            <View
+              key={i}
+              style={[
+                styles.progressDot,
+                i <= step && styles.progressDotActive
+              ]}
+            />
+          ))}
+        </View>
+
+        <View style={styles.buttonRow}>
+          {step > 0 && (
+            <TouchableOpacity
+              style={[styles.navButton, styles.backButton]}
+              onPress={prevStep}
+            >
+              <Text style={styles.navButtonText}>Précédent</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={[styles.navButton, styles.nextButton]}
+            onPress={nextStep}
+          >
+            <Text style={styles.navButtonText}>
+              {step < 3 ? 'Suivant' : `S'inscrire`}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <TouchableOpacity
@@ -108,56 +221,88 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  logo: {
-    width: 300,
-    height: 120,
-    resizeMode: 'contain',
-  },
+  logoContainer: { alignItems: 'center', marginBottom: 20 },
+  logo: { width: 300, height: 120, resizeMode: 'contain' },
   card: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 20,
-    shadowColor: '#000000',
+    shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
     marginBottom: 15,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#050A23',
-    textAlign: 'center',
-    marginBottom: 20,
+    fontSize: 24, fontWeight: '600', color: '#050A23',
+    textAlign: 'center', marginBottom: 20,
   },
   input: {
     backgroundColor: '#ECECEC',
     borderRadius: 8,
     paddingHorizontal: 15,
     paddingVertical: 12,
-    marginBottom: 15,
+    marginBottom: 20,
     fontSize: 16,
     color: '#050A23',
   },
-  button: {
-    backgroundColor: '#8BEAFF',
+  levelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  levelButton: {
+    flex: 1,
+    marginHorizontal: 2,              // plus d'espace entre
+    paddingVertical: 10,
     borderRadius: 8,
-    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: '#CCC',
     alignItems: 'center',
   },
-  buttonText: {
+  levelButtonActive: {
+    backgroundColor: '#8BEAFF',
+    borderColor: '#8BEAFF',
+  },
+  levelText: {
+    color: '#050A23',
+    fontSize: 14,
+  },
+  levelTextActive: {
+    color: '#050A23',
+    fontWeight: '600',
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  progressDot: {
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: '#DDD', marginHorizontal: 5,
+  },
+  progressDotActive: { backgroundColor: '#8BEAFF' },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  navButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  backButton: {
+    backgroundColor: '#CCC',
+    marginRight: 10,
+  },
+  nextButton: { backgroundColor: '#8BEAFF' },
+  navButtonText: {
     color: '#050A23',
     fontSize: 16,
     fontWeight: '600',
   },
-  loginLink: {
-    marginTop: 10,
-  },
+  loginLink: { marginTop: 10 },
   link: {
     color: '#8BEAFF',
     fontSize: 16,
