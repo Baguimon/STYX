@@ -74,7 +74,7 @@ export default function ProfileScreen() {
             </View>
           </View>
           <View style={styles.levelRow}>
-            <Text style={styles.levelIcon}>🙂</Text>
+            <Text style={styles.levelIcon}></Text>
             <Text style={styles.levelText}>{user.level}</Text>
             <Text style={styles.hours}>{user.totalHours}h</Text>
           </View>
