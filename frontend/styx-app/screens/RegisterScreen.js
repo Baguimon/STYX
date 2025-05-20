@@ -1,16 +1,10 @@
 // screens/RegisterScreen.js
 import React, { useState, useContext } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  Image,
-  TouchableOpacity,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet
+  View, Text, TextInput, Image, TouchableOpacity, Alert,
+  KeyboardAvoidingView, Platform, StyleSheet
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
 import { registerUser } from '../services/api';
 import styxLogo from '../assets/styx-logo.png';
@@ -21,7 +15,6 @@ const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*\W).{8,}$/;
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useContext(AuthContext);
-
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     username: '',
@@ -30,49 +23,38 @@ export default function RegisterScreen({ navigation }) {
     password: ''
   });
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
   };
 
   const nextStep = async () => {
-    // Étape 1 : username
     if (step === 0) {
-      if (!form.username.trim()) {
-        return Alert.alert('⚠️', 'Veuillez saisir un nom d’utilisateur');
-      }
+      if (!form.username.trim()) return Alert.alert('⚠️', 'Veuillez saisir un nom d’utilisateur');
       if (!USERNAME_REGEX.test(form.username)) {
-        return Alert.alert(
-          '⚠️',
-          'Le nom d’utilisateur ne peut contenir que lettres, chiffres, ".", "_" ou "-"'
-        );
+        return Alert.alert('⚠️', 'Le nom d’utilisateur ne peut contenir que lettres, chiffres, ".", "_" ou "-"');
       }
     }
-
-    // Étape 2 : niveau
     if (step === 1 && !form.level) {
       return Alert.alert('⚠️', 'Veuillez choisir votre niveau');
     }
-
-    // Étape 3 : email
     if (step === 2) {
       if (!form.email.match(/^[^@ ]+@[^@ ]+\.[^@ ]+$/)) {
         return Alert.alert('⚠️', 'Veuillez saisir un email valide');
       }
     }
-
-    // Étape 4 : mot de passe
     if (step === 3) {
       if (!PASSWORD_REGEX.test(form.password)) {
         return Alert.alert(
           '⚠️',
-          'Le mot de passe doit avoir 8 caractères min., 1 majuscule, 1 chiffre et 1 symbole'
+          'Le mot de passe doit avoir 8 caractères min., 1 majuscule, 1 chiffre et 1 symbole'
         );
       }
       if (form.password !== confirmPassword) {
         return Alert.alert('⚠️', 'Les mots de passe ne correspondent pas');
       }
-      // Envoi
       try {
         const { data } = await registerUser(form);
         Alert.alert('✅', data.message || 'Inscription réussie');
@@ -83,7 +65,6 @@ export default function RegisterScreen({ navigation }) {
       }
       return;
     }
-
     setStep(step + 1);
   };
 
@@ -152,27 +133,52 @@ export default function RegisterScreen({ navigation }) {
 
         {step === 3 && (
           <>
-            <TextInput
-              style={styles.input}
-              placeholder="Mot de passe"
-              placeholderTextColor="#AAA"
-              secureTextEntry
-              value={form.password}
-              onChangeText={v => handleChange('password', v)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirmer le mot de passe"
-              placeholderTextColor="#AAA"
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
+            <View style={{ position: 'relative' }}>
+              <TextInput
+                style={styles.input}
+                placeholder="Mot de passe"
+                placeholderTextColor="#AAA"
+                secureTextEntry={!showPassword}
+                value={form.password}
+                onChangeText={v => handleChange('password', v)}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(prev => !prev)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="#666"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ position: 'relative' }}>
+              <TextInput
+                style={styles.input}
+                placeholder="Confirmer le mot de passe"
+                placeholderTextColor="#AAA"
+                secureTextEntry={!showConfirmPassword}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(prev => !prev)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showConfirmPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="#666"
+                />
+              </TouchableOpacity>
+            </View>
           </>
         )}
 
         <View style={styles.progressContainer}>
-          {[0,1,2,3].map(i => (
+          {[0, 1, 2, 3].map(i => (
             <View
               key={i}
               style={[
@@ -247,6 +253,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#050A23',
   },
+  eyeIcon: {
+    position: 'absolute',
+    right: 15,
+    top: 12,
+  },
   levelContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -254,7 +265,7 @@ const styles = StyleSheet.create({
   },
   levelButton: {
     flex: 1,
-    marginHorizontal: 2,              // plus d'espace entre
+    marginHorizontal: 2,
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
