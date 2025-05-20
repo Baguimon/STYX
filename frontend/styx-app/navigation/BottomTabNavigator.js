@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
-import ClubScreen from '../screens/ClubScreen';
+import ClubStackNavigator from '../navigation/ClubStackNavigator';
 import ProfileScreen from '../screens/ProfileScreen';
 import TabBarIcon from '../components/TabBarIcon';
 
@@ -52,7 +52,7 @@ export default function BottomTabNavigator() {
       })}
     >
       <Tab.Screen name="Accueil" component={HomeScreen} />
-      <Tab.Screen name="Club" component={ClubScreen} />
+      <Tab.Screen name="Club" component={ClubStackNavigator} />
       <Tab.Screen name="Profil" component={ProfileScreen} />
     </Tab.Navigator>
   );
