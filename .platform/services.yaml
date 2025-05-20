@@ -1,5 +1,0 @@
-services:
-  # le nom ici doit correspondre à ce que vous avez mis dans `relationships` plus haut
-  mysql:
-    type: mysql:11.0
-    disk: 256
