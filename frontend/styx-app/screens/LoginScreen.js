@@ -1,5 +1,6 @@
 // LoginScreen.js
 import React, { useState, useContext } from 'react';
+import { loginUser } from '../services/api';
 import {
   View,
   Text,
@@ -20,29 +21,37 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
-    try {
-      const { data } = await axios.post('http://10.0.0.27:8000/api/login', {
-        email,
-        password
-      });
+const handleLogin = async () => {
+  try {
+    const { data } = await axios.post('https://ee92-132-208-12-94.ngrok-free.app/api/login', {
+      email,
+      password
+    });
 
-      if (!data.user) {
-        Alert.alert('Erreur', 'Réponse du serveur invalide.');
-        return;
-      }
+    console.log('Réponse:', data); // Ajout ici
 
-      await login(data.user);
-      Alert.alert('✅ Connexion réussie');
-    } catch (error) {
-      console.error(error);
-      if (error.response?.status === 401) {
-        Alert.alert('❌ Identifiants incorrects');
-      } else {
-        Alert.alert('❌ Erreur', 'Réponse du serveur invalide');
-      }
+    if (!data.user) {
+      Alert.alert('Erreur', 'Réponse du serveur invalide.');
+      return;
     }
-  };
+
+    await login(data.user);
+    Alert.alert('✅ Connexion réussie');
+  } catch (error) {
+    console.log('Erreur Axios:', error); // Ajout ici
+    if (error.response) {
+      console.log('Erreur serveur:', error.response.data);
+      console.log('Code:', error.response.status);
+    }
+
+    if (error.response?.status === 401) {
+      Alert.alert('❌ Identifiants incorrects');
+    } else {
+      Alert.alert('❌ Erreur', 'Réponse du serveur invalide');
+    }
+  }
+};
+
 
   return (
     <KeyboardAvoidingView

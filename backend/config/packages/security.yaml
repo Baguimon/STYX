@@ -16,11 +16,16 @@ security:
 
         api:
             pattern: ^/api
-            stateless: true
+            stateless: false 
             provider: app_user_provider
+            json_login:
+                check_path: /api/login
+                username_path: email
+                password_path: password
 
     access_control:
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/games, roles: PUBLIC_ACCESS }
+        - { path: ^/api/users, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: PUBLIC_ACCESS }
