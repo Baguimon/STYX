@@ -1,6 +1,6 @@
 # The name of this app. Must be unique within a project.
 name: app
-
+type: 'php:8.4'
 dependencies:
     php:
         ext-sodium: '*'
@@ -10,7 +10,6 @@ dependencies:
 # in multiple versions. Check the PHP documentation
 # (https://docs.platform.sh/languages/php.html#supported-versions)
 # to find the supported versions for the 'php' type.
-type: 'php:8.4'
 
 # The following block defines a single writable directory, 'web/uploads'
 # The 'source' specifies where the writable mount is. The 'local' source
