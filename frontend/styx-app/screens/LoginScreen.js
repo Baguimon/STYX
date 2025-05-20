@@ -1,18 +1,8 @@
-// LoginScreen.js
+// screens/LoginScreen.js
 import React, { useState, useContext } from 'react';
-import { loginUser } from '../services/api';
-import {
-  View,
-  Text,
-  TextInput,
-  Image,
-  TouchableOpacity,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet
-} from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
 import styxLogo from '../assets/styx-logo.png';
 
@@ -20,19 +10,35 @@ export default function LoginScreen({ navigation }) {
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-const handleLogin = async () => {
-  try {
-    const { data } = await axios.post('https://ee92-132-208-12-94.ngrok-free.app/api/login', {
-      email,
-      password
-    });
 
-    console.log('Réponse:', data); // Ajout ici
+  const handleLogin = async () => {
+    try {
+      const { data } = await axios.post('https://ee92-132-208-12-94.ngrok-free.app/api/login', {
+        email,
+        password
+      });
 
-    if (!data.user) {
-      Alert.alert('Erreur', 'Réponse du serveur invalide.');
-      return;
+      console.log('Réponse:', data);
+      if (!data.user) {
+        Alert.alert('Erreur', 'Réponse du serveur invalide.');
+        return;
+      }
+
+      await login(data.user);
+      Alert.alert('✅ Connexion réussie');
+    } catch (error) {
+      console.log('Erreur Axios:', error);
+      if (error.response) {
+        console.log('Erreur serveur:', error.response.data);
+        console.log('Code:', error.response.status);
+      }
+      if (error.response?.status === 401) {
+        Alert.alert('❌ Identifiants incorrects');
+      } else {
+        Alert.alert('❌ Erreur', 'Réponse du serveur invalide');
+      }
     }
 
     await login(data.user);
@@ -75,14 +81,26 @@ const handleLogin = async () => {
           keyboardType="email-address"
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Mot de passe"
-          placeholderTextColor="#AAA"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={{ position: 'relative' }}>
+          <TextInput
+            style={styles.input}
+            placeholder="Mot de passe"
+            placeholderTextColor="#AAA"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            onPress={() => setShowPassword(prev => !prev)}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={showPassword ? 'eye-off' : 'eye'}
+              size={24}
+              color="#666"
+            />
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Se connecter</Text>
@@ -93,7 +111,7 @@ const handleLogin = async () => {
         style={styles.registerLink}
         onPress={() => navigation.navigate('Register')}
       >
-        <Text style={styles.link}>Pas encore de compte ? S’inscrire</Text>
+        <Text style={styles.link}>Pas encore de compte ? S’inscrire</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
@@ -141,6 +159,11 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
     color: '#050A23',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 15,
+    top: 12,
   },
   button: {
     backgroundColor: '#8BEAFF',
