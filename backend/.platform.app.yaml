@@ -44,3 +44,50 @@ hooks:
 
         symfony-deploy
 
+name: app
+
+type: php:8.3
+
+runtime:
+    extensions:
+        - apcu
+        - mbstring
+        - sodium
+        - ctype
+        - iconv
+        
+
+#variables:
+#    php:
+#        # uncomment on PHP 7.4+
+#        #opcache.preload: config/preload.php
+
+build:
+    flavor: none
+
+disk: 1024
+
+web:
+    locations:
+        "/":
+            root: "public"
+            expires: 1h
+            passthru: "/index.php"
+
+mounts:
+    "/var/cache": { source: local, source_path: var/cache }
+    
+
+hooks:
+    build: |
+        set -x -e
+
+        curl -fs https://get.symfony.com/cloud/configurator | bash
+        
+        NODE_VERSION=22 symfony-build
+
+    deploy: |
+        set -x -e
+
+        symfony-deploy
+
