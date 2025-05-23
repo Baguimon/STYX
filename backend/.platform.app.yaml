@@ -11,10 +11,9 @@ runtime:
         - iconv
         
 
-#variables:
-#    php:
-#        # uncomment on PHP 7.4+
-#        #opcache.preload: config/preload.php
+variables:
+    env:
+        CORS_ALLOW_ORIGIN: "*"
 
 build:
     flavor: none
