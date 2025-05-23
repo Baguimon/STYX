@@ -28,8 +28,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $createdAt = null;
 
-    #[ORM\Column(type: 'integer', nullable: true)]
-    private ?int $clubId = null;
+    #[ORM\ManyToOne(targetEntity: Club::class, inversedBy: "members")]
+    private ?Club $club = null;
 
     #[ORM\Column(length: 100)]
     private ?string $role = null;
@@ -50,7 +50,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUsername(string $username): static
     {
         $this->username = $username;
-
         return $this;
     }
 
@@ -62,7 +61,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
@@ -74,7 +72,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
-
         return $this;
     }
 
@@ -86,19 +83,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
-
         return $this;
     }
 
-    public function getClubId(): ?int
+    public function getClub(): ?Club
     {
-        return $this->clubId;
+        return $this->club;
     }
 
-    public function setClubId(?int $clubId): static
+    public function setClub(?Club $club): static
     {
-        $this->clubId = $clubId;
-
+        $this->club = $club;
         return $this;
     }
 
@@ -110,7 +105,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRole(string $role): static
     {
         $this->role = $role;
-
         return $this;
     }
 
@@ -122,12 +116,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLevel(string $level): static
     {
         $this->level = $level;
-
         return $this;
     }
 
-    // Obligatoire pour l'interface UserInterface
-
+    // Obligatoire pour UserInterface
     public function getRoles(): array
     {
         return [$this->role ?? 'ROLE_USER'];
@@ -140,6 +132,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
-        // Pour stock des infos sensibles, les effacer ici
+        // Pour stocker des infos sensibles, les effacer ici si besoin
     }
 }

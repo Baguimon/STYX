@@ -22,14 +22,14 @@ class Club
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $createdAt = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $clubCaptain = null;
 
     /**
      * @var Collection<int, User>
      */
-    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\OneToMany(mappedBy: "club", targetEntity: User::class)]
     private Collection $members;
 
     public function __construct()
@@ -50,7 +50,6 @@ class Club
     public function setName(string $name): static
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -62,7 +61,6 @@ class Club
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
-
         return $this;
     }
 
@@ -74,7 +72,6 @@ class Club
     public function setClubCaptain(?User $clubCaptain): static
     {
         $this->clubCaptain = $clubCaptain;
-
         return $this;
     }
 
@@ -90,15 +87,19 @@ class Club
     {
         if (!$this->members->contains($member)) {
             $this->members->add($member);
+            $member->setClub($this); // synchronisation inverse
         }
-
         return $this;
     }
 
     public function removeMember(User $member): static
     {
-        $this->members->removeElement($member);
-
+        if ($this->members->removeElement($member)) {
+            // synchronisation inverse
+            if ($member->getClub() === $this) {
+                $member->setClub(null);
+            }
+        }
         return $this;
     }
 }
