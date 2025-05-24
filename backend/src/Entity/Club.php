@@ -87,7 +87,7 @@ class Club
     {
         if (!$this->members->contains($member)) {
             $this->members->add($member);
-            $member->setClub($this); // synchronisation inverse
+            $member->setClub($this);
         }
         return $this;
     }
@@ -95,7 +95,6 @@ class Club
     public function removeMember(User $member): static
     {
         if ($this->members->removeElement($member)) {
-            // synchronisation inverse
             if ($member->getClub() === $this) {
                 $member->setClub(null);
             }

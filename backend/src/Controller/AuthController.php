@@ -7,9 +7,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Routing\Annotation\Route;
 
 class AuthController extends AbstractController
 {
@@ -36,7 +36,7 @@ class AuthController extends AbstractController
         $user->setCreatedAt(new \DateTimeImmutable());
         $user->setRole('ROLE_USER');
         $user->setLevel('Débutant');
-        $user->setClubId(null);
+        $user->setClub(null);
 
         $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
         $user->setPassword($hashedPassword);
@@ -79,4 +79,3 @@ class AuthController extends AbstractController
         ]);
     }
 }
-

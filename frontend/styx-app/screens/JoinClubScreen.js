@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, FlatList, Button, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Button, ActivityIndicator, Alert } from 'react-native';
 import { getClubs, joinClub } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -11,7 +11,7 @@ export default function JoinClubScreen() {
   const navigation = useNavigation();
   const { userInfo } = useContext(AuthContext);
 
-  // BLOQUER si déjà membre d’un club
+  // BLOQUER si déjà membre d’un club (clubId existe)
   if (userInfo && userInfo.clubId) {
     return (
       <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
@@ -48,13 +48,28 @@ export default function JoinClubScreen() {
       const userId = await AsyncStorage.getItem('userId');
       await joinClub(userId, clubId);
       Alert.alert('Succès', 'Tu as rejoint le club !');
-      navigation.navigate('ClubHome');
+      // On force le retour à la home pour re-fetch l’état club (recommandé)
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ClubHome' }]
+      });
     } catch (e) {
       Alert.alert('Erreur', "Impossible de rejoindre le club");
+      console.log('Erreur joinClub :', e?.response?.data, e.message, e);
     }
   };
 
   if (loading) return <ActivityIndicator size="large" />;
+
+  if (!clubs.length) {
+    return (
+      <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
+        <Text style={{ fontSize:16, color:'#888', margin:16 }}>
+          Aucun club disponible pour l’instant.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex:1, padding:20 }}>
