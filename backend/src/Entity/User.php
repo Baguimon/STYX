@@ -5,8 +5,11 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use App\Entity\GamePlayer;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
@@ -36,6 +39,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 100)]
     private ?string $level = null;
+
+    // ---- Relation GamePlayer (tous les matchs rejoints) ----
+    /**
+     * @var Collection<int, GamePlayer>
+     */
+    #[ORM\OneToMany(mappedBy: "user", targetEntity: GamePlayer::class, orphanRemoval: true)]
+    private Collection $gamePlayers;
+
+    public function __construct()
+    {
+        $this->gamePlayers = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -118,6 +133,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->level = $level;
         return $this;
     }
+  
+  
+    // ---- Partie pour l'interface UserInterface ----
 
     public function getRoles(): array
     {
@@ -132,5 +150,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         // Pour stocker des infos sensibles, les effacer ici si besoin
+    }
+
+    // ---- Partie GamePlayers ----
+
+    /**
+     * @return Collection<int, GamePlayer>
+     */
+    public function getGamePlayers(): Collection
+    {
+        return $this->gamePlayers;
+    }
+
+    public function addGamePlayer(GamePlayer $gamePlayer): static
+    {
+        if (!$this->gamePlayers->contains($gamePlayer)) {
+            $this->gamePlayers[] = $gamePlayer;
+            $gamePlayer->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeGamePlayer(GamePlayer $gamePlayer): static
+    {
+        if ($this->gamePlayers->removeElement($gamePlayer)) {
+            // set the owning side to null (unless already changed)
+            if ($gamePlayer->getUser() === $this) {
+                $gamePlayer->setUser(null);
+            }
+        }
+        return $this;
     }
 }
