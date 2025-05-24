@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
 import styxLogo from '../assets/styx-logo.png';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useContext(AuthContext);
@@ -26,6 +27,13 @@ export default function LoginScreen({ navigation }) {
       }
 
       await login(data.user);
+
+      // *** AJOUTE CETTE PARTIE ***
+      await AsyncStorage.setItem('userId', data.user.id?.toString() || '');
+      await AsyncStorage.setItem('userName', data.user.name || '');
+      await AsyncStorage.setItem('userEmail', data.user.email || '');
+      // ***************************
+
       Alert.alert('✅ Connexion réussie');
     } catch (error) {
       console.log('Erreur Axios:', error);
