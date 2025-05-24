@@ -1,12 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, Button, Alert } from 'react-native';
 import { createClub } from '../services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { AuthContext } from '../contexts/AuthContext';
 
 export default function CreateClubScreen() {
   const [name, setName] = useState('');
   const navigation = useNavigation();
+  const { userInfo } = useContext(AuthContext);
+
+  // BLOQUER si déjà membre d’un club
+  if (userInfo && userInfo.clubId) {
+    return (
+      <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
+        <Text style={{ fontSize:16, color:'#888', margin:16 }}>
+          Tu es déjà membre d’un club. Tu dois le quitter pour en créer un nouveau.
+        </Text>
+      </View>
+    );
+  }
 
   const handleCreate = async () => {
     if (!name) {
@@ -14,8 +26,7 @@ export default function CreateClubScreen() {
       return;
     }
     try {
-      const userId = await AsyncStorage.getItem('userId');
-      await createClub({ name, clubCaptainId: userId });
+      await createClub({ name, clubCaptainId: userInfo?.id });
       Alert.alert('Succès', 'Club créé !');
       navigation.navigate('ClubHome');
     } catch (e) {
@@ -24,14 +35,19 @@ export default function CreateClubScreen() {
   };
 
   return (
-    <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
-      <Text style={{ fontSize:22, fontWeight:'bold' }}>Créer un club</Text>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{ fontSize: 22, fontWeight: 'bold' }}>Créer un club</Text>
       <TextInput
         placeholder="Nom du club"
         value={name}
         onChangeText={setName}
         style={{
-          borderWidth:1, borderColor:'#ccc', borderRadius:6, width:250, marginVertical:16, padding:10
+          borderWidth: 1,
+          borderColor: '#ccc',
+          borderRadius: 6,
+          width: 250,
+          marginVertical: 16,
+          padding: 10,
         }}
       />
       <Button title="Créer" onPress={handleCreate} />

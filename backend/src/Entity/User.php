@@ -31,8 +31,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $createdAt = null;
 
-    #[ORM\Column(type: 'integer', nullable: true)]
-    private ?int $clubId = null;
+    #[ORM\ManyToOne(targetEntity: Club::class, inversedBy: "members")]
+    private ?Club $club = null;
 
     #[ORM\Column(length: 100)]
     private ?string $role = null;
@@ -101,12 +101,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getClubId(): ?int
+    public function getClub(): ?Club
     {
-        return $this->clubId;
+        return $this->club;
     }
 
-    public function setClubId(?int $clubId): static
+    public function setClub(?Club $club): static
     {
         $this->clubId = $clubId;
         return $this;
@@ -133,7 +133,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->level = $level;
         return $this;
     }
-
+  
+  
     // ---- Partie pour l'interface UserInterface ----
 
     public function getRoles(): array
@@ -148,7 +149,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
-        // Pour stock des infos sensibles, les effacer ici
+        // Pour stocker des infos sensibles, les effacer ici si besoin
     }
 
     // ---- Partie GamePlayers ----

@@ -10,7 +10,7 @@ const api = axios.create({
 // Intercepteur pour les tokens (peut être utilisé + tard si tu mets l’auth JWT côté back)
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
-  const publicRoutes = ['/register', '/login', '/users', '/games'];
+  const publicRoutes = ['/register', '/login', '/users','/games', '/clubs'];
   const isPublic = publicRoutes.some(route => config.url.includes(route));
 
   if (token && !isPublic) {
@@ -28,6 +28,10 @@ export const getUsers = async () => {
 
 export const registerUser = async (form) => {
   return api.post('/register', form);
+};
+
+export const createClub = async (form) => {
+  return api.post('/clubs', form);
 };
 
 export const loginUser = async (form) => {
@@ -64,6 +68,7 @@ export const getUserClub = async (userId) => {
 };
 
 export const getClub = async (clubId) => {
+  console.log('API getClub →', { clubId });
   const response = await api.get(`/clubs/${clubId}`);
   return response.data;
 };
@@ -78,9 +83,9 @@ export const joinClub = async (userId, clubId) => {
   return response.data;
 };
 
-export const leaveClub = async (userId) => {
-  const response = await api.post(`/users/${userId}/leave-club`);
-  return response.data;
+export const leaveClub = async (userId, clubId) => {
+  console.log('API leaveClub →', { userId, clubId });
+  return api.post(`/clubs/${clubId}/leave/${userId}`);
 };
 
 export default api;
