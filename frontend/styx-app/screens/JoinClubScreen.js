@@ -48,7 +48,6 @@ export default function JoinClubScreen() {
       const userId = await AsyncStorage.getItem('userId');
       await joinClub(userId, clubId);
       Alert.alert('Succès', 'Tu as rejoint le club !');
-      // On force le retour à la home pour re-fetch l’état club (recommandé)
       navigation.reset({
         index: 0,
         routes: [{ name: 'ClubHome' }]
