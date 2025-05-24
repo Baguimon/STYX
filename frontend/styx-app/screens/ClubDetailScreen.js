@@ -16,18 +16,26 @@ export default function ClubDetailScreen() {
     const fetchData = async () => {
       setLoading(true);
       try {
+        console.log("Fetching clubId:", clubId);
         const clubData = await getClub(clubId);
         setClub(clubData);
         const membersData = await getClubMembers(clubId);
         setMembers(membersData);
       } catch (e) {
-        Alert.alert('Erreur', "Impossible de charger le club");
+        if (e.response?.status === 404) {
+          Alert.alert('Ce club n\'existe plus', 'Retour à l\'accueil.');
+          navigation.navigate('ClubHome');
+        } else {
+          Alert.alert('Erreur', "Impossible de charger le club");
+          console.log('Erreur getClub:', e?.response?.data, e.message, e);
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, [clubId]);
+
 
   const handleLeave = async () => {
     try {

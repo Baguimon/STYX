@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Repository\UserRepository;
 use App\Repository\ClubRepository;
+use App\Entity\Club;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,10 +25,10 @@ class UserController extends AbstractController
                 'id' => $user->getId(),
                 'username' => $user->getUsername(),
                 'email' => $user->getEmail(),
-                'createdAt' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
+                'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
                 'role' => $user->getRole(),
                 'level' => $user->getLevel(),
-                'clubId' => $user->getClubId(),
+                'clubId' => $user->getClub()?->getId(),
             ];
         }
         return $this->json($data);
@@ -35,17 +36,13 @@ class UserController extends AbstractController
 
     // Voir le club de l'utilisateur
     #[Route('/users/{id}/club', name: 'user_club', methods: ['GET'])]
-    public function getUserClub($id, UserRepository $userRepository, ClubRepository $clubRepository): JsonResponse
+    public function getUserClub($id, UserRepository $userRepository): JsonResponse
     {
         $user = $userRepository->find($id);
         if (!$user) {
             return $this->json(['error' => 'User not found'], 404);
         }
-        $clubId = $user->getClubId();
-        if (!$clubId) {
-            return $this->json(null);
-        }
-        $club = $clubRepository->find($clubId);
+        $club = $user->getClub();
         if (!$club) {
             return $this->json(null);
         }
@@ -65,27 +62,58 @@ class UserController extends AbstractController
         if (!$user) {
             return $this->json(['error' => 'User not found'], 404);
         }
+        if ($user->getClub()) {
+            return $this->json(['error' => 'Vous êtes déjà membre d\'un club'], 400);
+        }
         $data = json_decode($request->getContent(), true);
         $clubId = $data['clubId'] ?? null;
         $club = $clubRepository->find($clubId);
         if (!$club) {
             return $this->json(['error' => 'Club not found'], 404);
         }
-        $user->setClubId($clubId);
+        $user->setClub($club);
         $em->flush();
         return $this->json(['success' => true]);
     }
 
-    // Quitter un club
+    // Quitter un club (ne gère pas la suppression ou le capitanat)
     #[Route('/users/{id}/leave-club', name: 'user_leave_club', methods: ['POST'])]
-    public function leaveClub($id, UserRepository $userRepository, EntityManagerInterface $em): JsonResponse
+    public function leaveClub($id, UserRepository $userRepository, ClubRepository $clubRepository, EntityManagerInterface $em): JsonResponse
     {
         $user = $userRepository->find($id);
         if (!$user) {
             return $this->json(['error' => 'User not found'], 404);
         }
-        $user->setClubId(null);
+
+        $club = $user->getClub();
+        if (!$club) {
+            return $this->json(['error' => 'User is not in any club'], 400);
+        }
+
+        // Retirer le user du club
+        $user->setClub(null);
         $em->flush();
+
+        // On vérifie les membres restants
+        $remainingMembers = $club->getMembers();
+
+        // S'il n'y a plus de membres, on supprime le club
+        if (count($remainingMembers) === 0) {
+            $em->remove($club);
+            $em->flush();
+            return $this->json(['success' => true, 'message' => 'Club supprimé, tu étais le dernier membre !']);
+        }
+
+        // Si le user qui part était capitaine, on transmet à un autre membre
+        if ($club->getClubCaptain() && $club->getClubCaptain()->getId() === $user->getId()) {
+            // Prendre le membre avec le plus petit id (ou autre critère)
+            $members = $club->getMembers()->toArray();
+            usort($members, fn($a, $b) => $a->getId() <=> $b->getId());
+            $newCaptain = $members[0];
+            $club->setClubCaptain($newCaptain);
+            $em->flush();
+        }
+
         return $this->json(['success' => true]);
     }
 }
