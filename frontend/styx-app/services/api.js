@@ -7,25 +7,19 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Aucun token injecté : API publique
-
-
+// Intercepteur pour les tokens (peut être utilisé + tard si tu mets l’auth JWT côté back)
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
-
-
   const publicRoutes = ['/register', '/login', '/users','/games', '/clubs'];
-
-
   const isPublic = publicRoutes.some(route => config.url.includes(route));
 
   if (token && !isPublic) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
   return config;
 });
 
+// ========== USERS ==========
 
 export const getUsers = async () => {
   const response = await api.get('/users');
@@ -40,6 +34,8 @@ export const loginUser = async (form) => {
   return api.post('/login', form);
 };
 
+// ========== GAMES ==========
+
 export const createGame = async (form) => {
   return api.post('/games', form);
 };
@@ -49,8 +45,26 @@ export const getGames = async () => {
   return response.data;
 };
 
+
 export const getClubs = async () => {
   const response = await api.get('/clubs');
+
+export const getGameById = async (id) => {
+  const response = await api.get(`/games/${id}`);
+  return response.data;
+};
+
+// ** LA BONNE MÉTHODE POUR REJOINDRE **
+export const joinGame = async (gameId, userId, team) => {
+  const response = await api.post(`/games/${gameId}/join`, { userId, team });
+  return response.data;
+};
+
+// ========== CLUBS ==========
+
+export const getUserClub = async (userId) => {
+  const response = await api.get(`/users/${userId}/club`);
+
   return response.data;
 };
 
@@ -83,5 +97,3 @@ export const getUserClub = async (userId) => {
 
 
 export default api;
-
-
