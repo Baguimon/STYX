@@ -48,7 +48,7 @@ export const getGames = async () => {
 
 export const getClubs = async () => {
   const response = await api.get('/clubs');
-};
+}
 
 export const getGameById = async (id) => {
   const response = await api.get(`/games/${id}`);
@@ -62,6 +62,12 @@ export const joinGame = async (gameId, userId, team) => {
 };
 
 // ========== CLUBS ==========
+
+export const getUserClub = async (userId) => {
+  const response = await api.get(`/users/${userId}/club`);
+
+  return response.data;
+};
 
 export const getClub = async (clubId) => {
   const response = await api.get(`/clubs/${clubId}`);
@@ -83,11 +89,6 @@ export const joinClub = async (userId, clubId) => {
 
 export const leaveClub = async (userId) => {
   return api.post(`/users/${userId}/leave-club`);
-};
-
-export const getUserClub = async (userId) => {
-  const response = await api.get(`/users/${userId}/club`);
-  return response.data;
 };
 
 
