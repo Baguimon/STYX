@@ -48,7 +48,7 @@ export const getGames = async () => {
 
 export const getClubs = async () => {
   const response = await api.get('/clubs');
-}
+};
 
 export const getGameById = async (id) => {
   const response = await api.get(`/games/${id}`);
