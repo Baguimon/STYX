@@ -5,8 +5,11 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use App\Entity\GamePlayer;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
@@ -37,6 +40,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100)]
     private ?string $level = null;
 
+    // ---- Relation GamePlayer (tous les matchs rejoints) ----
+    /**
+     * @var Collection<int, GamePlayer>
+     */
+    #[ORM\OneToMany(mappedBy: "user", targetEntity: GamePlayer::class, orphanRemoval: true)]
+    private Collection $gamePlayers;
+
+    public function __construct()
+    {
+        $this->gamePlayers = new ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -50,7 +65,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUsername(string $username): static
     {
         $this->username = $username;
-
         return $this;
     }
 
@@ -62,7 +76,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
@@ -74,7 +87,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
-
         return $this;
     }
 
@@ -86,7 +98,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
-
         return $this;
     }
 
@@ -98,7 +109,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setClubId(?int $clubId): static
     {
         $this->clubId = $clubId;
-
         return $this;
     }
 
@@ -110,7 +120,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRole(string $role): static
     {
         $this->role = $role;
-
         return $this;
     }
 
@@ -122,11 +131,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLevel(string $level): static
     {
         $this->level = $level;
-
         return $this;
     }
 
-    // Obligatoire pour l'interface UserInterface
+    // ---- Partie pour l'interface UserInterface ----
 
     public function getRoles(): array
     {
@@ -141,5 +149,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         // Pour stock des infos sensibles, les effacer ici
+    }
+
+    // ---- Partie GamePlayers ----
+
+    /**
+     * @return Collection<int, GamePlayer>
+     */
+    public function getGamePlayers(): Collection
+    {
+        return $this->gamePlayers;
+    }
+
+    public function addGamePlayer(GamePlayer $gamePlayer): static
+    {
+        if (!$this->gamePlayers->contains($gamePlayer)) {
+            $this->gamePlayers[] = $gamePlayer;
+            $gamePlayer->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeGamePlayer(GamePlayer $gamePlayer): static
+    {
+        if ($this->gamePlayers->removeElement($gamePlayer)) {
+            // set the owning side to null (unless already changed)
+            if ($gamePlayer->getUser() === $this) {
+                $gamePlayer->setUser(null);
+            }
+        }
+        return $this;
     }
 }

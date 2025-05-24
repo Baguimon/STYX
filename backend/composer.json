@@ -103,6 +103,7 @@
     "require-dev": {
         "symfony/browser-kit": "7.2.*",
         "symfony/css-selector": "7.2.*",
+        "symfony/maker-bundle": "^1.63",
         "symfony/phpunit-bridge": "^7.2",
         "symfony/stopwatch": "7.2.*"
     }
