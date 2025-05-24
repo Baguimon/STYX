@@ -36,10 +36,6 @@ export const registerUser = async (form) => {
   return api.post('/register', form);
 };
 
-export const createClub = async (form) => {
-  return api.post('/clubs', form);
-};
-
 export const loginUser = async (form) => {
   return api.post('/login', form);
 };
@@ -53,13 +49,12 @@ export const getGames = async () => {
   return response.data;
 };
 
-export const getUserClub = async (userId) => {
-  const response = await api.get(`/users/${userId}/club`);
+export const getClubs = async () => {
+  const response = await api.get('/clubs');
   return response.data;
 };
 
 export const getClub = async (clubId) => {
-  console.log('API getClub →', { clubId });
   const response = await api.get(`/clubs/${clubId}`);
   return response.data;
 };
@@ -69,15 +64,23 @@ export const getClubMembers = async (clubId) => {
   return response.data;
 };
 
+export const createClub = async (form) => {
+  return api.post('/clubs', form);
+};
+
 export const joinClub = async (userId, clubId) => {
-  const response = await api.post(`/users/${userId}/join-club`, { clubId });
+  return api.post(`/users/${userId}/join-club`, { clubId });
+};
+
+export const leaveClub = async (userId) => {
+  return api.post(`/users/${userId}/leave-club`);
+};
+
+export const getUserClub = async (userId) => {
+  const response = await api.get(`/users/${userId}/club`);
   return response.data;
 };
 
-export const leaveClub = async (userId, clubId) => {
-  console.log('API leaveClub →', { userId, clubId });
-  return api.post(`/clubs/${clubId}/leave/${userId}`);
-};
 
 export default api;
 
