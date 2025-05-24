@@ -108,7 +108,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setClub(?Club $club): static
     {
-        $this->clubId = $clubId;
+        $this->club = $club;
         return $this;
     }
 
