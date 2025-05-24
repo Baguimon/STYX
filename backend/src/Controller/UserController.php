@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Repository\UserRepository;
 use App\Repository\ClubRepository;
-use App\Entity\Club;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,7 +13,6 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/api', name: 'api_')]
 class UserController extends AbstractController
 {
-    // Liste tous les users
     #[Route('/users', name: 'users_list', methods: ['GET'])]
     public function list(UserRepository $userRepository): JsonResponse
     {
@@ -34,7 +32,6 @@ class UserController extends AbstractController
         return $this->json($data);
     }
 
-    // Voir le club de l'utilisateur
     #[Route('/users/{id}/club', name: 'user_club', methods: ['GET'])]
     public function getUserClub($id, UserRepository $userRepository): JsonResponse
     {
@@ -54,7 +51,6 @@ class UserController extends AbstractController
         ]);
     }
 
-    // Rejoindre un club
     #[Route('/users/{id}/join-club', name: 'user_join_club', methods: ['POST'])]
     public function joinClub($id, Request $request, UserRepository $userRepository, ClubRepository $clubRepository, EntityManagerInterface $em): JsonResponse
     {
@@ -76,7 +72,6 @@ class UserController extends AbstractController
         return $this->json(['success' => true]);
     }
 
-    // Quitter un club (ne gère pas la suppression ou le capitanat)
     #[Route('/users/{id}/leave-club', name: 'user_leave_club', methods: ['POST'])]
     public function leaveClub($id, UserRepository $userRepository, ClubRepository $clubRepository, EntityManagerInterface $em): JsonResponse
     {
@@ -90,30 +85,33 @@ class UserController extends AbstractController
             return $this->json(['error' => 'User is not in any club'], 400);
         }
 
-        // Retirer le user du club
+        // 1. Retirer le user du club
         $user->setClub(null);
         $em->flush();
 
-        // On vérifie les membres restants
+        $em->refresh($club);
         $remainingMembers = $club->getMembers();
 
-        // S'il n'y a plus de membres, on supprime le club
+        // 2. Si le user qui part était capitaine, on supprime le club et on retire tous les membres
+        if ($club->getClubCaptain() && $club->getClubCaptain()->getId() === $id) {
+            foreach ($remainingMembers as $member) {
+                $member->setClub(null);
+            }
+            $em->remove($club);
+            $em->flush();
+            return $this->json(['success' => true, 'message' => 'Club supprimé car le capitaine a quitté le club.']);
+        }
+
+        // 3. S'il n'y a plus de membres (sécurité), supprimer le club
         if (count($remainingMembers) === 0) {
             $em->remove($club);
             $em->flush();
             return $this->json(['success' => true, 'message' => 'Club supprimé, tu étais le dernier membre !']);
         }
 
-        // Si le user qui part était capitaine, on transmet à un autre membre
-        if ($club->getClubCaptain() && $club->getClubCaptain()->getId() === $user->getId()) {
-            // Prendre le membre avec le plus petit id (ou autre critère)
-            $members = $club->getMembers()->toArray();
-            usort($members, fn($a, $b) => $a->getId() <=> $b->getId());
-            $newCaptain = $members[0];
-            $club->setClubCaptain($newCaptain);
-            $em->flush();
-        }
-
+        // 4. Sinon, le membre a juste quitté
         return $this->json(['success' => true]);
     }
+
+
 }

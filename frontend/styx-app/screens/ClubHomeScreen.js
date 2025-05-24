@@ -34,14 +34,7 @@ export default function ClubHomeScreen() {
   const handleLeave = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
-      // Sauvegarde clubId MAINTENANT (tant que le state club est bien là)
-      const clubId = club?.id;
-      if (!clubId) {
-        Alert.alert('Erreur', 'Club introuvable');
-        return;
-      }
-      console.log('API_leaveClub →', { clubId, userId });
-      await leaveClub(userId, clubId);
+      await leaveClub(userId);
       Alert.alert('Tu as quitté le club');
       navigation.reset({
         index: 0,
@@ -60,6 +53,7 @@ export default function ClubHomeScreen() {
       }
     }
   };
+
 
   if (loading) return <ActivityIndicator size="large" />;
 
