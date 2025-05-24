@@ -74,6 +74,11 @@ export const leaveClub = async (userId) => {
   return response.data;
 };
 
+export const joinGame = async (gameId, team) => {
+  const response = await api.post(`/games/${gameId}/join`, { team });
+  return response.data;
+};
+
 
 
 export default api;
