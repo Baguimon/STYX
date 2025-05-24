@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -9,28 +9,32 @@ import {
   Image,
   Modal,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { getGames } from '../services/api';
+import { getGames, joinGame } from '../services/api';
+import { AuthContext } from '../contexts/AuthContext';
 
 export default function GameSearchScreen() {
   const navigation = useNavigation();
+  const { userInfo } = useContext(AuthContext);
+
   const [games, setGames] = useState([]);
   const [searchCity, setSearchCity] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Toutes');
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedGameId, setSelectedGameId] = useState(null);
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getGames().then(setGames).catch(console.error);
+    getGames()
+      .then(setGames)
+      .catch(console.error);
   }, []);
 
   const filteredGames = games.filter(
     (game) =>
-      (searchCity === '' || (game.location && game.location.toLowerCase().includes(searchCity.toLowerCase()))) &&
-      (selectedCategory === 'Toutes' ||
-        (selectedCategory === 'Foot débutant' && game.status?.toLowerCase().includes('débutant')) ||
-        (selectedCategory === 'Foot compétitif' && game.status?.toLowerCase().includes('compétitif')))
+      (searchCity === '' ||
+        (game.location && game.location.toLowerCase().includes(searchCity.toLowerCase())))
   );
 
   const formatDate = (dateStr) => {
@@ -42,6 +46,27 @@ export default function GameSearchScreen() {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
+  };
+
+  // Fonction pour rejoindre le match
+  const handleJoin = async (team) => {
+    if (!userInfo || !userInfo.id) {
+      Alert.alert('Erreur', 'Utilisateur non connecté');
+      return;
+    }
+    setLoading(true);
+    try {
+      await joinGame(selectedGame.id, userInfo.id, team);
+      Alert.alert('Succès', "Tu as rejoint le match !");
+      setModalVisible(false);
+      // On refresh la liste après inscription (pour voir l'évolution des places)
+      getGames().then(setGames);
+    } catch (err) {
+      Alert.alert('Erreur', err.response?.data?.error || "Impossible de rejoindre ce match");
+      setModalVisible(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -58,11 +83,13 @@ export default function GameSearchScreen() {
           {item.status === 'ouvert' && <View style={styles.statusDot} />}
         </View>
       </View>
-
       <Pressable
-        style={({ pressed }) => [styles.button, { backgroundColor: pressed ? '#329CB6' : '#46B3D0' }]}
+        style={({ pressed }) => [
+          styles.button,
+          { backgroundColor: pressed ? '#329CB6' : '#46B3D0' },
+        ]}
         onPress={() => {
-          setSelectedGameId(item.id);
+          setSelectedGame(item);
           setModalVisible(true);
         }}
       >
@@ -101,23 +128,22 @@ export default function GameSearchScreen() {
             <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
               <Text style={{ fontSize: 18, color: '#ccc' }}>✕</Text>
             </TouchableOpacity>
+            <Text style={{ color: "#fff", fontWeight: "bold", marginBottom: 16, fontSize: 16 }}>
+              Choisis ton équipe
+            </Text>
             <Pressable
               style={styles.modalButton}
-              onPress={() => {
-                console.log('Rejoindre avec le Club');
-                setModalVisible(false);
-              }}
+              disabled={loading}
+              onPress={() => handleJoin(1)}
             >
-              <Text style={styles.modalButtonText}>Rejoindre avec le Club</Text>
+              <Text style={styles.modalButtonText}>Équipe 1</Text>
             </Pressable>
             <Pressable
               style={styles.modalButton}
-              onPress={() => {
-                console.log('Rejoindre Seul');
-                setModalVisible(false);
-              }}
+              disabled={loading}
+              onPress={() => handleJoin(2)}
             >
-              <Text style={styles.modalButtonText}>Rejoindre Seul</Text>
+              <Text style={styles.modalButtonText}>Équipe 2</Text>
             </Pressable>
           </View>
         </View>
@@ -153,24 +179,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     marginBottom: 8,
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    gap: 10,
-  },
-  filterButton: {
-    padding: 6,
-    backgroundColor: '#666',
-    borderRadius: 5,
-  },
-  activeFilter: {
-    backgroundColor: '#46B3D0',
-  },
-  filterText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
   item: {
     padding: 15,
@@ -234,7 +242,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-
   // Modal
   modalOverlay: {
     flex: 1,
