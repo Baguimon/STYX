@@ -90,23 +90,23 @@ class UserController extends AbstractController
             return $this->json(['error' => 'User is not in any club'], 400);
         }
 
-        // Retirer le user du club
+        // 1. Retirer le user du club
         $user->setClub(null);
         $em->flush();
 
-        // On vérifie les membres restants
+        // ** Recharge le club depuis la BDD pour avoir la vraie liste à jour **
+        $em->refresh($club);
         $remainingMembers = $club->getMembers();
 
-        // S'il n'y a plus de membres, on supprime le club
+        // 2. S'il n'y a plus de membres, supprimer le club
         if (count($remainingMembers) === 0) {
             $em->remove($club);
             $em->flush();
             return $this->json(['success' => true, 'message' => 'Club supprimé, tu étais le dernier membre !']);
         }
 
-        // Si le user qui part était capitaine, on transmet à un autre membre
+        // 3. Si le user qui part était capitaine, transférer le capitanat
         if ($club->getClubCaptain() && $club->getClubCaptain()->getId() === $user->getId()) {
-            // Prendre le membre avec le plus petit id (ou autre critère)
             $members = $club->getMembers()->toArray();
             usort($members, fn($a, $b) => $a->getId() <=> $b->getId());
             $newCaptain = $members[0];
