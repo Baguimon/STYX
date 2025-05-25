@@ -61,10 +61,12 @@ class ClubController extends AbstractController
                 'email' => $user->getEmail(),
                 'level' => $user->getLevel(),
                 'role' => $user->getRole(),
+                'poste' => $user->getPoste(), // AJOUT INDISPENSABLE !!!
             ];
         }
         return $this->json($data);
     }
+
 
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(Request $request, EntityManagerInterface $em, UserRepository $userRepository): JsonResponse
@@ -98,6 +100,46 @@ class ClubController extends AbstractController
             'createdAt' => $club->getCreatedAt()?->format('Y-m-d H:i:s'),
             'clubCaptain' => $club->getClubCaptain()?->getId(),
         ]);
+    }
+    #[Route('/{clubId}/set-poste/{userId}', name: 'set_user_poste', methods: ['POST'])]
+    public function setUserPoste(
+        Request $request,
+        UserRepository $userRepository,
+        ClubRepository $clubRepository,
+        EntityManagerInterface $em,
+        int $clubId,
+        int $userId
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        $poste = $data['poste'] ?? null;
+
+        if (!$poste) {
+            return $this->json(['error' => 'Aucun poste précisé'], 400);
+        }
+
+        $club = $clubRepository->find($clubId);
+        $user = $userRepository->find($userId);
+
+        if (!$club || !$user) {
+            return $this->json(['error' => 'Club ou joueur introuvable'], 404);
+        }
+
+        if ($user->getClub()?->getId() !== $club->getId()) {
+            return $this->json(['error' => 'Ce joueur n\'est pas dans ce club'], 403);
+        }
+
+        // Vérifier si le poste est déjà pris par un autre membre
+        $usersDuClub = $userRepository->findBy(['club' => $club]);
+        foreach ($usersDuClub as $membre) {
+            if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {
+                return $this->json(['error' => 'Poste déjà pris'], 409);
+            }
+        }
+
+        $user->setPoste($poste);
+        $em->flush();
+
+        return $this->json(['success' => true]);
     }
 
 }
