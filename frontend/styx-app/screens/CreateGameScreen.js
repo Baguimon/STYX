@@ -1,5 +1,3 @@
-// screens/CreateGameScreen.js
-
 import React, { useState } from 'react';
 import {
   View,
@@ -16,6 +14,40 @@ import { useNavigation } from '@react-navigation/native';
 import { createGame } from '../services/api';
 import LocationInput from '../components/LocationInput';
 import EvenNumberPicker from '../components/EvenNumberPicker';
+
+// Fonction pour extraire uniquement la ville
+function getCityFromAddressComponents(components, fallbackName = '') {
+  if (!components) return '';
+
+  // 1. "locality" (ville)
+  let cityObj = components.find(c => c.types.includes('locality'));
+  if (cityObj) return cityObj.long_name;
+
+  // 2. "administrative_area_level_3" (commune en France)
+  cityObj = components.find(c => c.types.includes('administrative_area_level_3'));
+  if (cityObj) return cityObj.long_name;
+
+  // 3. "administrative_area_level_2" mais SANS régions connues
+  cityObj = components.find(c =>
+    c.types.includes('administrative_area_level_2') &&
+    !["Département", "Region", "Occitanie", "Grand Est", "Île-de-France", "Bretagne", "Nouvelle-Aquitaine"].some(region =>
+      c.long_name.includes(region)
+    )
+  );
+  if (cityObj) return cityObj.long_name;
+
+  // 4. Fallback : découpe le nom et prend le 1er mot "ville"
+  if (fallbackName) {
+    const parts = fallbackName.split(',').map(p => p.trim());
+    const city = parts.find(word =>
+      word &&
+      !word.match(/(France|Metropole|Europe|Est|Ouest|Sud|Nord|Centre|Département|Region|Occitanie|Grand Est|Île-de-France|Bretagne|Nouvelle-Aquitaine)/i)
+      && /^[A-ZÀ-Ÿ][a-zà-ÿ\- ]{2,25}$/.test(word)
+    );
+    if (city) return city;
+  }
+  return '';
+}
 
 export default function CreateGameScreen() {
   const navigation = useNavigation();
@@ -176,8 +208,21 @@ export default function CreateGameScreen() {
           <Text style={styles.cardTitle}>Lieu</Text>
           <LocationInput
             value={form.location}
-            onSelect={({ name, lat, lon }) => {
-              handleChange('location', name);
+            onSelect={({ name, lat, lon, details }) => {
+              let city = '';
+              if (details && details.address_components) {
+                city = getCityFromAddressComponents(details.address_components, name);
+              }
+              if (!city && name) {
+                const parts = name.split(',').map(p => p.trim());
+                const tryCity = parts.find(word =>
+                  word &&
+                  !word.match(/(France|Metropole|Europe|Est|Ouest|Sud|Nord|Centre|Département|Region|Occitanie|Grand Est|Île-de-France|Bretagne|Nouvelle-Aquitaine)/i)
+                  && /^[A-ZÀ-Ÿ][a-zà-ÿ\- ]{2,25}$/.test(word)
+                );
+                city = tryCity || name;
+              }
+              handleChange('location', city);
               handleChange('latitude', lat);
               handleChange('longitude', lon);
             }}
@@ -317,26 +362,26 @@ export default function CreateGameScreen() {
 
   const [step, setStep] = useState(0);
   const isLast = step === steps.length - 1;
-const isStepValid = () => {
-  switch (step) {
-    case 0: // Date
-      return !!date;
-    case 1: // Heure
-      return !!date; // la date contient aussi l'heure sélectionnée
-    case 2: // Lieu
-      return !!form.location && form.location.trim().length > 0;
-    case 3: // Joueurs max
-      return form.maxPlayers && parseInt(form.maxPlayers, 10) >= 2;
-    case 4: // Joueurs actuels
-      return form.playerCount && parseInt(form.playerCount, 10) >= 0;
-    case 5: // Statut
-      return !!form.status;
-    case 6: // Match de club
-      return form.isClubMatch === 'Oui' || form.isClubMatch === 'Non' || form.isClubMatch === 'true' || form.isClubMatch === 'false';
-    default:
-      return true;
-  }
-};
+  const isStepValid = () => {
+    switch (step) {
+      case 0: // Date
+        return !!date;
+      case 1: // Heure
+        return !!date;
+      case 2: // Lieu
+        return !!form.location && form.location.trim().length > 0;
+      case 3: // Joueurs max
+        return form.maxPlayers && parseInt(form.maxPlayers, 10) >= 2;
+      case 4: // Joueurs actuels
+        return form.playerCount && parseInt(form.playerCount, 10) >= 0;
+      case 5: // Statut
+        return !!form.status;
+      case 6: // Match de club
+        return form.isClubMatch === 'Oui' || form.isClubMatch === 'Non' || form.isClubMatch === 'true' || form.isClubMatch === 'false';
+      default:
+        return true;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -367,24 +412,24 @@ const isStepValid = () => {
             <Text style={styles.prevText}>Précédent</Text>
           </TouchableOpacity>
         )}
-      <TouchableOpacity
-        style={styles.nextBtn}
-        onPress={() => {
-          if (!isStepValid()) {
-            Alert.alert('Attention', 'Merci de compléter ce champ avant de continuer.');
-            return;
-          }
-          if (isLast) {
-            handleSubmit();
-          } else {
-            setStep(s => s + 1);
-          }
-        }}
-      >
-        <Text style={styles.nextText}>
-          {isLast ? 'Valider' : 'Suivant'}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (!isStepValid()) {
+              Alert.alert('Attention', 'Merci de compléter ce champ avant de continuer.');
+              return;
+            }
+            if (isLast) {
+              handleSubmit();
+            } else {
+              setStep(s => s + 1);
+            }
+          }}
+        >
+          <Text style={styles.nextText}>
+            {isLast ? 'Valider' : 'Suivant'}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

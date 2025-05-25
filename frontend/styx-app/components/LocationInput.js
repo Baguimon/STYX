@@ -10,6 +10,24 @@ import {
 } from 'react-native';
 import Autocomplete from 'react-native-autocomplete-input';
 
+// Fonction utilitaire pour extraire la ville proprement
+function getCityFromAddress(address) {
+  // 1. Prendre "city"
+  if (address.city) return address.city;
+  // 2. Sinon "town", "village", "municipality"
+  if (address.town) return address.town;
+  if (address.village) return address.village;
+  if (address.municipality) return address.municipality;
+  // 3. Sinon essayer "locality" ou "hamlet"
+  if (address.locality) return address.locality;
+  if (address.hamlet) return address.hamlet;
+  // 4. Fallback: département, région
+  if (address.county) return address.county;
+  if (address.state) return address.state;
+  // Sinon rien
+  return '';
+}
+
 export default function LocationInput({ value, onSelect }) {
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState([]);
@@ -24,11 +42,22 @@ export default function LocationInput({ value, onSelect }) {
       setLoading(true);
       fetch(
         `https://nominatim.openstreetmap.org/search?` +
-        `q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`
+        `q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=7&accept-language=fr&countrycodes=fr`
       )
         .then(r => r.json())
-        .then(data => setResults(data))
-        .catch(() => {})
+        .then(data => {
+          // Filtrer uniquement les résultats qui sont bien des villes FR
+          const filtered = data.filter(item => {
+            const city = getCityFromAddress(item.address);
+            return (
+              !!city &&
+              item.address &&
+              item.address.country_code === 'fr'
+            );
+          });
+          setResults(filtered);
+        })
+        .catch(() => setResults([]))
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(timer);
@@ -45,31 +74,35 @@ export default function LocationInput({ value, onSelect }) {
         }}
         containerStyle={styles.autocompleteContainer}
         inputContainerStyle={styles.inputContainer}
-        listStyle={styles.list}             // ← c’est ici que ça se joue
+        listStyle={styles.list}
         textInputProps={{
-          placeholder: 'Rechercher un lieu…',
+          placeholder: 'Rechercher une ville...',
           placeholderTextColor: '#888',
           style: styles.textInput,
         }}
         flatListProps={{
           keyExtractor: item => item.place_id.toString(),
           keyboardShouldPersistTaps: 'handled',
-          renderItem: ({ item }) => (
-            <TouchableOpacity
-              style={styles.item}
-              onPress={() => {
-                setQuery(item.display_name);
-                setResults([]);
-                onSelect({
-                  name: item.display_name,
-                  lat: item.lat,
-                  lon: item.lon,
-                });
-              }}
-            >
-              <Text style={styles.itemText}>{item.display_name}</Text>
-            </TouchableOpacity>
-          ),
+          renderItem: ({ item }) => {
+            const city = getCityFromAddress(item.address);
+            return (
+              <TouchableOpacity
+                style={styles.item}
+                onPress={() => {
+                  setQuery(city);
+                  setResults([]);
+                  onSelect({
+                    name: city,
+                    lat: item.lat,
+                    lon: item.lon,
+                    details: item,
+                  });
+                }}
+              >
+                <Text style={styles.itemText}>{city}</Text>
+              </TouchableOpacity>
+            );
+          },
         }}
       />
       {loading && <ActivityIndicator style={styles.loader} />}
@@ -78,12 +111,8 @@ export default function LocationInput({ value, onSelect }) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    width: '100%',
-  },
-  autocompleteContainer: {
-    backgroundColor: 'transparent',
-  },
+  wrapper: { width: '100%' },
+  autocompleteContainer: { backgroundColor: 'transparent' },
   inputContainer: {
     backgroundColor: '#2A2A40',
     borderRadius: 10,
@@ -95,7 +124,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   list: {
-    backgroundColor: '#1A1F3D', // fond sombre
+    backgroundColor: '#1A1F3D',
     borderRadius: 10,
     marginTop: 4,
     maxHeight: 200,
@@ -108,7 +137,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2A2A40',
   },
   itemText: {
-    color: '#000000',
     fontSize: 15,
   },
   loader: {
