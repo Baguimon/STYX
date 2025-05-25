@@ -41,7 +41,6 @@ class Game
     // 🚨 Ajoute ce champ pour le créateur (nullable d'abord)
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: true)] // Passe à false après migration et update des anciennes lignes !
-    private ?User $creator = null;
 
     // -------------------- ÉQUIPES -----------------------
     #[ORM\ManyToMany(targetEntity: User::class)]
@@ -153,17 +152,6 @@ class Game
         return $this;
     }
 
-    // 🚨 GETTER/SETTER POUR LE CRÉATEUR
-    public function getCreator(): ?User
-    {
-        return $this->creator;
-    }
-
-    public function setCreator(?User $creator): static
-    {
-        $this->creator = $creator;
-        return $this;
-    }
 
     // -------------------- TEAM / ÉQUIPES -----------------------
     public function addPlayerToTeam(User $user, int $team): void

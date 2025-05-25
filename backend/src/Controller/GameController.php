@@ -49,7 +49,6 @@ class GameController extends AbstractController
             'createdAt' => $game->getCreatedAt()->format('Y-m-d H:i:s'),
             'status' => $game->getStatus(),
             'isClubMatch' => $game->isClubMatch(),
-            'creator' => $game->getCreator()?->getId(), 
         ];
 
         return $this->json($data);
