@@ -25,6 +25,7 @@ class GameController extends AbstractController
             'id' => $game->getId(),
             'date' => $game->getDate()->format('Y-m-d H:i:s'),
             'location' => $game->getLocation(),
+            'locationDetails' => $game->getLocationDetails(), // <- ajouté
             'maxPlayers' => $game->getMaxPlayers(),
             'playerCount' => $game->getPlayerCount(),
             'createdAt' => $game->getCreatedAt()->format('Y-m-d H:i:s'),
@@ -42,6 +43,7 @@ class GameController extends AbstractController
             'id' => $game->getId(),
             'date' => $game->getDate()->format('Y-m-d H:i:s'),
             'location' => $game->getLocation(),
+            'locationDetails' => $game->getLocationDetails(), // <- ajouté
             'maxPlayers' => $game->getMaxPlayers(),
             'playerCount' => $game->getPlayerCount(),
             'createdAt' => $game->getCreatedAt()->format('Y-m-d H:i:s'),
@@ -60,6 +62,7 @@ class GameController extends AbstractController
         $game = new Game();
         $game->setDate(new \DateTime($data['date']));
         $game->setLocation($data['location']);
+        $game->setLocationDetails($data['locationDetails'] ?? null); // <- ajouté
         $game->setMaxPlayers($data['maxPlayers']);
         $game->setPlayerCount($data['playerCount']);
         $game->setCreatedAt(new \DateTime());
@@ -79,6 +82,7 @@ class GameController extends AbstractController
 
         $game->setDate(new \DateTime($data['date']));
         $game->setLocation($data['location']);
+        $game->setLocationDetails($data['locationDetails'] ?? null); // <- ajouté
         $game->setMaxPlayers($data['maxPlayers']);
         $game->setPlayerCount($data['playerCount']);
         $game->setStatus($data['status']);
@@ -106,7 +110,6 @@ class GameController extends AbstractController
         EntityManagerInterface $em,
         UserRepository $userRepository
     ): JsonResponse {
-        // Version MVP : récupère userId dans la requête POST (plus tard = $this->getUser())
         $data = json_decode($request->getContent(), true);
         $userId = $data['userId'] ?? null;
         $team = $data['team'] ?? null;
@@ -120,7 +123,6 @@ class GameController extends AbstractController
             return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_NOT_FOUND);
         }
 
-        // Vérifie que le joueur n'est pas déjà dans ce match
         if (method_exists($game, 'getGamePlayers')) {
             foreach ($game->getGamePlayers() as $gp) {
                 if ($gp->getUser() === $user) {
@@ -129,12 +131,10 @@ class GameController extends AbstractController
             }
         }
 
-        // Vérifie si le match est complet
         if ($game->getPlayerCount() >= $game->getMaxPlayers()) {
             return $this->json(['error' => 'Le match est complet'], Response::HTTP_CONFLICT);
         }
 
-        // Création GamePlayer
         $gamePlayer = new GamePlayer();
         $gamePlayer->setGame($game);
         $gamePlayer->setUser($user);
@@ -142,7 +142,6 @@ class GameController extends AbstractController
 
         $em->persist($gamePlayer);
 
-        // Mets à jour le playerCount
         $game->setPlayerCount($game->getPlayerCount() + 1);
 
         $em->flush();
