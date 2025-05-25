@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../contexts/AuthContext';
-import { getGames } from '../services/api';
+import { getUserGames } from '../services/api';
 
 import fieldImage   from '../assets/field.jpg';
 import styxLogo     from '../assets/styx-logo.png';
@@ -31,12 +31,14 @@ export default function HomeScreen() {
   const scrollY    = useRef(new Animated.Value(0)).current;
   const arrowAnim  = useRef(new Animated.Value(0)).current;
   const navigation = useNavigation();
-  const { logout } = useContext(AuthContext);
+  const { logout, userInfo } = useContext(AuthContext);
 
-  const [games, setGames] = useState([]);
+  const [userGames, setUserGames] = useState([]);
   useEffect(() => {
-    getGames().then(setGames).catch(console.error);
-  }, []);
+    if (userInfo?.id) {
+      getUserGames(userInfo.id).then(setUserGames).catch(console.error);
+    }
+  }, [userInfo]);
 
   // Animation de la flèche
   useEffect(() => {
@@ -52,12 +54,6 @@ export default function HomeScreen() {
     inputRange: [0, 1],
     outputRange: [0, 10],
   });
-
-  const TOURNAMENTS = [
-    { name: 'Paris 16e', score: '8 vs 8', date: '18/02' },
-    { name: 'Argenteuil', score: '6 vs 6', date: '18/02' },
-    { name: 'St-Ouen',   score: '11 vs 11', date: '19/02' },
-  ];
 
   const scrollToMenu = () => {
     scrollRef.current?.scrollTo({ y: screenHeight, animated: true });
@@ -135,20 +131,29 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {/* Bloc MES MATCHS À VENIR */}
           <View style={styles.tournois}>
             <View style={styles.tournoisHeader}>
-              <Text style={styles.tournoisTitle}>Tournois</Text>
-              <TouchableOpacity><Text style={styles.tournoisMore}>Voir plus</Text></TouchableOpacity>
+              <Text style={styles.tournoisTitle}>Mes matchs à venir</Text>
+              <TouchableOpacity>
+                <Text style={styles.tournoisMore}>Voir plus</Text>
+              </TouchableOpacity>
             </View>
-            {TOURNAMENTS.map(t => (
-              <View key={t.name} style={styles.tournoisItem}>
-                <Text style={styles.tName}>{t.name}</Text>
-                <Text style={styles.tInfo}>{t.score}   {t.date}</Text>
-                <TouchableOpacity style={styles.tBtn}>
-                  <Text style={styles.tBtnText}>Détails</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+            {userGames.length === 0 ? (
+              <Text style={{ color: '#888' }}>Aucun match à venir.</Text>
+            ) : (
+              userGames.map((g) => (
+                <View key={g.id} style={styles.tournoisItem}>
+                  <Text style={styles.tName}>{g.location}</Text>
+                  <Text style={styles.tInfo}>
+                    {g.playerCount} / {g.maxPlayers} - {formatDate(g.date)}
+                  </Text>
+                  <TouchableOpacity style={styles.tBtn}>
+                    <Text style={styles.tBtnText}>Détails</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
           </View>
 
           <TouchableOpacity style={styles.logout} onPress={logout}>
@@ -159,6 +164,17 @@ export default function HomeScreen() {
       </View>
     </Animated.ScrollView>
   );
+}
+
+function formatDate(dateStr) {
+  const date = new Date(dateStr);
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
 }
 
 function Feature({ bg, label, subtitle, onPress }) {
