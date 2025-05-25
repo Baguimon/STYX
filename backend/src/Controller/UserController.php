@@ -143,4 +143,37 @@ class UserController extends AbstractController
 
         return $this->json($matches);
     }
+    #[Route('/api/clubs/{clubId}/set-poste/{userId}', name: 'api_set_user_poste', methods: ['POST'])]
+    public function setUserPoste(Request $request, UserRepository $userRepository, ClubRepository $clubRepository, EntityManagerInterface $em, int $clubId, int $userId): JsonResponse
+    {
+        $poste = $request->get('poste');
+        if (!$poste) {
+            return $this->json(['error' => 'Aucun poste précisé'], 400);
+        }
+
+        $club = $clubRepository->find($clubId);
+        $user = $userRepository->find($userId);
+
+        if (!$club || !$user) {
+            return $this->json(['error' => 'Club ou joueur introuvable'], 404);
+        }
+
+        // Vérifier que le user est bien dans ce club
+        if ($user->getClub()?->getId() !== $club->getId()) {
+            return $this->json(['error' => 'Ce joueur n\'est pas dans ce club'], 403);
+        }
+
+        // Vérifier que le poste n'est pas déjà pris (sauf si c'est lui-même)
+        $usersDuClub = $userRepository->findBy(['club' => $club]);
+        foreach ($usersDuClub as $membre) {
+            if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {
+                return $this->json(['error' => 'Poste déjà pris'], 409);
+            }
+        }
+
+        $user->setPoste($poste);
+        $em->flush();
+
+        return $this->json(['success' => true]);
+    }
 }
