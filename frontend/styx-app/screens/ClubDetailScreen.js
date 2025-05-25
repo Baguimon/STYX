@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions, Alert } from 'react-native';
-import { getClub, getClubMembers, setUserPoste, leaveClub } from '../services/api';
+import { getClub, getClubMembers, setUserPoste, leaveClub, transferCaptain } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
@@ -9,8 +9,7 @@ const defaultPlayerImage = require('../assets/player-default.png');
 const FIELD_IMAGE = require('../assets/field-club.jpg');
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-
-const Y_OFFSET = -0.09; 
+const Y_OFFSET = -0.1; 
 
 const POSTES_11 = [
   { key: 'GB', label: 'GB', x: 0.5, y: 0.94 + Y_OFFSET },
@@ -25,7 +24,6 @@ const POSTES_11 = [
   { key: 'BU', label: 'BU', x: 0.5, y: 0.17 + Y_OFFSET },
   { key: 'AD', label: 'AD', x: 0.7, y: 0.25 + Y_OFFSET },
 ];
-
 
 export default function ClubDetailScreen({ route }) {
   const clubId = route?.params?.clubId;
@@ -49,16 +47,22 @@ export default function ClubDetailScreen({ route }) {
       .finally(() => setLoading(false));
   }, [clubId]);
 
-  // Trouve le joueur assigné à chaque poste
+  // Capitaine
+  const captainId = club?.clubCaptain?.id || club?.clubCaptain;
+
+  // Trie pour mettre le capitaine en haut
+  const sortedMembers = [...members].sort((a, b) => {
+    if (a.id === captainId) return -1;
+    if (b.id === captainId) return 1;
+    return 0;
+  });
+
   const getPlayerForPoste = (posteKey) =>
     members.find(u => u.poste === posteKey);
 
-  // IDs des membres titulaires (sur le terrain)
   const fieldMemberIds = POSTES_11.map(pos => getPlayerForPoste(pos.key)?.id).filter(Boolean);
-  // Les remplaçants sont ceux qui ont poste === 'REMPLACANT'
   const remplacants = members.filter(m => m.poste === 'REMPLACANT');
 
-  // Sélection d'un poste terrain
   const handleSelectPoste = async (posteKey) => {
     if (!userInfo?.id) return;
     try {
@@ -75,7 +79,6 @@ export default function ClubDetailScreen({ route }) {
     }
   };
 
-  // Sélection/removal remplaçant
   const handleToggleRemplacant = async () => {
     if (!userInfo?.id) return;
     const isRemplacant = members.find(m => m.id === userInfo.id && m.poste === 'REMPLACANT');
@@ -93,21 +96,63 @@ export default function ClubDetailScreen({ route }) {
     }
   };
 
-  // Quitter le club
   const handleLeave = async () => {
     try {
       const userId = userInfo?.id;
-      await leaveClub(userId, club.id);
-      Alert.alert('Tu as quitté le club');
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'NoClubScreen' }]
-      });
+      const isCaptain = captainId === userId;
+      const otherMembers = members.filter(m => m.id !== userId);
+
+      if (isCaptain && otherMembers.length > 0) {
+        // Choix du nouveau capitaine
+        const options = otherMembers.map(m => m.username || m.nom);
+        options.push('Annuler');
+        const selectNewCaptain = async (newCaptainIdx) => {
+          if (newCaptainIdx < 0 || newCaptainIdx >= otherMembers.length) return; // Cancel
+          const newCaptainId = otherMembers[newCaptainIdx].id;
+          try {
+            await transferCaptain(club.id, newCaptainId);
+            await leaveClub(userId, club.id);
+            Alert.alert('Capitaine transféré', 'Tu as quitté le club.');
+            navigation.reset({ index: 0, routes: [{ name: 'NoClubScreen' }] });
+          } catch (e) {
+            Alert.alert('Erreur', "Impossible de transférer le capitanat ou quitter le club");
+          }
+        };
+        if (Platform.OS === 'ios') {
+          ActionSheetIOS.showActionSheetWithOptions(
+            {
+              options,
+              cancelButtonIndex: options.length - 1,
+              title: "Choisis le nouveau capitaine du club :"
+            },
+            selectNewCaptain
+          );
+        } else {
+          // Android : Alert avec boutons
+          Alert.alert(
+            "Choisis le nouveau capitaine",
+            "",
+            otherMembers.map((m, i) => ({
+              text: `${m.username || m.nom}`,
+              onPress: () => selectNewCaptain(i)
+            })).concat([{ text: 'Annuler', style: 'cancel' }])
+          );
+        }
+      } else {
+        // Si pas capitaine ou plus de membres, leave normal (le club sera supprimé côté back si besoin)
+        await leaveClub(userId, club.id);
+        Alert.alert('Tu as quitté le club');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'NoClubScreen' }]
+        });
+      }
     } catch (e) {
       Alert.alert('Erreur', "Impossible de quitter le club");
       console.log('Erreur leaveClub :', e?.response?.data, e.message, e);
     }
   };
+
 
   if (loading) {
     return (
@@ -125,7 +170,6 @@ export default function ClubDetailScreen({ route }) {
     );
   }
 
-  // Vérifie si user sur le terrain ou non
   const isUserOnField = fieldMemberIds.includes(userInfo?.id);
   const isUserRemplacant = members.find(m => m.id === userInfo.id && m.poste === 'REMPLACANT');
 
@@ -173,16 +217,13 @@ export default function ClubDetailScreen({ route }) {
             {/* COMPOSITION */}
             <Text style={styles.sectionTitle}>Composition</Text>
             <View style={styles.compoContainer}>
-              {/* Terrain en fond, position absolute */}
               <Image
                 source={FIELD_IMAGE}
                 style={styles.terrainBackground}
-                resizeMode="cover" // ou "contain" selon la taille, mais "cover" donne le rendu le + immersif
+                resizeMode="cover"
               />
-              {/* Overlay facultatif pour assombrir le terrain, décommente si tu veux */}
-              {/* <View style={styles.terrainOverlay} /> */}
+              <View style={styles.terrainOverlay} />
 
-              {/* Joueurs positionnés au-dessus du terrain */}
               {POSTES_11.map(slot => {
                 const player = getPlayerForPoste(slot.key);
                 const isLibre = !player;
@@ -211,28 +252,33 @@ export default function ClubDetailScreen({ route }) {
                       }
                     }}
                   >
-                    <Image
-                      source={player?.image ? { uri: player.image } : defaultPlayerImage}
-                      style={styles.playerAvatar}
-                    />
+                    <View style={{position:'relative'}}>
+                      <Image
+                        source={player?.image ? { uri: player.image } : defaultPlayerImage}
+                        style={styles.playerAvatar}
+                      />
+                      {/* Capitaine point */}
+                      {player && captainId && player.id === captainId && (
+                        <View style={styles.captainDotField} />
+                      )}
+                    </View>
                     <Text style={styles.playerOnFieldText}>{slot.label}</Text>
                     <View style={styles.playerNameTag}>
-                    <Text
-                      style={[
-                        styles.playerNameOnField,
-                        { color: isLibre ? '#fff' : '#00D9FF' }
-                      ]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {isLibre ? 'Libre' : (player.username || player.nom)}
-                    </Text>
-                  </View>
+                      <Text
+                        style={[
+                          styles.playerNameOnField,
+                          { color: isLibre ? '#fff' : '#00D9FF' }
+                        ]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {isLibre ? 'Libre' : (player.username || player.nom)}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
             </View>
-
 
             {/* REMPLAÇANTS */}
             <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
@@ -245,8 +291,6 @@ export default function ClubDetailScreen({ route }) {
                 ]}
                 onPress={async () => {
                   try {
-                    // Si je suis déjà remplaçant => me retirer (poste null)
-                    // Si j'étais sur un poste terrain, il doit déjà être à jour car il n'y a pas de poste = 'REMPLACANT' ET terrain
                     await setUserPoste(clubId, userInfo.id, isUserRemplacant ? null : 'REMPLACANT');
                     setMembers(prev =>
                       prev.map(m =>
@@ -290,16 +334,24 @@ export default function ClubDetailScreen({ route }) {
                 ))}
             </View>
 
-
             {/* LISTE JOUEURS */}
-            <Text style={styles.sectionTitle}>Joueurs</Text>
+            <View style={styles.sectionTitleContainer}>
+              <View style={styles.sectionTitleBar} />
+              <Text style={styles.sectionTitle}>Joueurs</Text>
+            </View>
             <View>
-              {members.map(item => (
+              {sortedMembers.map(item => (
                 <View key={item.id} style={styles.playerCard}>
-                  <Image
-                    source={item.image ? { uri: item.image } : defaultPlayerImage}
-                    style={styles.playerListAvatar}
-                  />
+                  <View style={{ position: 'relative', width: 45, height: 45, marginRight: 16 }}>
+                    <Image
+                      source={item.image ? { uri: item.image } : defaultPlayerImage}
+                      style={styles.playerListAvatar}
+                    />
+                    {/* Capitaine point collé à l’avatar */}
+                    {item.id === captainId && (
+                      <View style={styles.captainDotList} />
+                    )}
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.playerName}>{item.username || item.nom}</Text>
                     <Text style={styles.playerPosteList}>Poste : {item.poste || '-'}</Text>
@@ -452,7 +504,7 @@ const styles = StyleSheet.create({
   },
   terrainOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,10,0.25)', // overlay foncé (optionnel)
+    backgroundColor: 'rgba(0,0,0,0.38)', // 0.38 = assombri, tu peux tester plus (0.5 par ex.)
     zIndex: 1,
   },
 
@@ -601,4 +653,51 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 17,
   },
+  captainDotField: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 13,
+    height: 13,
+    borderRadius: 8,
+    backgroundColor: '#e23030',
+    borderWidth: 2,
+    borderColor: '#fff',
+    zIndex: 10,
+  },
+  captainDotList: {
+    position: 'absolute',
+    bottom: -3,   
+    right: -3,    
+    width: 13,
+    height: 13,
+    borderRadius: 8,
+    backgroundColor: '#e23030',
+    borderWidth: 2,
+    borderColor: '#fff',
+    zIndex: 10,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 14,
+    marginBottom: 6,
+  },
+  sectionTitleBar: {
+    width: 7,
+    height: 28,
+    backgroundColor: '#00D9FF',
+    borderRadius: 3,
+    marginRight: 12,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 23,
+    letterSpacing: 1,
+    textShadowColor: '#232346',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+
 });

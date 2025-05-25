@@ -141,5 +141,32 @@ class ClubController extends AbstractController
 
         return $this->json(['success' => true]);
     }
+    #[Route('/{clubId}/transfer-captain', name: 'transfer_captain', methods: ['POST'])]
+    public function transferCaptain(
+        $clubId,
+        Request $request,
+        ClubRepository $clubRepository,
+        UserRepository $userRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        $newCaptainId = $data['newCaptainId'] ?? null;
+        $club = $clubRepository->find($clubId);
+        $newCaptain = $userRepository->find($newCaptainId);
+
+        if (!$club || !$newCaptain) {
+            return $this->json(['error' => 'Club ou utilisateur non trouvé'], 404);
+        }
+        if (!$club->getMembers()->contains($newCaptain)) {
+            return $this->json(['error' => 'Ce membre ne fait pas partie du club'], 400);
+        }
+
+        $club->setClubCaptain($newCaptain);
+        $em->persist($club);
+        $em->flush();
+
+        return $this->json(['success' => true, 'newCaptainId' => $newCaptain->getId()]);
+    }
+
 
 }

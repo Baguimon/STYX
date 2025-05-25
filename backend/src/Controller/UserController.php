@@ -74,7 +74,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/users/{id}/leave-club', name: 'user_leave_club', methods: ['POST'])]
-    public function leaveClub($id, UserRepository $userRepository, ClubRepository $clubRepository, EntityManagerInterface $em): JsonResponse
+    public function leaveClub($id, UserRepository $userRepository, ClubRepository $clubRepository, EntityManagerInterface $em, Request $request): JsonResponse
     {
         $user = $userRepository->find($id);
         if (!$user) {
@@ -88,31 +88,48 @@ class UserController extends AbstractController
 
         // 1. Retirer le user du club
         $user->setClub(null);
+        $em->persist($user);
         $em->flush();
 
         $em->refresh($club);
-        $remainingMembers = $club->getMembers();
+        $remainingMembers = $club->getMembers()->toArray();
 
-        // 2. Si le user qui part était capitaine, on supprime le club et on retire tous les membres
-        if ($club->getClubCaptain() && $club->getClubCaptain()->getId() === $id) {
-            foreach ($remainingMembers as $member) {
-                $member->setClub(null);
+        // SI user était capitaine
+        if ($club->getClubCaptain() && $club->getClubCaptain()->getId() == $id) {
+            if (count($remainingMembers) === 0) {
+                // Personne d'autre : supprimer le club
+                $em->remove($club);
+                $em->flush();
+                return $this->json(['success' => true, 'message' => 'Club supprimé car plus aucun membre.']);
+            } else {
+                // Il reste des membres : transférer le capitanat
+                // --- Option 1 : automatique (au plus ancien) ---
+                usort($remainingMembers, fn($a, $b) => $a->getCreatedAt() <=> $b->getCreatedAt());
+                $newCaptain = $remainingMembers[0];
+
+                $club->setClubCaptain($newCaptain);
+                $em->persist($club);
+                $em->flush();
+
+                return $this->json([
+                    'success' => true,
+                    'message' => 'Capitanat transféré à ' . ($newCaptain->getUsername() ?? $newCaptain->getEmail()),
+                    'newCaptainId' => $newCaptain->getId()
+                ]);
             }
-            $em->remove($club);
-            $em->flush();
-            return $this->json(['success' => true, 'message' => 'Club supprimé car le capitaine a quitté le club.']);
         }
 
-        // 3. S'il n'y a plus de membres (sécurité), supprimer le club
+        // S'il n'y a plus de membres (sécurité), supprimer le club
         if (count($remainingMembers) === 0) {
             $em->remove($club);
             $em->flush();
             return $this->json(['success' => true, 'message' => 'Club supprimé, tu étais le dernier membre !']);
         }
 
-        // 4. Sinon, le membre a juste quitté
+        // Sinon, simple départ
         return $this->json(['success' => true]);
     }
+
 
     // ------- LISTE DES MATCHS REJOINTS PAR L'UTILISATEUR -------
     #[Route('/users/{id}/games', name: 'user_games', methods: ['GET'])]
