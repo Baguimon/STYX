@@ -10,7 +10,7 @@ const FIELD_IMAGE = require('../assets/field-club.jpg');
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const Y_OFFSET = -0.09; 
+const Y_OFFSET = -0.1; 
 
 const POSTES_11 = [
   { key: 'GB', label: 'GB', x: 0.5, y: 0.94 + Y_OFFSET },
@@ -173,14 +173,15 @@ export default function ClubDetailScreen({ route }) {
             {/* COMPOSITION */}
             <Text style={styles.sectionTitle}>Composition</Text>
             <View style={styles.compoContainer}>
-              {/* Terrain en fond, position absolute */}
+              {/* Terrain */}
               <Image
                 source={FIELD_IMAGE}
                 style={styles.terrainBackground}
-                resizeMode="cover" // ou "contain" selon la taille, mais "cover" donne le rendu le + immersif
+                resizeMode="cover"
               />
-              {/* Overlay facultatif pour assombrir le terrain, décommente si tu veux */}
-              {/* <View style={styles.terrainOverlay} /> */}
+
+              {/* Overlay noir pour assombrir */}
+              <View style={styles.terrainOverlay} />
 
               {/* Joueurs positionnés au-dessus du terrain */}
               {POSTES_11.map(slot => {
@@ -452,7 +453,7 @@ const styles = StyleSheet.create({
   },
   terrainOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,10,0.25)', // overlay foncé (optionnel)
+    backgroundColor: 'rgba(0,0,0,0.38)', // 0.38 = assombri, tu peux tester plus (0.5 par ex.)
     zIndex: 1,
   },
 
