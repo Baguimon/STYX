@@ -99,59 +99,18 @@ export default function ClubDetailScreen({ route }) {
   const handleLeave = async () => {
     try {
       const userId = userInfo?.id;
-      const isCaptain = captainId === userId;
-      const otherMembers = members.filter(m => m.id !== userId);
-
-      if (isCaptain && otherMembers.length > 0) {
-        // Choix du nouveau capitaine
-        const options = otherMembers.map(m => m.username || m.nom);
-        options.push('Annuler');
-        const selectNewCaptain = async (newCaptainIdx) => {
-          if (newCaptainIdx < 0 || newCaptainIdx >= otherMembers.length) return; // Cancel
-          const newCaptainId = otherMembers[newCaptainIdx].id;
-          try {
-            await transferCaptain(club.id, newCaptainId);
-            await leaveClub(userId, club.id);
-            Alert.alert('Capitaine transféré', 'Tu as quitté le club.');
-            navigation.reset({ index: 0, routes: [{ name: 'NoClubScreen' }] });
-          } catch (e) {
-            Alert.alert('Erreur', "Impossible de transférer le capitanat ou quitter le club");
-          }
-        };
-        if (Platform.OS === 'ios') {
-          ActionSheetIOS.showActionSheetWithOptions(
-            {
-              options,
-              cancelButtonIndex: options.length - 1,
-              title: "Choisis le nouveau capitaine du club :"
-            },
-            selectNewCaptain
-          );
-        } else {
-          // Android : Alert avec boutons
-          Alert.alert(
-            "Choisis le nouveau capitaine",
-            "",
-            otherMembers.map((m, i) => ({
-              text: `${m.username || m.nom}`,
-              onPress: () => selectNewCaptain(i)
-            })).concat([{ text: 'Annuler', style: 'cancel' }])
-          );
-        }
-      } else {
-        // Si pas capitaine ou plus de membres, leave normal (le club sera supprimé côté back si besoin)
-        await leaveClub(userId, club.id);
-        Alert.alert('Tu as quitté le club');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'NoClubScreen' }]
-        });
-      }
+      await leaveClub(userId); // <= juste ça !
+      Alert.alert('Tu as quitté le club');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'NoClubScreen' }]
+      });
     } catch (e) {
       Alert.alert('Erreur', "Impossible de quitter le club");
       console.log('Erreur leaveClub :', e?.response?.data, e.message, e);
     }
   };
+
 
 
   if (loading) {
