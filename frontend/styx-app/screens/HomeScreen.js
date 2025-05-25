@@ -150,7 +150,7 @@ export default function HomeScreen() {
             <View style={styxV3.upcomingBlock}>
               <View style={styxV3.upcomingHeader}>
                 <Text style={styxV3.upcomingTitle}>Mes matchs à venir</Text>
-                <TouchableOpacity style={styxV3.seeMoreBtn} onPress={() => navigation.navigate('UpcomingGames')}>
+                <TouchableOpacity style={styxV3.seeMoreBtn} onPress={() => navigation.navigate('MyGames')}>
                   <Text style={styxV3.seeMoreText}>Voir plus</Text>
                 </TouchableOpacity>
               </View>
@@ -173,7 +173,8 @@ export default function HomeScreen() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styxV3.matchMain}>{formatDateFR(g.date)}</Text>
-                      <Text style={styxV3.matchSub}>{g.location}</Text>
+                      {/* Adresse sur une seule ligne */}
+                      <Text style={styxV3.matchSub} numberOfLines={1}>{g.location}</Text>
                     </View>
                     <View style={styxV3.rightInfo}>
                       <Text style={styxV3.matchPlayers}>{g.playerCount} / {g.maxPlayers}</Text>
@@ -183,7 +184,7 @@ export default function HomeScreen() {
                 ))
               )}
             </View>
-            {/* On met un espace en bas pour que le footer ne chevauche rien */}
+            {/* Espace en bas pour que le footer ne chevauche rien */}
             <View style={{ height: 38 }} />
           </View>
         </Animated.ScrollView>
@@ -379,6 +380,8 @@ const styxV3 = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 0,
+    // Ajout du maxWidth si tu veux vraiment couper pareil partout :
+    // maxWidth: 160,
   },
   rightInfo: {
     alignItems: 'flex-end',
