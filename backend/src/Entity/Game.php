@@ -38,6 +38,10 @@ class Game
     #[ORM\Column]
     private ?bool $isClubMatch = null;
 
+    // 🚨 Ajoute ce champ pour le créateur (nullable d'abord)
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true)] // Passe à false après migration et update des anciennes lignes !
+
     // -------------------- ÉQUIPES -----------------------
     #[ORM\ManyToMany(targetEntity: User::class)]
     #[ORM\JoinTable(name: "game_team1_players")]
@@ -147,6 +151,7 @@ class Game
         $this->isClubMatch = $isClubMatch;
         return $this;
     }
+
 
     // -------------------- TEAM / ÉQUIPES -----------------------
     public function addPlayerToTeam(User $user, int $team): void

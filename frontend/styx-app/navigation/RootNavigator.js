@@ -8,7 +8,10 @@ import MainNavigator from './MainNavigator';
 import { AuthContext } from '../contexts/AuthContext';
 
 // === Ajoute cette ligne pour la screen "UpcomingGameScreen" ===
-import UpcomingGameScreen from '../screens/UpcomingGameScreen';
+
+// APRÈS (corrige ici)
+import MyGamesScreen from '../screens/MyGamesScreen';
+
 
 // (Optionnel) Ajoute GameDetails si tu as une page détail :
 import GameDetailsScreen from '../screens/GameDetailsScreen';
@@ -39,7 +42,7 @@ export default function RootNavigator() {
 
       {/* 4) UpcomingGames accessible en dehors du MainNavigator */}
       {isAuthenticated && (
-        <Stack.Screen name="UpcomingGames" component={UpcomingGameScreen} />
+        <Stack.Screen name="MyGames" component={MyGamesScreen} />
       )}
 
       {/* 5) (Optionnel) Détails d'un match */}
