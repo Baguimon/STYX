@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions, Alert } from 'react-native';
-import { getClub, getClubMembers, setUserPoste } from '../services/api'; // ← setUserPoste à créer !
+import { getClub, getClubMembers, setUserPoste, leaveClub } from '../services/api'; // setUserPoste & leaveClub API !
 import { AuthContext } from '../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
 const defaultClubImage = require('../assets/club-default.png');
 const defaultPlayerImage = require('../assets/player-default.png');
-const FIELD_IMAGE = require('../assets/field.jpg'); // Image terrain
+const FIELD_IMAGE = require('../assets/field.jpg'); // Ton image de terrain
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -29,7 +30,8 @@ export default function ClubDetailScreen({ route }) {
   const [loading, setLoading] = useState(true);
   const [club, setClub] = useState(null);
   const [members, setMembers] = useState([]);
-  const { userInfo } = useContext(AuthContext); // userInfo doit contenir id
+  const { userInfo } = useContext(AuthContext);
+  const navigation = useNavigation();
 
   useEffect(() => {
     setLoading(true);
@@ -57,18 +59,31 @@ export default function ClubDetailScreen({ route }) {
     if (!userInfo?.id) return;
     try {
       await setUserPoste(clubId, userInfo.id, posteKey);
-      // Mettre à jour localement : change le poste de ce joueur
+      // Met à jour le state local pour voir le changement tout de suite
       setMembers(prev =>
         prev.map(m =>
           m.id === userInfo.id ? { ...m, poste: posteKey } : (m.poste === posteKey ? { ...m, poste: null } : m)
         )
       );
     } catch (e) {
-      if (e.response?.data?.error) {
-        Alert.alert('Erreur', e.response.data.error);
-      } else {
-        Alert.alert('Erreur', 'Impossible de prendre ce poste');
-      }
+      Alert.alert('Erreur', e?.response?.data?.error || 'Impossible de prendre ce poste');
+    }
+  };
+
+
+  // Quitter le club
+  const handleLeave = async () => {
+    try {
+      const userId = userInfo?.id;
+      await leaveClub(userId, club.id);
+      Alert.alert('Tu as quitté le club');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'NoClubScreen' }]
+      });
+    } catch (e) {
+      Alert.alert('Erreur', "Impossible de quitter le club");
+      console.log('Erreur leaveClub :', e?.response?.data, e.message, e);
     }
   };
 
@@ -212,10 +227,28 @@ export default function ClubDetailScreen({ route }) {
             <TouchableOpacity style={styles.addBtn}>
               <Text style={styles.addBtnText}>Ajouter des joueurs à votre club</Text>
             </TouchableOpacity>
+
+            {/* -- BOUTON QUITTER LE CLUB -- */}
+            <TouchableOpacity
+              style={{
+                marginTop: 36,
+                marginBottom: 36,
+                backgroundColor: '#d00',
+                borderRadius: 24,
+                paddingVertical: 18,
+                alignItems: 'center',
+                width: '94%',
+                alignSelf: 'center',
+              }}
+              onPress={handleLeave}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
+                Quitter le club
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
 
-        {/* Matches à venir */}
         {activeTab === 'matches' && (
           <View style={{ padding: 24 }}>
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center' }}>
@@ -413,7 +446,7 @@ const styles = StyleSheet.create({
   },
   addBtn: {
     marginTop: 18,
-    marginBottom: 36,
+    marginBottom: 10,
     backgroundColor: '#00D9FF',
     borderRadius: 24,
     paddingVertical: 15,
