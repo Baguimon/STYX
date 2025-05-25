@@ -45,11 +45,6 @@ export const getGames = async () => {
   return response.data;
 };
 
-
-export const getClubs = async () => {
-  const response = await api.get('/clubs');
-}
-
 export const getGameById = async (id) => {
   const response = await api.get(`/games/${id}`);
   return response.data;
@@ -73,6 +68,11 @@ export const getClub = async (clubId) => {
   const response = await api.get(`/clubs/${clubId}`);
   return response.data;
 };
+
+export const getClubs = async () => {
+  const response = await api.get('/clubs');
+  return response.data;
+}
 
 export const getClubMembers = async (clubId) => {
   const response = await api.get(`/clubs/${clubId}/members`);
