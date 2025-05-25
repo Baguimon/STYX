@@ -6,7 +6,7 @@ import { AuthContext } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { getUserGames } from '../services/api';
 import matchIcon from '../assets/match-icon.png';
-import { Ionicons } from '@expo/vector-icons'; // icône pour la cloche et l'étoile orga
+import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -33,14 +33,13 @@ export default function MyGamesScreen() {
 
   const toggleNotif = (id) => {
     setNotifState((prev) => ({ ...prev, [id]: !prev[id] }));
-    // Tu peux aussi brancher une vraie logique/alerte
+    // Ajoute ta vraie logique de notif ici si besoin
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.headerBar}>
-        {/* Bouton retour */}
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={26} color="#fff" />
         </TouchableOpacity>
@@ -74,9 +73,6 @@ export default function MyGamesScreen() {
                 game={item}
                 notifOn={!!notifState[item.id]}
                 onToggleNotif={() => toggleNotif(item.id)}
-                // <--- À activer si tu as creatorId dans le back
-                // isOrganizer={item.creatorId === userInfo.id}
-                isOrganizer={false} // temporaire !
                 onPress={() => navigation.navigate('GameDetails', { game: item })}
               />
             )}
@@ -95,10 +91,13 @@ export default function MyGamesScreen() {
   );
 }
 
-function GameCard({ game, notifOn, onToggleNotif, isOrganizer, onPress }) {
+function GameCard({ game, notifOn, onToggleNotif, onPress }) {
   let displayLocation = game.location?.length > 24
     ? game.location.slice(0, 24) + '...'
     : game.location;
+
+  // Couleur différente selon la team
+  const teamColor = game.team === 2 ? '#d94141' : '#2170b9';
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.86} onPress={onPress}>
@@ -108,14 +107,10 @@ function GameCard({ game, notifOn, onToggleNotif, isOrganizer, onPress }) {
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
           <Text style={styles.cardTitle} numberOfLines={1}>{displayLocation || "Lieu inconnu"}</Text>
-          {/* Badge organisateur */}
-          {isOrganizer && (
-            <Ionicons name="star" size={16} color="#ffd670" style={{ marginLeft: 4, marginBottom: 2 }} />
-          )}
         </View>
         <Text style={styles.cardDate}>{formatDateFR(game.date)}</Text>
         <View style={styles.teamNotifRow}>
-          <View style={styles.teamLabel}>
+          <View style={[styles.teamLabel, { backgroundColor: teamColor }]}>
             <Text style={styles.teamLabelText}>Équipe {game.team ?? '?'}</Text>
           </View>
           <TouchableOpacity style={styles.notifBtn} onPress={onToggleNotif}>
@@ -161,7 +156,7 @@ const styles = StyleSheet.create({
   headerBar: {
     paddingTop: 38,
     paddingBottom: 16,
-    backgroundColor: "#192230",
+    backgroundColor: "#272930",
     alignItems: "center",
     flexDirection: 'row',
     justifyContent: 'center',
@@ -179,12 +174,13 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     letterSpacing: 0.6,
-    marginTop: 2,
+    marginTop: 22,
+    marginBottom: -8,
     marginLeft: 0,
   },
   tabsRow: {
     flexDirection: "row",
-    backgroundColor: "#161d26",
+    backgroundColor: "#272930",
     paddingHorizontal: 0,
     paddingTop: 4,
   },
@@ -197,7 +193,7 @@ const styles = StyleSheet.create({
   },
   tabBtnActive: {
     borderBottomColor: "#41B2D1",
-    backgroundColor: "#151d23",
+    backgroundColor: "#272930",
   },
   tabText: {
     color: "#6d7683",
@@ -246,7 +242,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontWeight: "bold",
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     maxWidth: width * 0.39,
     marginBottom: 0,
   },
@@ -263,7 +259,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   teamLabel: {
-    backgroundColor: "#2170b9",
     borderRadius: 11,
     alignSelf: "flex-start",
     paddingHorizontal: 10,
