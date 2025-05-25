@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Repository\GamePlayerRepository;
 
 #[Route('/api', name: 'api_')]
 class UserController extends AbstractController
@@ -113,5 +114,33 @@ class UserController extends AbstractController
         return $this->json(['success' => true]);
     }
 
+    // ------- LISTE DES MATCHS REJOINTS PAR L'UTILISATEUR -------
+    #[Route('/users/{id}/games', name: 'user_games', methods: ['GET'])]
+    public function getUserGames($id, UserRepository $userRepository): JsonResponse
+    {
+        $user = $userRepository->find($id);
+        if (!$user) {
+            return $this->json(['error' => 'User not found'], 404);
+        }
 
+        // Parcours tous les GamePlayers liés à l'utilisateur
+        $matches = [];
+        foreach ($user->getGamePlayers() as $gp) {
+            $game = $gp->getGame();
+            if ($game) {
+                $matches[] = [
+                    'id'         => $game->getId(),
+                    'date'       => $game->getDate()?->format('Y-m-d H:i:s'),
+                    'location'   => $game->getLocation(),
+                    'maxPlayers' => $game->getMaxPlayers(),
+                    'playerCount'=> $game->getPlayerCount(),
+                    'status'     => $game->getStatus(),
+                    'isClubMatch'=> $game->isClubMatch(),
+                    'team'       => $gp->getTeam(),
+                ];
+            }
+        }
+
+        return $this->json($matches);
+    }
 }
