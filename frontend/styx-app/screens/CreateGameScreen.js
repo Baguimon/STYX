@@ -58,6 +58,7 @@ export default function CreateGameScreen() {
 
   const [form, setForm] = useState({
     location: '',
+    locationDetails: '', // ← ajouté
     latitude: null,
     longitude: null,
     maxPlayers: '',
@@ -75,6 +76,7 @@ export default function CreateGameScreen() {
       const payload = {
         date: date.toISOString(),
         location: form.location,
+        locationDetails: form.locationDetails, // ← ajouté
         latitude: form.latitude,
         longitude: form.longitude,
         maxPlayers: parseInt(form.maxPlayers, 10),
@@ -227,6 +229,13 @@ export default function CreateGameScreen() {
               handleChange('longitude', lon);
             }}
           />
+          <TextInput
+            style={[styles.input, {marginTop: 18}]}
+            placeholder="Détail du lieu (ex : Parc, terrain, salle...)"
+            placeholderTextColor="#888"
+            value={form.locationDetails}
+            onChangeText={text => handleChange('locationDetails', text)}
+          />
         </View>
       ),
     },
@@ -336,6 +345,12 @@ export default function CreateGameScreen() {
             <Text style={styles.summaryLabel}>Lieu</Text>
             <Text style={styles.summaryValue}>{form.location}</Text>
           </View>
+          {form.locationDetails ? (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Détail</Text>
+              <Text style={styles.summaryValue}>{form.locationDetails}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Joueurs</Text>
