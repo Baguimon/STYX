@@ -59,19 +59,17 @@ export default function ClubDetailScreen({ route }) {
     if (!userInfo?.id) return;
     try {
       await setUserPoste(clubId, userInfo.id, posteKey);
+      // Met à jour le state local pour voir le changement tout de suite
       setMembers(prev =>
         prev.map(m =>
           m.id === userInfo.id ? { ...m, poste: posteKey } : (m.poste === posteKey ? { ...m, poste: null } : m)
         )
       );
     } catch (e) {
-      if (e.response?.data?.error) {
-        Alert.alert('Erreur', e.response.data.error);
-      } else {
-        Alert.alert('Erreur', 'Impossible de prendre ce poste');
-      }
+      Alert.alert('Erreur', e?.response?.data?.error || 'Impossible de prendre ce poste');
     }
   };
+
 
   // Quitter le club
   const handleLeave = async () => {

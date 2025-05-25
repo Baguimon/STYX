@@ -96,5 +96,8 @@ export const leaveClub = async (userId) => {
   return api.post(`/users/${userId}/leave-club`);
 };
 
+export const setUserPoste = async (clubId, userId, poste) => {
+  return api.post(`/clubs/${clubId}/set-poste/${userId}`, { poste });
+};
 
 export default api;
