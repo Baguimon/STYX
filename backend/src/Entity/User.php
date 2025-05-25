@@ -40,7 +40,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100)]
     private ?string $level = null;
 
-    // ---- Relation GamePlayer (tous les matchs rejoints) ----
     /**
      * @var Collection<int, GamePlayer>
      */
@@ -133,8 +132,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->level = $level;
         return $this;
     }
-  
-  
+
     // ---- Partie pour l'interface UserInterface ----
 
     public function getRoles(): array
