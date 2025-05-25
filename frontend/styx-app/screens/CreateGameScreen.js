@@ -58,7 +58,7 @@ export default function CreateGameScreen() {
 
   const [form, setForm] = useState({
     location: '',
-    locationDetails: '', // ← ajouté
+    locationDetails: '',
     latitude: null,
     longitude: null,
     maxPlayers: '',
@@ -76,7 +76,7 @@ export default function CreateGameScreen() {
       const payload = {
         date: date.toISOString(),
         location: form.location,
-        locationDetails: form.locationDetails, // ← ajouté
+        locationDetails: form.locationDetails,
         latitude: form.latitude,
         longitude: form.longitude,
         maxPlayers: parseInt(form.maxPlayers, 10),
@@ -230,7 +230,7 @@ export default function CreateGameScreen() {
             }}
           />
           <TextInput
-            style={[styles.input, {marginTop: 18}]}
+            style={[styles.input, { marginTop: 18 }]}
             placeholder="Détail du lieu (ex : Parc, terrain, salle...)"
             placeholderTextColor="#888"
             value={form.locationDetails}
@@ -627,3 +627,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
