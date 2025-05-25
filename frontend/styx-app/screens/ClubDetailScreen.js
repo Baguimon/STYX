@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const defaultClubImage = require('../assets/club-default.png');
 const defaultPlayerImage = require('../assets/player-default.png');
-const FIELD_IMAGE = require('../assets/field.jpg');
+const FIELD_IMAGE = require('../assets/field-club.jpg');
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -169,13 +169,21 @@ export default function ClubDetailScreen({ route }) {
           <View style={{ padding: 16 }}>
             {/* COMPOSITION */}
             <Text style={styles.sectionTitle}>Composition</Text>
-            <View style={styles.fieldWrapper}>
-              <Image source={FIELD_IMAGE} style={styles.fieldImage} />
+            <View style={styles.compoContainer}>
+              {/* Terrain en fond, position absolute */}
+              <Image
+                source={FIELD_IMAGE}
+                style={styles.terrainBackground}
+                resizeMode="cover" // ou "contain" selon la taille, mais "cover" donne le rendu le + immersif
+              />
+              {/* Overlay facultatif pour assombrir le terrain, décommente si tu veux */}
+              {/* <View style={styles.terrainOverlay} /> */}
+
+              {/* Joueurs positionnés au-dessus du terrain */}
               {POSTES_11.map(slot => {
                 const player = getPlayerForPoste(slot.key);
                 const isLibre = !player;
                 const isUser = player && player.id === userInfo?.id;
-
                 return (
                   <TouchableOpacity
                     key={slot.key}
@@ -184,15 +192,20 @@ export default function ClubDetailScreen({ route }) {
                       {
                         left: `${slot.x * 100}%`,
                         top: `${slot.y * 100}%`,
-                        marginLeft: -25,
-                        marginTop: -25,
+                        marginLeft: -AVATAR_SIZE / 2,
+                        marginTop: -AVATAR_SIZE / 2,
                         borderColor: isUser ? '#00D9FF' : 'transparent',
                         borderWidth: isUser ? 2 : 0,
+                        zIndex: 2,
                       }
                     ]}
                     disabled={!isLibre && !isUser}
                     onPress={() => {
-                      if (isLibre || isUser) handleSelectPoste(slot.key);
+                      if (isLibre) {
+                        handleSelectPoste(slot.key);
+                      } else if (isUser) {
+                        handleSelectPoste(null);
+                      }
                     }}
                   >
                     <Image
@@ -200,13 +213,23 @@ export default function ClubDetailScreen({ route }) {
                       style={styles.playerAvatar}
                     />
                     <Text style={styles.playerOnFieldText}>{slot.label}</Text>
-                    <Text style={{ color: isLibre ? '#00D9FF' : '#fff', fontSize: 14, fontWeight: 'bold', marginTop: 2 }}>
+                    <View style={styles.playerNameTag}>
+                    <Text
+                      style={[
+                        styles.playerNameOnField,
+                        { color: isLibre ? '#fff' : '#00D9FF' }
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
                       {isLibre ? 'Libre' : (player.username || player.nom)}
                     </Text>
+                  </View>
                   </TouchableOpacity>
                 );
               })}
             </View>
+
 
             {/* REMPLAÇANTS */}
             <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
@@ -323,7 +346,7 @@ export default function ClubDetailScreen({ route }) {
 
 const AVATAR_SIZE = 50;
 const styles = StyleSheet.create({
-  // ... tous tes styles inchangés ...
+  // Header et infos club
   header: {
     backgroundColor: '#181818',
     flexDirection: 'row',
@@ -364,6 +387,8 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     letterSpacing: 1,
   },
+
+  // Tabs
   tabs: {
     flexDirection: 'row',
     backgroundColor: '#181818',
@@ -391,6 +416,8 @@ const styles = StyleSheet.create({
     color: '#00D9FF',
     fontWeight: '700',
   },
+
+  // Section titres
   sectionTitle: {
     color: '#00D9FF',
     fontWeight: '700',
@@ -399,32 +426,41 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textAlign: 'left',
   },
-  fieldWrapper: {
-    width: SCREEN_WIDTH - 32,
-    height: (SCREEN_WIDTH - 32) * 1.2,
+
+  // Bloc composition AVEC terrain en fond
+  compoContainer: {
+    width: '100%',
+    aspectRatio: 0.8, // Ajuste selon ton image terrain (0.8 pour rectangle, 1 pour carré)
     borderRadius: 20,
-    alignSelf: 'center',
     overflow: 'hidden',
+    alignSelf: 'center',
     marginVertical: 16,
-    backgroundColor: '#111',
-    borderWidth: 2,
-    borderColor: '#222',
+    position: 'relative',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    backgroundColor: '#111', // fallback si l'image ne charge pas
   },
-  fieldImage: {
+  terrainBackground: {
     ...StyleSheet.absoluteFillObject,
-    resizeMode: 'cover',
-    opacity: 0.82
+    width: '100%',
+    height: '100%',
+    zIndex: 0,
+    opacity: 0.85,
   },
+  terrainOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,10,10,0.25)', // overlay foncé (optionnel)
+    zIndex: 1,
+  },
+
   playerOnField: {
     position: 'absolute',
     alignItems: 'center',
     width: AVATAR_SIZE,
-    height: AVATAR_SIZE + 30,
+    height: AVATAR_SIZE + 36,
     justifyContent: 'flex-start',
     backgroundColor: 'transparent',
-    zIndex: 1,
+    zIndex: 2,
   },
   playerAvatar: {
     width: AVATAR_SIZE,
@@ -432,22 +468,60 @@ const styles = StyleSheet.create({
     borderRadius: AVATAR_SIZE / 2,
     borderWidth: 2,
     borderColor: '#fff',
-    backgroundColor: '#222',
+    backgroundColor: 'transparent',
     marginBottom: 2,
   },
   playerOnFieldText: {
     color: '#fff',
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 12,
     textAlign: 'center',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    letterSpacing: 0.7,
+    backgroundColor: 'rgba(0,0,0,0.38)', // plus discret
+    borderRadius: 5,
+    overflow: 'hidden',
+    paddingHorizontal: 4,
+    paddingVertical: 0.5,
+    minWidth: 22,
+    alignSelf: 'center',
+    marginBottom: 1,
+    maxWidth: AVATAR_SIZE * 1.3,
   },
+  playerNameTag: {
+    backgroundColor: 'rgba(0,0,0,0.63)',
+    borderRadius: 6,
+    paddingVertical: 1.5,
+    paddingHorizontal: 5,
+    marginTop: 2,
+    alignSelf: 'center',
+    maxWidth: AVATAR_SIZE * 1.4,
+    minWidth: 30,
+  },
+  playerNameOnField: {
+    fontSize: 12.5,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    letterSpacing: 0.1,
+    flexShrink: 1,
+    includeFontPadding: false,
+    numberOfLines: 1,
+  },
+
+
+  // Remplaçants
   remplacantsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
     marginTop: 5,
     gap: 5,
-    justifyContent: 'flex-start'
+    justifyContent: 'flex-start',
   },
   remplacantEmpty: {
     width: 40,
@@ -458,8 +532,10 @@ const styles = StyleSheet.create({
     marginRight: 5,
     backgroundColor: '#444',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
+
+  // Liste joueurs
   playerCard: {
     width: '96%',
     backgroundColor: '#242640',
@@ -505,6 +581,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
+
+  // Ajout joueurs
   addBtn: {
     marginTop: 18,
     marginBottom: 10,
