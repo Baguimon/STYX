@@ -46,6 +46,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: "user", targetEntity: GamePlayer::class, orphanRemoval: true)]
     private Collection $gamePlayers;
 
+    #[ORM\Column(type: 'string', length: 10, nullable: true)]
+    private ?string $poste = null;
+
+
     public function __construct()
     {
         $this->gamePlayers = new ArrayCollection();
@@ -177,6 +181,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $gamePlayer->setUser(null);
             }
         }
+        return $this;
+    }
+    public function getPoste(): ?string
+    {
+        return $this->poste;
+    }
+
+    public function setPoste(?string $poste): self
+    {
+        $this->poste = $poste;
         return $this;
     }
 }
