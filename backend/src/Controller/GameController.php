@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Game;
+use App\Entity\GamePlayer;
 use App\Repository\GameRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -94,5 +96,57 @@ class GameController extends AbstractController
         $em->flush();
 
         return $this->json(['message' => 'Match supprimé avec succès !']);
+    }
+
+    // ----------- Route JOIN (Inscription à un match) -------------
+    #[Route('/{id}/join', name: 'game_join', methods: ['POST'])]
+    public function join(
+        Request $request,
+        Game $game,
+        EntityManagerInterface $em,
+        UserRepository $userRepository
+    ): JsonResponse {
+        // Version MVP : récupère userId dans la requête POST (plus tard = $this->getUser())
+        $data = json_decode($request->getContent(), true);
+        $userId = $data['userId'] ?? null;
+        $team = $data['team'] ?? null;
+
+        if (!$userId || !in_array($team, [1, 2])) {
+            return $this->json(['error' => 'userId et team (1 ou 2) requis'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $userRepository->find($userId);
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Vérifie que le joueur n'est pas déjà dans ce match
+        if (method_exists($game, 'getGamePlayers')) {
+            foreach ($game->getGamePlayers() as $gp) {
+                if ($gp->getUser() === $user) {
+                    return $this->json(['error' => 'Vous êtes déjà inscrit à ce match'], Response::HTTP_CONFLICT);
+                }
+            }
+        }
+
+        // Vérifie si le match est complet
+        if ($game->getPlayerCount() >= $game->getMaxPlayers()) {
+            return $this->json(['error' => 'Le match est complet'], Response::HTTP_CONFLICT);
+        }
+
+        // Création GamePlayer
+        $gamePlayer = new GamePlayer();
+        $gamePlayer->setGame($game);
+        $gamePlayer->setUser($user);
+        $gamePlayer->setTeam($team);
+
+        $em->persist($gamePlayer);
+
+        // Mets à jour le playerCount
+        $game->setPlayerCount($game->getPlayerCount() + 1);
+
+        $em->flush();
+
+        return $this->json(['message' => 'Inscription réussie !']);
     }
 }
