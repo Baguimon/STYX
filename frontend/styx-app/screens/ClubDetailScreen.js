@@ -10,19 +10,22 @@ const FIELD_IMAGE = require('../assets/field-club.jpg');
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+const Y_OFFSET = -0.09; 
+
 const POSTES_11 = [
-  { key: 'GB', label: 'GB', x: 0.5, y: 0.06 },
-  { key: 'DG', label: 'DG', x: 0.15, y: 0.25 },
-  { key: 'DC1', label: 'DC', x: 0.32, y: 0.18 },
-  { key: 'DC2', label: 'DC', x: 0.68, y: 0.18 },
-  { key: 'DD', label: 'DD', x: 0.85, y: 0.25 },
-  { key: 'MG', label: 'MG', x: 0.21, y: 0.48 },
-  { key: 'MC', label: 'MC', x: 0.5, y: 0.36 },
-  { key: 'MD', label: 'MD', x: 0.79, y: 0.48 },
-  { key: 'AG', label: 'AG', x: 0.3, y: 0.75 },
-  { key: 'BU', label: 'BU', x: 0.5, y: 0.83 },
-  { key: 'AD', label: 'AD', x: 0.7, y: 0.75 },
+  { key: 'GB', label: 'GB', x: 0.5, y: 0.94 + Y_OFFSET },
+  { key: 'DG', label: 'DG', x: 0.15, y: 0.75 + Y_OFFSET },
+  { key: 'DC1', label: 'DC', x: 0.32, y: 0.82 + Y_OFFSET },
+  { key: 'DC2', label: 'DC', x: 0.68, y: 0.82 + Y_OFFSET },
+  { key: 'DD', label: 'DD', x: 0.85, y: 0.75 + Y_OFFSET },
+  { key: 'MG', label: 'MG', x: 0.21, y: 0.52 + Y_OFFSET },
+  { key: 'MC', label: 'MC', x: 0.5, y: 0.64 + Y_OFFSET },
+  { key: 'MD', label: 'MD', x: 0.79, y: 0.52 + Y_OFFSET },
+  { key: 'AG', label: 'AG', x: 0.3, y: 0.25 + Y_OFFSET },
+  { key: 'BU', label: 'BU', x: 0.5, y: 0.17 + Y_OFFSET },
+  { key: 'AD', label: 'AD', x: 0.7, y: 0.25 + Y_OFFSET },
 ];
+
 
 export default function ClubDetailScreen({ route }) {
   const clubId = route?.params?.clubId;
