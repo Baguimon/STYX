@@ -75,7 +75,7 @@ export default function GameSearchScreen() {
         <Image source={require('../assets/balls-pattern.png')} style={styles.ballIcon} />
         <View style={styles.headerText}>
           <Text style={styles.location}>{item.location}</Text>
-          <Text style={styles.city}>Paris 16e</Text>
+          <Text style={styles.city}>{item.locationDetails}</Text>
           <Text style={styles.date}>{formatDate(item.date)}</Text>
         </View>
         <View style={styles.right}>

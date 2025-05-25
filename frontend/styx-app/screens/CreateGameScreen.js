@@ -234,8 +234,12 @@ export default function CreateGameScreen() {
             placeholder="Détail du lieu (ex : Parc, terrain, salle...)"
             placeholderTextColor="#888"
             value={form.locationDetails}
+            maxLength={50} // ← Limite à 50 caractères
             onChangeText={text => handleChange('locationDetails', text)}
           />
+          <Text style={{ color: "#888", fontSize: 12, alignSelf: "flex-end" }}>
+            {form.locationDetails.length}/50
+          </Text>
         </View>
       ),
     },
@@ -627,4 +631,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
