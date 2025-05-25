@@ -59,6 +59,9 @@ class Game
     #[ORM\OneToMany(targetEntity: GamePlayer::class, mappedBy: 'game', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $gamePlayers;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $locationDetails = null;
+
     // -------------------- CONSTRUCTEUR -----------------------
     public function __construct()
     {
@@ -226,6 +229,18 @@ class Game
                 $gamePlayer->setGame(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getLocationDetails(): ?string
+    {
+        return $this->locationDetails;
+    }
+
+    public function setLocationDetails(?string $locationDetails): static
+    {
+        $this->locationDetails = $locationDetails;
 
         return $this;
     }
