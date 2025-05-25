@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions, Alert } from 'react-native';
-import { getClub, getClubMembers, setUserPoste, leaveClub } from '../services/api'; // setUserPoste & leaveClub API !
+import { getClub, getClubMembers, setUserPoste, leaveClub } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
 const defaultClubImage = require('../assets/club-default.png');
 const defaultPlayerImage = require('../assets/player-default.png');
-const FIELD_IMAGE = require('../assets/field.jpg'); // Ton image de terrain
+const FIELD_IMAGE = require('../assets/field.jpg');
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -46,23 +46,25 @@ export default function ClubDetailScreen({ route }) {
       .finally(() => setLoading(false));
   }, [clubId]);
 
-  // Pour chaque poste, trouver le joueur assigné ou null
+  // Trouve le joueur assigné à chaque poste
   const getPlayerForPoste = (posteKey) =>
     members.find(u => u.poste === posteKey);
 
-  // Tous les IDs sur le terrain
+  // IDs des membres titulaires (sur le terrain)
   const fieldMemberIds = POSTES_11.map(pos => getPlayerForPoste(pos.key)?.id).filter(Boolean);
-  const remplacants = members.filter(m => !fieldMemberIds.includes(m.id));
+  // Les remplaçants sont ceux qui ont poste === 'REMPLACANT'
+  const remplacants = members.filter(m => m.poste === 'REMPLACANT');
 
-  // Sélection de poste pour ce joueur
+  // Sélection d'un poste terrain
   const handleSelectPoste = async (posteKey) => {
     if (!userInfo?.id) return;
     try {
       await setUserPoste(clubId, userInfo.id, posteKey);
-      // Met à jour le state local pour voir le changement tout de suite
       setMembers(prev =>
         prev.map(m =>
-          m.id === userInfo.id ? { ...m, poste: posteKey } : (m.poste === posteKey ? { ...m, poste: null } : m)
+          m.id === userInfo.id
+            ? { ...m, poste: posteKey }
+            : (m.poste === posteKey ? { ...m, poste: null } : m)
         )
       );
     } catch (e) {
@@ -70,6 +72,23 @@ export default function ClubDetailScreen({ route }) {
     }
   };
 
+  // Sélection/removal remplaçant
+  const handleToggleRemplacant = async () => {
+    if (!userInfo?.id) return;
+    const isRemplacant = members.find(m => m.id === userInfo.id && m.poste === 'REMPLACANT');
+    try {
+      await setUserPoste(clubId, userInfo.id, isRemplacant ? null : 'REMPLACANT');
+      setMembers(prev =>
+        prev.map(m =>
+          m.id === userInfo.id
+            ? { ...m, poste: isRemplacant ? null : 'REMPLACANT' }
+            : m
+        )
+      );
+    } catch (e) {
+      Alert.alert('Erreur', "Impossible de gérer le statut remplaçant");
+    }
+  };
 
   // Quitter le club
   const handleLeave = async () => {
@@ -102,6 +121,10 @@ export default function ClubDetailScreen({ route }) {
       </View>
     );
   }
+
+  // Vérifie si user sur le terrain ou non
+  const isUserOnField = fieldMemberIds.includes(userInfo?.id);
+  const isUserRemplacant = members.find(m => m.id === userInfo.id && m.poste === 'REMPLACANT');
 
   return (
     <View style={{ backgroundColor: '#111', flex: 1 }}>
@@ -188,22 +211,59 @@ export default function ClubDetailScreen({ route }) {
             {/* REMPLAÇANTS */}
             <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
             <View style={styles.remplacantsRow}>
-              {remplacants.length === 0 && Array.from({ length: 5 }).map((_, i) => (
-                <View key={`empty-rep-${i}`} style={styles.remplacantEmpty}>
+              {/* 1. Le bouton d’action “+” ou “X”, toujours à gauche */}
+              <TouchableOpacity
+                style={[
+                  styles.remplacantEmpty,
+                  isUserRemplacant && { borderColor: '#00D9FF', borderWidth: 2 }
+                ]}
+                onPress={async () => {
+                  try {
+                    // Si je suis déjà remplaçant => me retirer (poste null)
+                    // Si j'étais sur un poste terrain, il doit déjà être à jour car il n'y a pas de poste = 'REMPLACANT' ET terrain
+                    await setUserPoste(clubId, userInfo.id, isUserRemplacant ? null : 'REMPLACANT');
+                    setMembers(prev =>
+                      prev.map(m =>
+                        m.id === userInfo.id
+                          ? { ...m, poste: isUserRemplacant ? null : 'REMPLACANT' }
+                          : m
+                      )
+                    );
+                  } catch (e) {
+                    Alert.alert('Erreur', "Vous êtes êtes déjà remplaçant");
+                  }
+                }}
+              >
+                {isUserRemplacant ? (
+                  <Text style={{ color: '#00D9FF', fontWeight: 'bold', fontSize: 20 }}>X</Text>
+                ) : (
                   <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
+                )}
+              </TouchableOpacity>
+
+              {/* 2. Si je suis remplaçant, mon avatar juste après le “+” */}
+              {isUserRemplacant && (
+                <View style={[styles.remplacantEmpty, { borderColor: '#00D9FF', borderWidth: 2 }]}>
+                  <Image
+                    source={userInfo.image ? { uri: userInfo.image } : defaultPlayerImage}
+                    style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#222' }}
+                  />
                 </View>
-              ))}
-              {remplacants.map(r => (
-                <View key={r.id} style={styles.remplacantEmpty}>
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
-                </View>
-              ))}
-              {Array.from({ length: Math.max(0, 5 - remplacants.length) }).map((_, i) => (
-                <View key={`empty-rep-x${i}`} style={styles.remplacantEmpty}>
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
-                </View>
-              ))}
+              )}
+
+              {/* 3. Les autres remplaçants ensuite (sauf moi) */}
+              {remplacants
+                .filter(r => r.id !== userInfo?.id)
+                .map(r => (
+                  <View key={r.id} style={styles.remplacantEmpty}>
+                    <Image
+                      source={r.image ? { uri: r.image } : defaultPlayerImage}
+                      style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#222' }}
+                    />
+                  </View>
+                ))}
             </View>
+
 
             {/* LISTE JOUEURS */}
             <Text style={styles.sectionTitle}>Joueurs</Text>
@@ -263,6 +323,7 @@ export default function ClubDetailScreen({ route }) {
 
 const AVATAR_SIZE = 50;
 const styles = StyleSheet.create({
+  // ... tous tes styles inchangés ...
   header: {
     backgroundColor: '#181818',
     flexDirection: 'row',
