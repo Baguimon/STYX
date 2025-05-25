@@ -100,4 +100,8 @@ export const setUserPoste = async (clubId, userId, poste) => {
   return api.post(`/clubs/${clubId}/set-poste/${userId}`, { poste });
 };
 
+export const transferCaptain = async (clubId, newCaptainId) => {
+  return api.post(`/clubs/${clubId}/transfer-captain`, { newCaptainId });
+};
+
 export default api;
