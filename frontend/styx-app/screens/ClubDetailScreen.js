@@ -1,26 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
-import { getClub, getClubMembers } from '../services/api'; // Tes services API à adapter
+import React, { useEffect, useState, useContext } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions, Alert } from 'react-native';
+import { getClub, getClubMembers, setUserPoste } from '../services/api'; // ← setUserPoste à créer !
+import { AuthContext } from '../contexts/AuthContext';
 
 const defaultClubImage = require('../assets/club-default.png');
 const defaultPlayerImage = require('../assets/player-default.png');
-const FIELD_IMAGE = require('../assets/field.jpg'); // Image terrain de foot
+const FIELD_IMAGE = require('../assets/field.jpg'); // Image terrain
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// Les 11 postes de base, avec la position sur le terrain (x/y de 0 à 1)
 const POSTES_11 = [
-  { key: 'GB', label: 'GB', x: 0.5, y: 0.05 },
-  { key: 'DG', label: 'DG', x: 0.13, y: 0.20 },
-  { key: 'DC1', label: 'DC', x: 0.31, y: 0.18 },
-  { key: 'DC2', label: 'DC', x: 0.69, y: 0.18 },
-  { key: 'DD', label: 'DD', x: 0.87, y: 0.20 },
-  { key: 'MG', label: 'MG', x: 0.18, y: 0.47 },
-  { key: 'MC', label: 'MC', x: 0.5, y: 0.38 },
-  { key: 'MD', label: 'MD', x: 0.82, y: 0.47 },
-  { key: 'AG', label: 'AG', x: 0.26, y: 0.75 },
+  { key: 'GB', label: 'GB', x: 0.5, y: 0.06 },
+  { key: 'DG', label: 'DG', x: 0.15, y: 0.25 },
+  { key: 'DC1', label: 'DC', x: 0.32, y: 0.18 },
+  { key: 'DC2', label: 'DC', x: 0.68, y: 0.18 },
+  { key: 'DD', label: 'DD', x: 0.85, y: 0.25 },
+  { key: 'MG', label: 'MG', x: 0.21, y: 0.48 },
+  { key: 'MC', label: 'MC', x: 0.5, y: 0.36 },
+  { key: 'MD', label: 'MD', x: 0.79, y: 0.48 },
+  { key: 'AG', label: 'AG', x: 0.3, y: 0.75 },
   { key: 'BU', label: 'BU', x: 0.5, y: 0.83 },
-  { key: 'AD', label: 'AD', x: 0.74, y: 0.75 },
+  { key: 'AD', label: 'AD', x: 0.7, y: 0.75 },
 ];
 
 export default function ClubDetailScreen({ route }) {
@@ -29,6 +29,7 @@ export default function ClubDetailScreen({ route }) {
   const [loading, setLoading] = useState(true);
   const [club, setClub] = useState(null);
   const [members, setMembers] = useState([]);
+  const { userInfo } = useContext(AuthContext); // userInfo doit contenir id
 
   useEffect(() => {
     setLoading(true);
@@ -43,14 +44,33 @@ export default function ClubDetailScreen({ route }) {
       .finally(() => setLoading(false));
   }, [clubId]);
 
-  // Pour chaque poste, trouver le joueur assigné ou rien
-  const getPlayerForPoste = (posteKey) => {
-    return members.find(u => u.poste === posteKey || u.posteActuel === posteKey);
-  };
+  // Pour chaque poste, trouver le joueur assigné ou null
+  const getPlayerForPoste = (posteKey) =>
+    members.find(u => u.poste === posteKey);
 
-  // Remplaçants : membres non présents sur un poste principal
+  // Tous les IDs sur le terrain
   const fieldMemberIds = POSTES_11.map(pos => getPlayerForPoste(pos.key)?.id).filter(Boolean);
   const remplacants = members.filter(m => !fieldMemberIds.includes(m.id));
+
+  // Sélection de poste pour ce joueur
+  const handleSelectPoste = async (posteKey) => {
+    if (!userInfo?.id) return;
+    try {
+      await setUserPoste(clubId, userInfo.id, posteKey);
+      // Mettre à jour localement : change le poste de ce joueur
+      setMembers(prev =>
+        prev.map(m =>
+          m.id === userInfo.id ? { ...m, poste: posteKey } : (m.poste === posteKey ? { ...m, poste: null } : m)
+        )
+      );
+    } catch (e) {
+      if (e.response?.data?.error) {
+        Alert.alert('Erreur', e.response.data.error);
+      } else {
+        Alert.alert('Erreur', 'Impossible de prendre ce poste');
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -69,7 +89,7 @@ export default function ClubDetailScreen({ route }) {
   }
 
   return (
-    <ScrollView style={{ backgroundColor: '#111', flex: 1 }}>
+    <View style={{ backgroundColor: '#111', flex: 1 }}>
       {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.statsBlock}>
@@ -106,97 +126,109 @@ export default function ClubDetailScreen({ route }) {
         </TouchableOpacity>
       </View>
 
-      {activeTab === 'members' && (
-        <View style={{ padding: 16 }}>
-          {/* COMPOSITION */}
-          <Text style={styles.sectionTitle}>Composition</Text>
-          <View style={styles.fieldWrapper}>
-            <Image source={FIELD_IMAGE} style={styles.fieldImage} />
-            {POSTES_11.map(slot => {
-              const player = getPlayerForPoste(slot.key);
-              return (
-                <View
-                  key={slot.key}
-                  style={[
-                    styles.playerOnField,
-                    {
-                      left: `${slot.x * 100}%`,
-                      top: `${slot.y * 100}%`,
-                      marginLeft: -25,
-                      marginTop: -25,
-                    }
-                  ]}
-                >
-                  <Image
-                    source={player?.image ? { uri: player.image } : defaultPlayerImage}
-                    style={styles.playerAvatar}
-                  />
-                  <Text style={styles.playerOnFieldText}>{slot.label}</Text>
-                  {player && (
-                    <Text style={[styles.playerOnFieldText, { fontSize: 10 }]} numberOfLines={1}>
-                      {player.username || player.nom}
-                    </Text>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-          {/* REMPLAÇANTS */}
-          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
-          <View style={styles.remplacantsRow}>
-            {remplacants.map(r => (
-              <Image
-                key={r.id}
-                source={r.image ? { uri: r.image } : defaultPlayerImage}
-                style={styles.remplacantAvatar}
-              />
-            ))}
-            {Array.from({ length: Math.max(0, 5 - remplacants.length) }).map((_, i) => (
-              <View key={`empty-rep-${i}`} style={styles.remplacantEmpty}>
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
-              </View>
-            ))}
-          </View>
-          {/* LISTE JOUEURS */}
-          <Text style={styles.sectionTitle}>Joueurs</Text>
-          <View style={{ width: '100%', alignItems: 'center' }}>
-            {members.map(item => (
-              <View key={item.id} style={styles.playerCard}>
-                <Image
-                  source={item.image ? { uri: item.image } : defaultPlayerImage}
-                  style={styles.playerListAvatar}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.playerName}>{item.username || item.nom}</Text>
-                  <Text style={styles.playerPosteList}>Poste : {item.poste || '-'}</Text>
-                </View>
-                <TouchableOpacity style={styles.profileBtn}>
-                  <Text style={styles.profileBtnText}>Profil</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-          <TouchableOpacity style={styles.addBtn}>
-            <Text style={styles.addBtnText}>Ajouter des joueurs à votre club</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <ScrollView style={{ flex: 1 }}>
+        {activeTab === 'members' && (
+          <View style={{ padding: 16 }}>
+            {/* COMPOSITION */}
+            <Text style={styles.sectionTitle}>Composition</Text>
+            <View style={styles.fieldWrapper}>
+              <Image source={FIELD_IMAGE} style={styles.fieldImage} />
+              {POSTES_11.map(slot => {
+                const player = getPlayerForPoste(slot.key);
+                const isLibre = !player;
+                const isUser = player && player.id === userInfo?.id;
 
-      {/* Matches à venir */}
-      {activeTab === 'matches' && (
-        <View style={{ padding: 24 }}>
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center' }}>
-            Aucun match à venir pour l’instant.
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+                return (
+                  <TouchableOpacity
+                    key={slot.key}
+                    style={[
+                      styles.playerOnField,
+                      {
+                        left: `${slot.x * 100}%`,
+                        top: `${slot.y * 100}%`,
+                        marginLeft: -25,
+                        marginTop: -25,
+                        borderColor: isUser ? '#00D9FF' : 'transparent',
+                        borderWidth: isUser ? 2 : 0,
+                      }
+                    ]}
+                    disabled={!isLibre && !isUser}
+                    onPress={() => {
+                      if (isLibre || isUser) handleSelectPoste(slot.key);
+                    }}
+                  >
+                    <Image
+                      source={player?.image ? { uri: player.image } : defaultPlayerImage}
+                      style={styles.playerAvatar}
+                    />
+                    <Text style={styles.playerOnFieldText}>{slot.label}</Text>
+                    <Text style={{ color: isLibre ? '#00D9FF' : '#fff', fontSize: 14, fontWeight: 'bold', marginTop: 2 }}>
+                      {isLibre ? 'Libre' : (player.username || player.nom)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* REMPLAÇANTS */}
+            <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
+            <View style={styles.remplacantsRow}>
+              {remplacants.length === 0 && Array.from({ length: 5 }).map((_, i) => (
+                <View key={`empty-rep-${i}`} style={styles.remplacantEmpty}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
+                </View>
+              ))}
+              {remplacants.map(r => (
+                <View key={r.id} style={styles.remplacantEmpty}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
+                </View>
+              ))}
+              {Array.from({ length: Math.max(0, 5 - remplacants.length) }).map((_, i) => (
+                <View key={`empty-rep-x${i}`} style={styles.remplacantEmpty}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* LISTE JOUEURS */}
+            <Text style={styles.sectionTitle}>Joueurs</Text>
+            <View>
+              {members.map(item => (
+                <View key={item.id} style={styles.playerCard}>
+                  <Image
+                    source={item.image ? { uri: item.image } : defaultPlayerImage}
+                    style={styles.playerListAvatar}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.playerName}>{item.username || item.nom}</Text>
+                    <Text style={styles.playerPosteList}>Poste : {item.poste || '-'}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.profileBtn}>
+                    <Text style={styles.profileBtnText}>Profil</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.addBtn}>
+              <Text style={styles.addBtnText}>Ajouter des joueurs à votre club</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Matches à venir */}
+        {activeTab === 'matches' && (
+          <View style={{ padding: 24 }}>
+            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center' }}>
+              Aucun match à venir pour l’instant.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
-
 const AVATAR_SIZE = 50;
-
 const styles = StyleSheet.create({
   header: {
     backgroundColor: '#181818',
@@ -295,7 +327,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     width: AVATAR_SIZE,
-    height: AVATAR_SIZE + 20,
+    height: AVATAR_SIZE + 30,
+    justifyContent: 'flex-start',
+    backgroundColor: 'transparent',
+    zIndex: 1,
   },
   playerAvatar: {
     width: AVATAR_SIZE,
@@ -319,15 +354,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
     gap: 5,
     justifyContent: 'flex-start'
-  },
-  remplacantAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#fff',
-    marginRight: 5,
-    backgroundColor: '#222',
   },
   remplacantEmpty: {
     width: 40,
@@ -401,4 +427,3 @@ const styles = StyleSheet.create({
     fontSize: 17,
   },
 });
-
