@@ -196,7 +196,7 @@ class ClubController extends AbstractController
     }
 
 
-    #[Route('/api/clubs/{id}/upload-logo', name: 'upload_club_logo', methods: ['POST'])]
+    #[Route('/{id}/upload-logo', name: 'api_club_upload_club_logo', methods: ['POST'])]
     public function uploadLogo(Request $request, Club $club, EntityManagerInterface $em): JsonResponse
     {
         /** @var UploadedFile $file */
