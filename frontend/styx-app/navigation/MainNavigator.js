@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import BottomTabNavigator from './BottomTabNavigator';
 import CreateGameScreen from '../screens/CreateGameScreen';
 import UserDetailsScreen from '../screens/UserDetailsScreen';
-import GameSearchScreen from '../screens/GameSearchScreen'; // ✅ Ajout de l'import
+import GameSearchScreen from '../screens/GameSearchScreen';
 
 const Stack = createNativeStackNavigator();
 

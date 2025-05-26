@@ -107,4 +107,18 @@ export const transferCaptain = async (clubId, newCaptainId) => {
   return api.post(`/clubs/${clubId}/transfer-captain`, { newCaptainId });
 };
 
+export const updateClub = (clubId, data) =>
+  api.patch(`/clubs/${clubId}`, data);
+
+export const uploadClubLogo = (clubId, formData) =>
+  api.post(`/clubs/${clubId}/upload-logo`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+
+export const kickMember = (clubId, memberId) =>
+  api.post(`/clubs/${clubId}/kick`, { memberId });
+
+export const blockMember = (clubId, memberId) =>
+  api.post(`/clubs/${clubId}/block`, { memberId });
+
 export default api;
