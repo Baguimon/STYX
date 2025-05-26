@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   Image, Alert, ScrollView, ActivityIndicator
@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getClub, getClubMembers, updateClub, uploadClubLogo, kickMember, blockMember, setUserPoste, transferCaptain } from '../services/api';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { AuthContext } from '../contexts/AuthContext'; // <--- AJOUT CONTEXT
 
 const defaultPlayerImage = require('../assets/player-default.png');
 
@@ -20,7 +21,9 @@ export default function ClubManageScreen() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Re-fetch les infos du club si besoin
+  const { userInfo } = useContext(AuthContext); // <--- AJOUT CONTEXT
+
+  // Re-fetch infos du club si besoin
   useEffect(() => {
     if (!club?.id) return;
     (async () => {
@@ -45,10 +48,10 @@ export default function ClubManageScreen() {
       allowsEditing: true,
       aspect: [1, 1]
     });
-    if (!result.cancelled) {
+    if (!result.cancelled && result.assets && result.assets.length > 0) {
       setUploading(true);
       try {
-        const uri = result.assets ? result.assets[0].uri : result.uri; // selon version expo
+        const uri = result.assets[0].uri;
         const filename = uri.split('/').pop();
         const type = 'image/' + filename.split('.').pop();
         const formData = new FormData();
@@ -221,31 +224,38 @@ export default function ClubManageScreen() {
             <Text style={{ color: '#fff', fontWeight: '700' }}>{m.username || m.nom}</Text>
             <Text style={{ color: '#82E482', fontSize: 13 }}>Poste : {m.poste || '-'}</Text>
           </View>
+          {/* Changement de poste : autorisé pour tout le monde */}
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={() => handleChangePoste(m.id, m.poste)}
           >
             <Ionicons name="pencil" size={18} color="#00D9FF" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => handleKick(m.id)}
-          >
-            <Ionicons name="person-remove" size={19} color="#e23030" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => handleBlock(m.id)}
-          >
-            <Ionicons name="close-circle" size={20} color="#b70000" />
-          </TouchableOpacity>
-          {club.clubCaptain?.id !== m.id && (
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() => handleTransferCaptain(m)}
-            >
-              <Ionicons name="star" size={19} color="#FFD700" />
-            </TouchableOpacity>
+          {/* Boutons réservés aux autres membres que moi-même */}
+          {userInfo?.id !== m.id && (
+            <>
+              <TouchableOpacity
+                style={styles.iconBtn}
+                onPress={() => handleKick(m.id)}
+              >
+                <Ionicons name="person-remove" size={19} color="#e23030" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconBtn}
+                onPress={() => handleBlock(m.id)}
+              >
+                <Ionicons name="close-circle" size={20} color="#b70000" />
+              </TouchableOpacity>
+              {/* Transfert capitanat : affiché uniquement si ce n'est pas le capitaine actuel */}
+              {club.clubCaptain?.id !== m.id && (
+                <TouchableOpacity
+                  style={styles.iconBtn}
+                  onPress={() => handleTransferCaptain(m)}
+                >
+                  <Ionicons name="star" size={19} color="#FFD700" />
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </View>
       ))}
