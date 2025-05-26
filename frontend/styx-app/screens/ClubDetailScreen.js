@@ -5,13 +5,11 @@ import { AuthContext } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
-
 const defaultClubImage = require('../assets/club-default.png');
 const defaultPlayerImage = require('../assets/player-default.png');
 const FIELD_IMAGE = require('../assets/field-club.jpg');
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const Y_OFFSET = -0.1; 
+const Y_OFFSET = -0.1;
 
 const POSTES_11 = [
   { key: 'GB', label: 'GB', x: 0.5, y: 0.94 + Y_OFFSET },
@@ -29,7 +27,6 @@ const POSTES_11 = [
 
 export default function ClubDetailScreen({ route }) {
   const clubId = route?.params?.clubId;
-  const [activeTab, setActiveTab] = useState('members');
   const [loading, setLoading] = useState(true);
   const [club, setClub] = useState(null);
   const [members, setMembers] = useState([]);
@@ -94,7 +91,6 @@ export default function ClubDetailScreen({ route }) {
     }
   };
 
-
   const inviteLocal = `exp://172.29.193.238:8081?clubId=${club?.id}`;
   const inviteTunnel = `exp://6vrrl3c-anonymous-8081.exp.direct?clubId=${club?.id}`;
 
@@ -115,7 +111,6 @@ export default function ClubDetailScreen({ route }) {
       Alert.alert('Erreur', "Impossible d’ouvrir la fenêtre de partage");
     }
   };
-
 
   const handleLeave = async () => {
     Alert.alert(
@@ -145,9 +140,6 @@ export default function ClubDetailScreen({ route }) {
       { cancelable: true }
     );
   };
-
-
-
 
   if (loading) {
     return (
@@ -186,210 +178,179 @@ export default function ClubDetailScreen({ route }) {
       </View>
       <Text style={styles.clubName}>{club.name}</Text>
 
-      {/* TABS */}
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'matches' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('matches')}
-        >
-          <Text style={[styles.tabText, activeTab === 'matches' && styles.tabTextActive]}>
-            Matchs à venir
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'members' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('members')}
-        >
-          <Text style={[styles.tabText, activeTab === 'members' && styles.tabTextActive]}>
-            Membres
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView style={{ flex: 1 }}>
-        {activeTab === 'members' && (
-          <View style={{ padding: 16 }}>
-            {/* COMPOSITION */}
-            <Text style={styles.sectionTitle}>Composition</Text>
-            <View style={styles.compoContainer}>
-              <Image
-                source={FIELD_IMAGE}
-                style={styles.terrainBackground}
-                resizeMode="cover"
-              />
-              <View style={styles.terrainOverlay} />
+        <View style={{ padding: 16 }}>
+          {/* COMPOSITION */}
+          <Text style={styles.sectionTitle}>Composition</Text>
+          <View style={styles.compoContainer}>
+            <Image
+              source={FIELD_IMAGE}
+              style={styles.terrainBackground}
+              resizeMode="cover"
+            />
+            <View style={styles.terrainOverlay} />
 
-              {POSTES_11.map(slot => {
-                const player = getPlayerForPoste(slot.key);
-                const isLibre = !player;
-                const isUser = player && player.id === userInfo?.id;
-                return (
-                  <TouchableOpacity
-                    key={slot.key}
-                    style={[
-                      styles.playerOnField,
-                      {
-                        left: `${slot.x * 100}%`,
-                        top: `${slot.y * 100}%`,
-                        marginLeft: -AVATAR_SIZE / 2,
-                        marginTop: -AVATAR_SIZE / 2,
-                        borderColor: isUser ? '#00D9FF' : 'transparent',
-                        borderWidth: isUser ? 2 : 0,
-                        zIndex: 2,
-                      }
-                    ]}
-                    disabled={!isLibre && !isUser}
-                    onPress={() => {
-                      if (isLibre) {
-                        handleSelectPoste(slot.key);
-                      } else if (isUser) {
-                        handleSelectPoste(null);
-                      }
-                    }}
-                  >
-                    <View style={{position:'relative'}}>
-                      <Image
-                        source={player?.image ? { uri: player.image } : defaultPlayerImage}
-                        style={styles.playerAvatar}
-                      />
-                      {/* Capitaine point */}
-                      {player && captainId && player.id === captainId && (
-                        <View style={styles.captainDotField} />
-                      )}
-                    </View>
-                    <Text style={styles.playerOnFieldText}>{slot.label}</Text>
-                    <View style={styles.playerNameTag}>
-                      <Text
-                        style={[
-                          styles.playerNameOnField,
-                          { color: isLibre ? '#fff' : '#00D9FF' }
-                        ]}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                      >
-                        {isLibre ? 'Libre' : (player.username || player.nom)}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {POSTES_11.map(slot => {
+              const player = getPlayerForPoste(slot.key);
+              const isLibre = !player;
+              const isUser = player && player.id === userInfo?.id;
+              return (
+                <TouchableOpacity
+                  key={slot.key}
+                  style={[
+                    styles.playerOnField,
+                    {
+                      left: `${slot.x * 100}%`,
+                      top: `${slot.y * 100}%`,
+                      marginLeft: -AVATAR_SIZE / 2,
+                      marginTop: -AVATAR_SIZE / 2,
+                      borderColor: isUser ? '#00D9FF' : 'transparent',
+                      borderWidth: isUser ? 2 : 0,
+                      zIndex: 2,
+                    }
+                  ]}
+                  disabled={!isLibre && !isUser}
+                  onPress={() => {
+                    if (isLibre) {
+                      handleSelectPoste(slot.key);
+                    } else if (isUser) {
+                      handleSelectPoste(null);
+                    }
+                  }}
+                >
+                  <View style={{position:'relative'}}>
+                    <Image
+                      source={player?.image ? { uri: player.image } : defaultPlayerImage}
+                      style={styles.playerAvatar}
+                    />
+                    {/* Capitaine point */}
+                    {player && captainId && player.id === captainId && (
+                      <View style={styles.captainDotField} />
+                    )}
+                  </View>
+                  <Text style={styles.playerOnFieldText}>{slot.label}</Text>
+                  <View style={styles.playerNameTag}>
+                    <Text
+                      style={[
+                        styles.playerNameOnField,
+                        { color: isLibre ? '#fff' : '#00D9FF' }
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {isLibre ? 'Libre' : (player.username || player.nom)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-            {/* REMPLAÇANTS */}
-            <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
-            <View style={styles.remplacantsRow}>
-              {/* 1. Le bouton d’action “+” ou “X”, toujours à gauche */}
-              <TouchableOpacity
-                style={[
-                  styles.remplacantEmpty,
-                  isUserRemplacant && { borderColor: '#00D9FF', borderWidth: 2 }
-                ]}
-                onPress={async () => {
-                  try {
-                    await setUserPoste(clubId, userInfo.id, isUserRemplacant ? null : 'REMPLACANT');
-                    setMembers(prev =>
-                      prev.map(m =>
-                        m.id === userInfo.id
-                          ? { ...m, poste: isUserRemplacant ? null : 'REMPLACANT' }
-                          : m
-                      )
-                    );
-                  } catch (e) {
-                    Alert.alert('Erreur', "Vous êtes êtes déjà remplaçant");
-                  }
-                }}
-              >
-                {isUserRemplacant ? (
-                  <Text style={{ color: '#00D9FF', fontWeight: 'bold', fontSize: 20 }}>X</Text>
-                ) : (
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
-                )}
-              </TouchableOpacity>
+          {/* REMPLAÇANTS */}
+          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
+          <View style={styles.remplacantsRow}>
+            {/* 1. Le bouton d’action “+” ou “X”, toujours à gauche */}
+            <TouchableOpacity
+              style={[
+                styles.remplacantEmpty,
+                isUserRemplacant && { borderColor: '#00D9FF', borderWidth: 2 }
+              ]}
+              onPress={async () => {
+                try {
+                  await setUserPoste(clubId, userInfo.id, isUserRemplacant ? null : 'REMPLACANT');
+                  setMembers(prev =>
+                    prev.map(m =>
+                      m.id === userInfo.id
+                        ? { ...m, poste: isUserRemplacant ? null : 'REMPLACANT' }
+                        : m
+                    )
+                  );
+                } catch (e) {
+                  Alert.alert('Erreur', "Vous êtes êtes déjà remplaçant");
+                }
+              }}
+            >
+              {isUserRemplacant ? (
+                <Text style={{ color: '#00D9FF', fontWeight: 'bold', fontSize: 20 }}>X</Text>
+              ) : (
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
+              )}
+            </TouchableOpacity>
 
-              {/* 2. Si je suis remplaçant, mon avatar juste après le “+” */}
-              {isUserRemplacant && (
-                <View style={[styles.remplacantEmpty, { borderColor: '#00D9FF', borderWidth: 2 }]}>
+            {/* 2. Si je suis remplaçant, mon avatar juste après le “+” */}
+            {isUserRemplacant && (
+              <View style={[styles.remplacantEmpty, { borderColor: '#00D9FF', borderWidth: 2 }]}>
+                <Image
+                  source={userInfo.image ? { uri: userInfo.image } : defaultPlayerImage}
+                  style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#222' }}
+                />
+              </View>
+            )}
+
+            {/* 3. Les autres remplaçants ensuite (sauf moi) */}
+            {remplacants
+              .filter(r => r.id !== userInfo?.id)
+              .map(r => (
+                <View key={r.id} style={styles.remplacantEmpty}>
                   <Image
-                    source={userInfo.image ? { uri: userInfo.image } : defaultPlayerImage}
+                    source={r.image ? { uri: r.image } : defaultPlayerImage}
                     style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#222' }}
                   />
                 </View>
-              )}
-
-              {/* 3. Les autres remplaçants ensuite (sauf moi) */}
-              {remplacants
-                .filter(r => r.id !== userInfo?.id)
-                .map(r => (
-                  <View key={r.id} style={styles.remplacantEmpty}>
-                    <Image
-                      source={r.image ? { uri: r.image } : defaultPlayerImage}
-                      style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#222' }}
-                    />
-                  </View>
-                ))}
-            </View>
-
-            {/* LISTE JOUEURS */}
-            <View style={styles.sectionTitleRow}>
-              <View style={styles.sectionTitleBar} />
-              <Text style={styles.sectionTitle}>Joueurs</Text>
-              <TouchableOpacity
-                style={styles.inviteBtn}
-                onPress={handleShareInvite}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="person-add" size={18} color="#00D9FF" style={{ marginRight: 5 }} />
-                <Text style={styles.inviteBtnText}>Inviter</Text>
-              </TouchableOpacity>
-            </View>
-            <View>
-              {sortedMembers.map(item => (
-                <View key={item.id} style={styles.playerCard}>
-                  <View style={{ position: 'relative', width: 45, height: 45, marginRight: 16 }}>
-                    <Image
-                      source={item.image ? { uri: item.image } : defaultPlayerImage}
-                      style={styles.playerListAvatar}
-                    />
-                    {/* Capitaine point collé à l’avatar */}
-                    {item.id === captainId && (
-                      <View style={styles.captainDotList} />
-                    )}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.playerName}>{item.username || item.nom}</Text>
-                    <Text style={styles.playerPosteList}>Poste : {item.poste || '-'}</Text>
-                  </View>
-                  <TouchableOpacity style={styles.profileBtn}>
-                    <Text style={styles.profileBtnText}>Profil</Text>
-                  </TouchableOpacity>
-                </View>
               ))}
-            </View>
-            <View style={styles.actionBar}>
-              {userInfo.id === captainId && (
-                <TouchableOpacity
-                  style={styles.actionBtn}
-                  onPress={() => navigation.navigate('ClubManageScreen', { club, members })}
-                >
-                  <Text style={styles.actionBtnText}>Gérer</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+          </View>
 
-            <TouchableOpacity style={styles.leaveBtn} onPress={handleLeave}>
-              <Text style={styles.leaveBtnText}>Quitter le club</Text>
+          {/* LISTE JOUEURS */}
+          <View style={styles.sectionTitleRow}>
+            <View style={styles.sectionTitleBar} />
+            <Text style={styles.sectionTitle}>Joueurs</Text>
+            <TouchableOpacity
+              style={styles.inviteBtn}
+              onPress={handleShareInvite}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="person-add" size={18} color="#00D9FF" style={{ marginRight: 5 }} />
+              <Text style={styles.inviteBtnText}>Inviter</Text>
             </TouchableOpacity>
-
           </View>
-        )}
-
-        {activeTab === 'matches' && (
-          <View style={{ padding: 24 }}>
-            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center' }}>
-              Aucun match à venir pour l’instant.
-            </Text>
+          <View>
+            {sortedMembers.map(item => (
+              <View key={item.id} style={styles.playerCard}>
+                <View style={{ position: 'relative', width: 45, height: 45, marginRight: 16 }}>
+                  <Image
+                    source={item.image ? { uri: item.image } : defaultPlayerImage}
+                    style={styles.playerListAvatar}
+                  />
+                  {/* Capitaine point collé à l’avatar */}
+                  {item.id === captainId && (
+                    <View style={styles.captainDotList} />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.playerName}>{item.username || item.nom}</Text>
+                  <Text style={styles.playerPosteList}>Poste : {item.poste || '-'}</Text>
+                </View>
+                <TouchableOpacity style={styles.profileBtn}>
+                  <Text style={styles.profileBtnText}>Profil</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
           </View>
-        )}
+          <View style={styles.actionBar}>
+            {userInfo.id === captainId && (
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => navigation.navigate('ClubManageScreen', { club, members })}
+              >
+                <Text style={styles.actionBtnText}>Gérer</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity style={styles.leaveBtn} onPress={handleLeave}>
+            <Text style={styles.leaveBtnText}>Quitter le club</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -439,35 +400,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // Tabs
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: '#181818',
-    borderBottomWidth: 2,
-    borderBottomColor: '#00D9FF',
-  },
-  tabBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-    backgroundColor: '#222',
-  },
-  tabBtnActive: {
-    borderBottomColor: '#00D9FF',
-    backgroundColor: '#050A23',
-  },
-  tabText: {
-    color: '#aaa',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  tabTextActive: {
-    color: '#00D9FF',
-    fontWeight: '700',
-  },
-
   // Section titres
   sectionTitle: {
     color: '#00D9FF',
@@ -481,7 +413,7 @@ const styles = StyleSheet.create({
   // Bloc composition AVEC terrain en fond
   compoContainer: {
     width: '100%',
-    aspectRatio: 0.8, // Ajuste selon ton image terrain (0.8 pour rectangle, 1 pour carré)
+    aspectRatio: 0.8,
     borderRadius: 20,
     overflow: 'hidden',
     alignSelf: 'center',
@@ -489,7 +421,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#111', // fallback si l'image ne charge pas
+    backgroundColor: '#111',
   },
   terrainBackground: {
     ...StyleSheet.absoluteFillObject,
@@ -500,7 +432,7 @@ const styles = StyleSheet.create({
   },
   terrainOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.38)', // 0.38 = assombri, tu peux tester plus (0.5 par ex.)
+    backgroundColor: 'rgba(0,0,0,0.38)',
     zIndex: 1,
   },
 
@@ -531,7 +463,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
     letterSpacing: 0.7,
-    backgroundColor: 'rgba(0,0,0,0.38)', // plus discret
+    backgroundColor: 'rgba(0,0,0,0.38)',
     borderRadius: 5,
     overflow: 'hidden',
     paddingHorizontal: 4,
@@ -563,7 +495,6 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     numberOfLines: 1,
   },
-
 
   // Remplaçants
   remplacantsRow: {
@@ -633,7 +564,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  // Ajout joueurs
   captainDotField: {
     position: 'absolute',
     top: 2,
@@ -660,10 +590,10 @@ const styles = StyleSheet.create({
   },
 
   sectionTitleRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginVertical: 14,
-  marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 14,
+    marginBottom: 6,
   },
   inviteBtn: {
     flexDirection: 'row',
@@ -701,12 +631,12 @@ const styles = StyleSheet.create({
   },
 
   actionBar: {
-  flexDirection: 'row',
-  justifyContent: 'center',
-  alignItems: 'center',
-  gap: 16,
-  marginTop: 18,
-  marginBottom: 6,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 18,
+    marginBottom: 6,
   },
   actionBtn: {
     backgroundColor: '#00D9FF',

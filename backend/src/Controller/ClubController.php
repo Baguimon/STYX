@@ -10,6 +10,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 #[Route('/api/clubs', name: 'api_club_')]
 class ClubController extends AbstractController
@@ -194,23 +196,26 @@ class ClubController extends AbstractController
     }
 
 
-    #[Route('/{id}/upload-logo', name: 'upload_logo', methods: ['POST'])]
-    public function uploadLogo(Request $request, ClubRepository $clubRepository, EntityManagerInterface $em, $id): JsonResponse
+    #[Route('/api/clubs/{id}/upload-logo', name: 'upload_club_logo', methods: ['POST'])]
+    public function uploadLogo(Request $request, Club $club, EntityManagerInterface $em): JsonResponse
     {
-        $club = $clubRepository->find($id);
-        if (!$club) return $this->json(['error' => 'Club not found'], 404);
-
+        /** @var UploadedFile $file */
         $file = $request->files->get('logo');
-        if (!$file) return $this->json(['error' => 'Aucun fichier envoyé'], 400);
+        if (!$file) {
+            return $this->json(['error' => 'Aucun fichier reçu'], 400);
+        }
 
-        $filename = uniqid() . '.' . $file->guessExtension();
-        $file->move($this->getParameter('club_logos_dir'), $filename);
+        $uploadDir = $this->getParameter('club_logos_dir');
+        $filename = uniqid().'.'.$file->guessExtension();
 
-        $club->setImage('/uploads/club-logos/' . $filename);
-        $em->persist($club);
-        $em->flush();
-
-        return $this->json(['success' => true, 'image' => $club->getImage()]);
+        try {
+            $file->move($uploadDir, $filename);
+            $club->setImage('/uploads/club-logos/'.$filename); // Chemin public
+            $em->flush();
+            return $this->json(['image' => $club->getImage()]);
+        } catch (FileException $e) {
+            return $this->json(['error' => "Erreur d'upload"], 500);
+        }
     }
     #[Route('/{clubId}/kick-member/{userId}', name: 'kick_member', methods: ['POST'])]
     public function kickMember($clubId, $userId, ClubRepository $clubRepository, UserRepository $userRepository, EntityManagerInterface $em): JsonResponse
