@@ -19,7 +19,7 @@ final class Version20250525051246 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-
+        $this->addSql('ALTER TABLE game DROP COLUMN players_team1_id;');
     }
 
     public function down(Schema $schema): void

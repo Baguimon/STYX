@@ -40,18 +40,9 @@ class Game
 
     // 🚨 Ajoute ce champ pour le créateur (nullable d'abord)
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: true)] // Passe à false après migration et update des anciennes lignes !
+    #[ORM\JoinColumn(nullable: true)]
+    // private ?User $creator = null; // décommente si tu veux vraiment le créateur plus tard
 
-    // -------------------- ÉQUIPES -----------------------
-    #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: "game_team1_players")]
-    private Collection $playersTeam1;
-
-    #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: "game_team2_players")]
-    private Collection $playersTeam2;
-
-    // -------------------- Lien avec GamePlayer -----------------------
     /**
      * @var Collection<int, GamePlayer>
      */
@@ -61,15 +52,12 @@ class Game
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $locationDetails = null;
 
-    // -------------------- CONSTRUCTEUR -----------------------
     public function __construct()
     {
-        $this->playersTeam1 = new ArrayCollection();
-        $this->playersTeam2 = new ArrayCollection();
         $this->gamePlayers = new ArrayCollection();
     }
 
-    // -------------------- GETTERS/SETTERS AUTO -----------------------
+    // -------------------- GETTERS/SETTERS -----------------------
     public function getId(): ?int
     {
         return $this->id;
@@ -152,43 +140,6 @@ class Game
         return $this;
     }
 
-
-    // -------------------- TEAM / ÉQUIPES -----------------------
-    public function addPlayerToTeam(User $user, int $team): void
-    {
-        if ($team === 1 && !$this->playersTeam1->contains($user)) {
-            $this->playersTeam1->add($user);
-        } elseif ($team === 2 && !$this->playersTeam2->contains($user)) {
-            $this->playersTeam2->add($user);
-        }
-    }
-
-    public function hasPlayer(User $user): bool
-    {
-        return $this->playersTeam1->contains($user) || $this->playersTeam2->contains($user);
-    }
-
-    public function removePlayerFromTeam(User $user): void
-    {
-        $this->playersTeam1->removeElement($user);
-        $this->playersTeam2->removeElement($user);
-    }
-
-    public function getPlayersCount(): int
-    {
-        return $this->playersTeam1->count() + $this->playersTeam2->count();
-    }
-
-    public function getPlayersTeam1(): Collection
-    {
-        return $this->playersTeam1;
-    }
-
-    public function getPlayersTeam2(): Collection
-    {
-        return $this->playersTeam2;
-    }
-
     // -------------------- GAMEPLAYER RELATION -----------------------
 
     /**
@@ -229,7 +180,6 @@ class Game
     public function setLocationDetails(?string $locationDetails): static
     {
         $this->locationDetails = $locationDetails;
-
         return $this;
     }
 }
