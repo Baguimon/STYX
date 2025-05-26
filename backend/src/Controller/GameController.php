@@ -23,14 +23,14 @@ class GameController extends AbstractController
 
         $data = array_map(fn(Game $game) => [
             'id' => $game->getId(),
-            'date' => $game->getDate()->format('Y-m-d H:i:s'),
+            'date' => $game->getDate()?->format('Y-m-d H:i:s'),
             'location' => $game->getLocation(),
-            'locationDetails' => $game->getLocationDetails(), // <- ajouté
-            'maxPlayers' => $game->getMaxPlayers(),
-            'playerCount' => $game->getPlayerCount(),
-            'createdAt' => $game->getCreatedAt()->format('Y-m-d H:i:s'),
+            'location_details' => $game->getLocationDetails(),
+            'max_players' => $game->getMaxPlayers(),
+            'player_count' => $game->getPlayerCount(),
+            'created_at' => $game->getCreatedAt()?->format('Y-m-d H:i:s'),
             'status' => $game->getStatus(),
-            'isClubMatch' => $game->isClubMatch(),
+            'is_club_match' => $game->isClubMatch(),
         ], $games);
 
         return $this->json($data);
@@ -39,7 +39,7 @@ class GameController extends AbstractController
     #[Route('/{id}', name: 'game_show', methods: ['GET'])]
     public function show(Game $game): JsonResponse
     {
-        // On ajoute les joueurs inscrits au match :
+        // Joueurs inscrits au match (optionnel, adapte selon ton usage)
         $players = [];
         foreach ($game->getGamePlayers() as $gp) {
             $user = $gp->getUser();
@@ -52,20 +52,19 @@ class GameController extends AbstractController
 
         $data = [
             'id' => $game->getId(),
-            'date' => $game->getDate()->format('Y-m-d H:i:s'),
+            'date' => $game->getDate()?->format('Y-m-d H:i:s'),
             'location' => $game->getLocation(),
-            'locationDetails' => $game->getLocationDetails(), // <- si tu utilises
-            'maxPlayers' => $game->getMaxPlayers(),
-            'playerCount' => $game->getPlayerCount(),
-            'createdAt' => $game->getCreatedAt()->format('Y-m-d H:i:s'),
+            'location_details' => $game->getLocationDetails(),
+            'max_players' => $game->getMaxPlayers(),
+            'player_count' => $game->getPlayerCount(),
+            'created_at' => $game->getCreatedAt()?->format('Y-m-d H:i:s'),
             'status' => $game->getStatus(),
-            'isClubMatch' => $game->isClubMatch(),
-            'players' => $players, // <= LA LISTE DES JOUEURS
+            'is_club_match' => $game->isClubMatch(),
+            'players' => $players,
         ];
 
         return $this->json($data);
     }
-
 
     #[Route('', name: 'game_create', methods: ['POST'])]
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
@@ -75,12 +74,12 @@ class GameController extends AbstractController
         $game = new Game();
         $game->setDate(new \DateTime($data['date']));
         $game->setLocation($data['location']);
-        $game->setLocationDetails($data['locationDetails'] ?? null); // <- ajouté
-        $game->setMaxPlayers($data['maxPlayers']);
-        $game->setPlayerCount($data['playerCount']);
-        $game->setCreatedAt(new \DateTime());
+        $game->setLocationDetails($data['location_details'] ?? null);
+        $game->setMaxPlayers($data['max_players']);
+        $game->setPlayerCount($data['player_count']);
+        $game->setCreatedAt(isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime());
         $game->setStatus($data['status']);
-        $game->setIsClubMatch($data['isClubMatch']);
+        $game->setIsClubMatch($data['is_club_match']);
 
         $em->persist($game);
         $em->flush();
@@ -95,11 +94,11 @@ class GameController extends AbstractController
 
         $game->setDate(new \DateTime($data['date']));
         $game->setLocation($data['location']);
-        $game->setLocationDetails($data['locationDetails'] ?? null); // <- ajouté
-        $game->setMaxPlayers($data['maxPlayers']);
-        $game->setPlayerCount($data['playerCount']);
+        $game->setLocationDetails($data['location_details'] ?? null);
+        $game->setMaxPlayers($data['max_players']);
+        $game->setPlayerCount($data['player_count']);
         $game->setStatus($data['status']);
-        $game->setIsClubMatch($data['isClubMatch']);
+        $game->setIsClubMatch($data['is_club_match']);
 
         $em->flush();
 
