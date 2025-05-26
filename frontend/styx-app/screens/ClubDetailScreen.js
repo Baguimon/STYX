@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Scr
 import { getClub, getClubMembers, setUserPoste, leaveClub, transferCaptain } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+
 
 const defaultClubImage = require('../assets/club-default.png');
 const defaultPlayerImage = require('../assets/player-default.png');
@@ -89,7 +91,7 @@ export default function ClubDetailScreen({ route }) {
   • Si tu es sur le même wifi que moi, ouvre ce lien :
   ${inviteLocal}
 
-  • Sinon, utilise ce lien universel (tunnel) :
+  • Sinon, utilise ce lien universel (tunnel) : 
   ${inviteTunnel}
 
   Ouvre-le avec Expo Go sur ton téléphone !
@@ -314,9 +316,17 @@ export default function ClubDetailScreen({ route }) {
             </View>
 
             {/* LISTE JOUEURS */}
-            <View style={styles.sectionTitleContainer}>
+            <View style={styles.sectionTitleRow}>
               <View style={styles.sectionTitleBar} />
               <Text style={styles.sectionTitle}>Joueurs</Text>
+              <TouchableOpacity
+                style={styles.inviteBtn}
+                onPress={handleShareInvite}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="person-add" size={18} color="#00D9FF" style={{ marginRight: 5 }} />
+                <Text style={styles.inviteBtnText}>Inviter</Text>
+              </TouchableOpacity>
             </View>
             <View>
               {sortedMembers.map(item => (
@@ -341,29 +351,21 @@ export default function ClubDetailScreen({ route }) {
                 </View>
               ))}
             </View>
-            <TouchableOpacity style={styles.addBtn} onPress={handleShareInvite}>
-              <Text style={styles.addBtnText}>Inviter des joueurs à votre club</Text>
+            <View style={styles.actionBar}>
+              {userInfo.id === captainId && (
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => navigation.navigate('ClubManageScreen', { club, members })}
+                >
+                  <Text style={styles.actionBtnText}>Gérer</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <TouchableOpacity style={styles.leaveBtn} onPress={handleLeave}>
+              <Text style={styles.leaveBtnText}>Quitter le club</Text>
             </TouchableOpacity>
 
-
-            {/* -- BOUTON QUITTER LE CLUB -- */}
-            <TouchableOpacity
-              style={{
-                marginTop: 36,
-                marginBottom: 36,
-                backgroundColor: '#d00',
-                borderRadius: 24,
-                paddingVertical: 18,
-                alignItems: 'center',
-                width: '94%',
-                alignSelf: 'center',
-              }}
-              onPress={handleLeave}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
-                Quitter le club
-              </Text>
-            </TouchableOpacity>
           </View>
         )}
 
@@ -618,21 +620,6 @@ const styles = StyleSheet.create({
   },
 
   // Ajout joueurs
-  addBtn: {
-    marginTop: 18,
-    marginBottom: 10,
-    backgroundColor: '#00D9FF',
-    borderRadius: 24,
-    paddingVertical: 15,
-    alignItems: 'center',
-    width: '98%',
-    alignSelf: 'center',
-  },
-  addBtnText: {
-    color: '#050A23',
-    fontWeight: 'bold',
-    fontSize: 17,
-  },
   captainDotField: {
     position: 'absolute',
     top: 2,
@@ -657,12 +644,31 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     zIndex: 10,
   },
-  sectionTitleContainer: {
+
+  sectionTitleRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginVertical: 14,
+  marginBottom: 6,
+  },
+  inviteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 14,
-    marginBottom: 6,
+    marginLeft: 'auto',
+    backgroundColor: 'rgba(0,217,255,0.13)',
+    paddingHorizontal: 13,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#00D9FF',
   },
+  inviteBtnText: {
+    color: '#00D9FF',
+    fontWeight: 'bold',
+    fontSize: 14.7,
+    letterSpacing: 0.4,
+  },
+
   sectionTitleBar: {
     width: 7,
     height: 28,
@@ -678,6 +684,50 @@ const styles = StyleSheet.create({
     textShadowColor: '#232346',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
+  },
+
+  actionBar: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: 16,
+  marginTop: 18,
+  marginBottom: 6,
+  },
+  actionBtn: {
+    backgroundColor: '#00D9FF',
+    borderRadius: 18,
+    paddingVertical: 13,
+    paddingHorizontal: 30,
+    alignItems: 'center',
+    marginHorizontal: 4,
+    minWidth: 100,
+  },
+  actionBtnText: {
+    color: '#050A23',
+    fontWeight: 'bold',
+    fontSize: 16.5,
+    letterSpacing: 0.5,
+  },
+  leaveBtn: {
+    marginTop: 6,
+    marginBottom: 24,
+    backgroundColor: '#E33232',
+    borderRadius: 18,
+    paddingVertical: 13,
+    paddingHorizontal: 38,
+    alignItems: 'center',
+    alignSelf: 'center',
+    shadowColor: '#E33232',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+  },
+  leaveBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16.5,
+    letterSpacing: 0.7,
   },
 
 });
