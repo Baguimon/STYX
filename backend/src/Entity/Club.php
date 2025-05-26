@@ -32,6 +32,9 @@ class Club
     #[ORM\OneToMany(mappedBy: "club", targetEntity: User::class)]
     private Collection $members;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $image = null;
+
     public function __construct()
     {
         $this->members = new ArrayCollection();
@@ -99,6 +102,17 @@ class Club
                 $member->setClub(null);
             }
         }
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): self
+    {
+        $this->image = $image;
         return $this;
     }
 }

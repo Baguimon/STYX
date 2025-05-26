@@ -166,7 +166,65 @@ class ClubController extends AbstractController
         $em->flush();
 
         return $this->json(['success' => true, 'newCaptainId' => $newCaptain->getId()]);
+    }   
+
+    #[Route('/{id}', name: 'update_club', methods: ['PATCH', 'POST'])]
+    public function updateClub($id, Request $request, ClubRepository $clubRepository, EntityManagerInterface $em): JsonResponse
+    {
+        $club = $clubRepository->find($id);
+        if (!$club) return $this->json(['error' => 'Club not found'], 404);
+
+        $data = json_decode($request->getContent(), true);
+        if (isset($data['name'])) $club->setName($data['name']);
+        $em->flush();
+        return $this->json([
+            'success' => true,
+            'club' => [
+                'id' => $club->getId(),
+                'name' => $club->getName(),
+                'image' => $club->getImage(),
+            ]
+        ]);
     }
 
+
+    #[Route('/{id}/upload-logo', name: 'upload_logo', methods: ['POST'])]
+    public function uploadLogo(Request $request, ClubRepository $clubRepository, EntityManagerInterface $em, $id): JsonResponse
+    {
+        $club = $clubRepository->find($id);
+        if (!$club) return $this->json(['error' => 'Club not found'], 404);
+
+        $file = $request->files->get('logo');
+        if (!$file) return $this->json(['error' => 'Aucun fichier envoyé'], 400);
+
+        $filename = uniqid() . '.' . $file->guessExtension();
+        $file->move($this->getParameter('club_logos_dir'), $filename);
+
+        $club->setImage('/uploads/club-logos/' . $filename);
+        $em->persist($club);
+        $em->flush();
+
+        return $this->json(['success' => true, 'image' => $club->getImage()]);
+    }
+    #[Route('/{clubId}/kick-member/{userId}', name: 'kick_member', methods: ['POST'])]
+    public function kickMember($clubId, $userId, ClubRepository $clubRepository, UserRepository $userRepository, EntityManagerInterface $em): JsonResponse
+    {
+        $club = $clubRepository->find($clubId);
+        $user = $userRepository->find($userId);
+
+        if (!$club || !$user) return $this->json(['error' => 'Club ou utilisateur non trouvé'], 404);
+        if ($user->getClub()?->getId() !== $club->getId()) return $this->json(['error' => 'Ce membre n\'est pas dans ce club'], 400);
+
+        // Sécurité : on ne peut pas kicker le capitaine
+        if ($club->getClubCaptain()->getId() == $userId) {
+            return $this->json(['error' => 'Impossible de kicker le capitaine !'], 400);
+        }
+
+        $user->setClub(null);
+        $em->persist($user);
+        $em->flush();
+
+        return $this->json(['success' => true]);
+    }
 
 }

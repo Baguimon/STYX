@@ -5,7 +5,8 @@ import ClubHomeScreen from '../screens/ClubHomeScreen';      // Le screen “cen
 import CreateClubScreen from '../screens/CreateClubScreen';
 import JoinClubScreen from '../screens/JoinClubScreen';
 import ClubDetailScreen from '../screens/ClubDetailScreen';
-import NoClubScreen from '../screens/NoClubScreen';        // Le screen “d’accueil” si pas de club
+import NoClubScreen from '../screens/NoClubScreen';
+import ClubManageScreen from '../screens/ClubManageScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -17,6 +18,7 @@ export default function ClubStackNavigator() {
       <Stack.Screen name="CreateClub" component={CreateClubScreen} />
       <Stack.Screen name="JoinClub" component={JoinClubScreen} />
       <Stack.Screen name="ClubDetail" component={ClubDetailScreen} />
+      <Stack.Screen name="ClubManageScreen" component={ClubManageScreen} />
     </Stack.Navigator>
   );
 }
