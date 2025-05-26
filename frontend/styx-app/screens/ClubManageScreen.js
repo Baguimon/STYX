@@ -54,24 +54,38 @@ export default function ClubManageScreen() {
       allowsEditing: true,
       aspect: [1, 1]
     });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
+    if (!result.cancelled && result.assets && result.assets.length > 0) {
       setUploading(true);
       try {
         const uri = result.assets[0].uri;
         const filename = uri.split('/').pop();
-        const ext = filename.split('.').pop();
-        const type = ext ? 'image/' + ext : 'image';
+        const type = 'image/' + filename.split('.').pop();
         const formData = new FormData();
         formData.append('logo', { uri, name: filename, type });
-        await uploadClubLogo(club.id, formData);
-        await fetchClubData();
+
+        const updated = await uploadClubLogo(club.id, formData);
+        setClub(c => ({ ...c, image: updated.image }));
         Alert.alert('Succès', "Logo mis à jour !");
       } catch (e) {
-        Alert.alert('Erreur', "Erreur lors de l’upload du logo");
+        // Récupère et affiche les infos détaillées
+        let backendMsg = '';
+        if (e.response && e.response.data) {
+          backendMsg = typeof e.response.data === 'object'
+            ? JSON.stringify(e.response.data)
+            : e.response.data;
+        }
+        Alert.alert(
+          'Erreur',
+          "Erreur lors de l’upload du logo.\n"
+          + (e.message ? 'Front: ' + e.message : '')
+          + (backendMsg ? '\nBack: ' + backendMsg : '')
+        );
+        console.error('Erreur lors de l’upload du logo :', e, e.response?.data);
       }
       setUploading(false);
     }
   };
+
 
   // Nom du club
   const handleSaveName = async () => {
