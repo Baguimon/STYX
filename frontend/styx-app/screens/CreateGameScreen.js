@@ -15,16 +15,12 @@ import { createGame } from '../services/api';
 import LocationInput from '../components/LocationInput';
 import EvenNumberPicker from '../components/EvenNumberPicker';
 
-// Fonction pour extraire uniquement la ville
 function getCityFromAddressComponents(components, fallbackName = '') {
   if (!components) return '';
-
   let cityObj = components.find(c => c.types.includes('locality'));
   if (cityObj) return cityObj.long_name;
-
   cityObj = components.find(c => c.types.includes('administrative_area_level_3'));
   if (cityObj) return cityObj.long_name;
-
   cityObj = components.find(c =>
     c.types.includes('administrative_area_level_2') &&
     !["Département", "Region", "Occitanie", "Grand Est", "Île-de-France", "Bretagne", "Nouvelle-Aquitaine"].some(region =>
@@ -32,7 +28,6 @@ function getCityFromAddressComponents(components, fallbackName = '') {
     )
   );
   if (cityObj) return cityObj.long_name;
-
   if (fallbackName) {
     const parts = fallbackName.split(',').map(p => p.trim());
     const city = parts.find(word =>
@@ -52,14 +47,13 @@ export default function CreateGameScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempTime, setTempTime] = useState(date);
 
-  // snake_case for backend compatibility
+  // ⬇️ On retire is_club_match du form
   const [form, setForm] = useState({
     location: '',
     location_details: '',
     max_players: '',
     player_count: '',
     status: '',
-    is_club_match: 'false',
   });
 
   const handleChange = (name, value) => {
@@ -74,10 +68,8 @@ export default function CreateGameScreen() {
         location_details: form.location_details,
         max_players: parseInt(form.max_players, 10),
         player_count: parseInt(form.player_count, 10),
-        is_club_match: form.is_club_match === 'true' || form.is_club_match === true,
         status: form.status,
         created_at: new Date().toISOString(),
-        // players_team1_id: null, // Décommente/complète si besoin
       };
       await createGame(payload);
       Alert.alert('Succès', 'Match créé avec succès');
@@ -88,6 +80,7 @@ export default function CreateGameScreen() {
     }
   };
 
+  // ⬇️ On retire l’étape "Match de club ?" et l’affichage du club dans le résumé
   const steps = [
     {
       title: 'Sélectionnez la date',
@@ -219,7 +212,6 @@ export default function CreateGameScreen() {
                 city = tryCity || name;
               }
               handleChange('location', city);
-              // Tu peux stocker latitude/longitude ailleurs si jamais tu ajoutes à la BDD plus tard
             }}
           />
           <TextInput
@@ -296,40 +288,10 @@ export default function CreateGameScreen() {
       )
     },
     {
-      title: 'Match de club ?',
-      content: (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Match de club ?</Text>
-          <View style={styles.toggleContainer}>
-            {['true', 'false'].map(option => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.toggleButton,
-                  form.is_club_match === option && styles.toggleButtonActive
-                ]}
-                onPress={() => handleChange('is_club_match', option)}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    form.is_club_match === option && styles.toggleTextActive
-                  ]}
-                >
-                  {option === 'true' ? 'Oui' : 'Non'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )
-    },
-    {
       title: 'Récapitulatif',
       content: (
         <View style={styles.summaryCard}>
           <Text style={styles.summaryCardTitle}>Récapitulatif du match</Text>
-
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Date & Heure</Text>
             <Text style={styles.summaryValue}>
@@ -337,7 +299,6 @@ export default function CreateGameScreen() {
               {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
-
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Lieu</Text>
             <Text style={styles.summaryValue}>{form.location}</Text>
@@ -348,24 +309,15 @@ export default function CreateGameScreen() {
               <Text style={styles.summaryValue}>{form.location_details}</Text>
             </View>
           ) : null}
-
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Joueurs</Text>
             <Text style={styles.summaryValue}>
               {form.player_count} / {form.max_players}
             </Text>
           </View>
-
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Statut</Text>
             <Text style={styles.summaryValue}>{form.status}</Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Club</Text>
-            <Text style={styles.summaryValue}>
-              {form.is_club_match === 'true' ? 'Oui' : 'Non'}
-            </Text>
           </View>
         </View>
       ),
@@ -382,7 +334,6 @@ export default function CreateGameScreen() {
       case 3: return form.max_players && parseInt(form.max_players, 10) >= 2;
       case 4: return form.player_count && parseInt(form.player_count, 10) >= 0;
       case 5: return !!form.status;
-      case 6: return form.is_club_match === 'true' || form.is_club_match === 'false';
       default: return true;
     }
   };
