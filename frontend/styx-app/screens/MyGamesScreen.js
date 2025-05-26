@@ -7,6 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 import { getUserGames } from '../services/api';
 import matchIcon from '../assets/match-icon.png';
 import { Ionicons } from '@expo/vector-icons';
+import { getGameDetails, joinGame, leaveGame, switchTeam } from '../services/api';
+
 
 const { width } = Dimensions.get('window');
 

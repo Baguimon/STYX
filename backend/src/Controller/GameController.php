@@ -39,20 +39,33 @@ class GameController extends AbstractController
     #[Route('/{id}', name: 'game_show', methods: ['GET'])]
     public function show(Game $game): JsonResponse
     {
+        // On ajoute les joueurs inscrits au match :
+        $players = [];
+        foreach ($game->getGamePlayers() as $gp) {
+            $user = $gp->getUser();
+            $players[] = [
+                'id' => $user->getId(),
+                'username' => $user->getUsername(),
+                'team' => $gp->getTeam(),
+            ];
+        }
+
         $data = [
             'id' => $game->getId(),
             'date' => $game->getDate()->format('Y-m-d H:i:s'),
             'location' => $game->getLocation(),
-            'locationDetails' => $game->getLocationDetails(), // <- ajouté
+            'locationDetails' => $game->getLocationDetails(), // <- si tu utilises
             'maxPlayers' => $game->getMaxPlayers(),
             'playerCount' => $game->getPlayerCount(),
             'createdAt' => $game->getCreatedAt()->format('Y-m-d H:i:s'),
             'status' => $game->getStatus(),
             'isClubMatch' => $game->isClubMatch(),
+            'players' => $players, // <= LA LISTE DES JOUEURS
         ];
 
         return $this->json($data);
     }
+
 
     #[Route('', name: 'game_create', methods: ['POST'])]
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
