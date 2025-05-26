@@ -50,6 +50,10 @@ export const getGameById = async (id) => {
   return response.data;
 };
 
+// ----------- Ajout fonction DÉTAILS MATCH -----------
+// Alias pour l’UI, peut pointer sur la même route
+export const getGameDetails = getGameById;
+
 // ** LA BONNE MÉTHODE POUR REJOINDRE **
 export const joinGame = async (gameId, userId, team) => {
   const response = await api.post(`/games/${gameId}/join`, { userId, team });
@@ -65,7 +69,6 @@ export const getUserGames = async (userId) => {
 
 export const getUserClub = async (userId) => {
   const response = await api.get(`/users/${userId}/club`);
-
   return response.data;
 };
 
