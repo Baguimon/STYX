@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions, Alert, Share } from 'react-native';
 import { getClub, getClubMembers, setUserPoste, leaveClub, transferCaptain } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -95,6 +95,28 @@ export default function ClubDetailScreen({ route }) {
       Alert.alert('Erreur', "Impossible de gérer le statut remplaçant");
     }
   };
+
+  const inviteLocal = `exp://172.29.193.238:8081?clubId=${club?.id}`;
+  const inviteTunnel = `exp://6vrrl3c-anonymous-8081.exp.direct?clubId=${club?.id}`;
+
+  const handleShareInvite = async () => {
+    try {
+      await Share.share({
+        message: `🚀 Rejoins mon club sur Styx !\n
+  • Si tu es sur le même wifi que moi, ouvre ce lien :
+  ${inviteLocal}
+
+  • Sinon, utilise ce lien universel (tunnel) :
+  ${inviteTunnel}
+
+  Ouvre-le avec Expo Go sur ton téléphone !
+  (ou scanne le QR code de l’app, ou copie le lien)`,
+      });
+    } catch (error) {
+      Alert.alert('Erreur', "Impossible d’ouvrir la fenêtre de partage");
+    }
+  };
+
 
   const handleLeave = async () => {
     Alert.alert(
@@ -336,9 +358,10 @@ export default function ClubDetailScreen({ route }) {
                 </View>
               ))}
             </View>
-            <TouchableOpacity style={styles.addBtn}>
-              <Text style={styles.addBtnText}>Ajouter des joueurs à votre club</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={handleShareInvite}>
+              <Text style={styles.addBtnText}>Inviter des joueurs à votre club</Text>
             </TouchableOpacity>
+
 
             {/* -- BOUTON QUITTER LE CLUB -- */}
             <TouchableOpacity
