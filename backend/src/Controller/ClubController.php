@@ -136,6 +136,12 @@ class ClubController extends AbstractController
             }
         }
 
+        foreach ($usersDuClub as $membre) {
+            if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {
+                return $this->json(['error' => 'Poste déjà pris'], 409);
+            }
+        }
+
         $user->setPoste($poste);
         $em->flush();
 

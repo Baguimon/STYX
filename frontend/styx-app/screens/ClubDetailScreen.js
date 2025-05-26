@@ -77,9 +77,23 @@ export default function ClubDetailScreen({ route }) {
         )
       );
     } catch (e) {
-      Alert.alert('Erreur', e?.response?.data?.error || 'Impossible de prendre ce poste');
+      if (e?.response?.data?.error === 'Poste déjà pris') {
+        // Attribuer remplaçant automatiquement !
+        await setUserPoste(clubId, userInfo.id, 'REMPLACANT');
+        setMembers(prev =>
+          prev.map(m =>
+            m.id === userInfo.id
+              ? { ...m, poste: 'REMPLACANT' }
+              : m
+          )
+        );
+        Alert.alert("Poste occupé", "Ce poste est déjà pris. Tu as été placé en remplaçant.");
+      } else {
+        Alert.alert('Erreur', e?.response?.data?.error || 'Impossible de prendre ce poste');
+      }
     }
   };
+
 
   const inviteLocal = `exp://172.29.193.238:8081?clubId=${club?.id}`;
   const inviteTunnel = `exp://6vrrl3c-anonymous-8081.exp.direct?clubId=${club?.id}`;
