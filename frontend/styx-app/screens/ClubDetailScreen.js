@@ -97,19 +97,34 @@ export default function ClubDetailScreen({ route }) {
   };
 
   const handleLeave = async () => {
-    try {
-      const userId = userInfo?.id;
-      await leaveClub(userId); // <= juste ça !
-      Alert.alert('Tu as quitté le club');
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'NoClubScreen' }]
-      });
-    } catch (e) {
-      Alert.alert('Erreur', "Impossible de quitter le club");
-      console.log('Erreur leaveClub :', e?.response?.data, e.message, e);
-    }
+    Alert.alert(
+      'Confirmation',
+      'Es-tu sûr de vouloir quitter le club ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { 
+          text: 'Oui, quitter', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const userId = userInfo?.id;
+              await leaveClub(userId);
+              Alert.alert('Tu as quitté le club');
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'NoClubScreen' }]
+              });
+            } catch (e) {
+              Alert.alert('Erreur', "Impossible de quitter le club");
+              console.log('Erreur leaveClub :', e?.response?.data, e.message, e);
+            }
+          }
+        },
+      ],
+      { cancelable: true }
+    );
   };
+
 
 
 
@@ -366,11 +381,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 26,
+    paddingTop: 40,
     paddingHorizontal: 12,
     paddingBottom: 10,
   },
-  clubImage: {
+  clubImage: {  
     width: 70,
     height: 70,
     borderRadius: 35,
