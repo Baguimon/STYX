@@ -79,23 +79,6 @@ export default function ClubDetailScreen({ route }) {
     }
   };
 
-  const handleToggleRemplacant = async () => {
-    if (!userInfo?.id) return;
-    const isRemplacant = members.find(m => m.id === userInfo.id && m.poste === 'REMPLACANT');
-    try {
-      await setUserPoste(clubId, userInfo.id, isRemplacant ? null : 'REMPLACANT');
-      setMembers(prev =>
-        prev.map(m =>
-          m.id === userInfo.id
-            ? { ...m, poste: isRemplacant ? null : 'REMPLACANT' }
-            : m
-        )
-      );
-    } catch (e) {
-      Alert.alert('Erreur', "Impossible de gérer le statut remplaçant");
-    }
-  };
-
   const inviteLocal = `exp://172.29.193.238:8081?clubId=${club?.id}`;
   const inviteTunnel = `exp://6vrrl3c-anonymous-8081.exp.direct?clubId=${club?.id}`;
 
