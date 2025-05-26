@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   Image, Alert, ScrollView, ActivityIndicator
@@ -7,9 +7,12 @@ import * as ImagePicker from 'expo-image-picker';
 import { getClub, getClubMembers, updateClub, uploadClubLogo, kickMember, blockMember, setUserPoste, transferCaptain } from '../services/api';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { AuthContext } from '../contexts/AuthContext'; // <--- AJOUT CONTEXT
+import { AuthContext } from '../contexts/AuthContext';
 
 const defaultPlayerImage = require('../assets/player-default.png');
+
+// Rôles disponibles
+const POSTES = ['Gardien', 'Défenseur', 'Milieu', 'Attaquant', 'Coach', 'Remplaçant'];
 
 export default function ClubManageScreen() {
   const navigation = useNavigation();
@@ -21,26 +24,29 @@ export default function ClubManageScreen() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const { userInfo } = useContext(AuthContext); // <--- AJOUT CONTEXT
+  const { userInfo } = useContext(AuthContext);
 
-  // Re-fetch infos du club si besoin
-  useEffect(() => {
+  // Refetch club infos (factorisé pour pouvoir l'utiliser partout)
+  const fetchClubData = useCallback(async () => {
     if (!club?.id) return;
-    (async () => {
-      setLoading(true);
-      try {
-        const [freshClub, freshMembers] = await Promise.all([
-          getClub(club.id),
-          getClubMembers(club.id)
-        ]);
-        setClub(freshClub);
-        setMembers(freshMembers);
-        setName(freshClub.name);
-      } catch (e) {}
-      setLoading(false);
-    })();
+    setLoading(true);
+    try {
+      const [freshClub, freshMembers] = await Promise.all([
+        getClub(club.id),
+        getClubMembers(club.id)
+      ]);
+      setClub(freshClub);
+      setMembers(freshMembers);
+      setName(freshClub.name);
+    } catch (e) {}
+    setLoading(false);
   }, [club?.id]);
 
+  useEffect(() => {
+    fetchClubData();
+  }, [fetchClubData]);
+
+  // Logo
   const handlePickLogo = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -48,16 +54,17 @@ export default function ClubManageScreen() {
       allowsEditing: true,
       aspect: [1, 1]
     });
-    if (!result.cancelled && result.assets && result.assets.length > 0) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       setUploading(true);
       try {
         const uri = result.assets[0].uri;
         const filename = uri.split('/').pop();
-        const type = 'image/' + filename.split('.').pop();
+        const ext = filename.split('.').pop();
+        const type = ext ? 'image/' + ext : 'image';
         const formData = new FormData();
         formData.append('logo', { uri, name: filename, type });
-        const updated = await uploadClubLogo(club.id, formData);
-        setClub(c => ({ ...c, image: updated.image }));
+        await uploadClubLogo(club.id, formData);
+        await fetchClubData();
         Alert.alert('Succès', "Logo mis à jour !");
       } catch (e) {
         Alert.alert('Erreur', "Erreur lors de l’upload du logo");
@@ -66,6 +73,7 @@ export default function ClubManageScreen() {
     }
   };
 
+  // Nom du club
   const handleSaveName = async () => {
     if (!name || name.trim().length < 2) {
       Alert.alert('Erreur', 'Le nom du club est trop court.');
@@ -73,8 +81,8 @@ export default function ClubManageScreen() {
     }
     setLoading(true);
     try {
-      const updated = await updateClub(club.id, { name });
-      setClub(c => ({ ...c, name: updated.name }));
+      await updateClub(club.id, { name });
+      await fetchClubData();
       Alert.alert('Succès', 'Nom du club mis à jour !');
     } catch (e) {
       Alert.alert('Erreur', "Impossible de modifier le nom");
@@ -82,6 +90,7 @@ export default function ClubManageScreen() {
     setLoading(false);
   };
 
+  // Virer un membre
   const handleKick = memberId => {
     Alert.alert(
       "Exclure ce joueur",
@@ -95,7 +104,7 @@ export default function ClubManageScreen() {
             setLoading(true);
             try {
               await kickMember(club.id, memberId);
-              setMembers(members.filter(m => m.id !== memberId));
+              await fetchClubData();
             } catch (e) {
               Alert.alert('Erreur', "Impossible de virer ce joueur");
             }
@@ -106,6 +115,7 @@ export default function ClubManageScreen() {
     );
   };
 
+  // Bloquer un membre
   const handleBlock = memberId => {
     Alert.alert(
       "Bloquer ce joueur",
@@ -119,7 +129,7 @@ export default function ClubManageScreen() {
             setLoading(true);
             try {
               await blockMember(club.id, memberId);
-              setMembers(members.filter(m => m.id !== memberId));
+              await fetchClubData();
             } catch (e) {
               Alert.alert('Erreur', "Impossible de bloquer ce joueur");
             }
@@ -130,31 +140,44 @@ export default function ClubManageScreen() {
     );
   };
 
+  // Changement de poste via boutons
   const handleChangePoste = (userId, currentPoste) => {
-    Alert.prompt(
-      "Changer de poste",
-      "Entre le nouveau poste pour ce joueur (ex : 'BU', 'MC', ...). Vide pour retirer.",
-      [
-        { text: "Annuler", style: "cancel" },
+    Alert.alert(
+      "Changer le poste",
+      "Choisis le nouveau poste pour ce joueur :",
+      POSTES.map(role => ({
+        text: role,
+        onPress: async () => {
+          setLoading(true);
+          try {
+            await setUserPoste(club.id, userId, role);
+            await fetchClubData();
+          } catch (e) {
+            Alert.alert('Erreur', "Impossible de modifier le poste");
+          }
+          setLoading(false);
+        }
+      })).concat([
         {
-          text: "OK",
-          onPress: async (poste) => {
+          text: "Retirer le poste",
+          onPress: async () => {
             setLoading(true);
             try {
-              await setUserPoste(club.id, userId, poste || null);
-              setMembers(members.map(m => m.id === userId ? { ...m, poste } : m));
+              await setUserPoste(club.id, userId, null);
+              await fetchClubData();
             } catch (e) {
-              Alert.alert('Erreur', "Impossible de modifier le poste");
+              Alert.alert('Erreur', "Impossible de retirer le poste");
             }
             setLoading(false);
-          }
-        }
-      ],
-      'plain-text',
-      currentPoste || ''
+          },
+          style: 'destructive'
+        },
+        { text: "Annuler", style: "cancel" }
+      ])
     );
   };
 
+  // Transfert de capitanat
   const handleTransferCaptain = (member) => {
     Alert.alert(
       "Donner le capitanat",
@@ -167,8 +190,8 @@ export default function ClubManageScreen() {
             setLoading(true);
             try {
               await transferCaptain(club.id, member.id);
+              await fetchClubData();
               Alert.alert("Succès", "Le capitanat a été transféré.");
-              navigation.goBack();
             } catch (e) {
               Alert.alert("Erreur", "Impossible de transférer le capitanat.");
             }
@@ -192,7 +215,7 @@ export default function ClubManageScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={handlePickLogo}>
           <Image
-            source={club.image ? { uri: club.image } : require('../assets/club-default.png')}
+            source={club?.image ? { uri: club.image } : require('../assets/club-default.png')}
             style={styles.clubImage}
           />
           {uploading && <ActivityIndicator color="#00D9FF" style={styles.uploadLoader} />}
@@ -224,7 +247,7 @@ export default function ClubManageScreen() {
             <Text style={{ color: '#fff', fontWeight: '700' }}>{m.username || m.nom}</Text>
             <Text style={{ color: '#82E482', fontSize: 13 }}>Poste : {m.poste || '-'}</Text>
           </View>
-          {/* Changement de poste : autorisé pour tout le monde */}
+          {/* Changement de poste via boutons */}
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={() => handleChangePoste(m.id, m.poste)}
