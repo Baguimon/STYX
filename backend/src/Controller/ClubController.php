@@ -115,7 +115,7 @@ class ClubController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $poste = $data['poste'] ?? null;
 
-        if (!$poste) {
+        if ($poste === null) {
             return $this->json(['error' => 'Aucun poste précisé'], 400);
         }
 
@@ -130,17 +130,13 @@ class ClubController extends AbstractController
             return $this->json(['error' => 'Ce joueur n\'est pas dans ce club'], 403);
         }
 
-        // Vérifier si le poste est déjà pris par un autre membre
-        $usersDuClub = $userRepository->findBy(['club' => $club]);
-        foreach ($usersDuClub as $membre) {
-            if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {
-                return $this->json(['error' => 'Poste déjà pris'], 409);
-            }
-        }
-
-        foreach ($usersDuClub as $membre) {
-            if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {
-                return $this->json(['error' => 'Poste déjà pris'], 409);
+        // Un seul joueur par poste... sauf pour les remplaçants !
+        if ($poste !== 'REMPLACANT') {
+            $usersDuClub = $userRepository->findBy(['club' => $club]);
+            foreach ($usersDuClub as $membre) {
+                if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {
+                    return $this->json(['error' => 'Poste déjà pris'], 409);
+                }
             }
         }
 
@@ -149,6 +145,7 @@ class ClubController extends AbstractController
 
         return $this->json(['success' => true]);
     }
+
     #[Route('/{clubId}/transfer-captain', name: 'transfer_captain', methods: ['POST'])]
     public function transferCaptain(
         $clubId,
