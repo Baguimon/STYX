@@ -35,13 +35,7 @@ class Game
     #[ORM\Column(length: 20)]
     private ?string $status = null;
 
-    #[ORM\Column]
-    private ?bool $isClubMatch = null;
-
-    // 🚨 Ajoute ce champ pour le créateur (nullable d'abord)
-    #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: true)]
-    // private ?User $creator = null; // décommente si tu veux vraiment le créateur plus tard
+    // SUPPRIMÉ : isClubMatch
 
     /**
      * @var Collection<int, GamePlayer>
@@ -126,17 +120,6 @@ class Game
     public function setStatus(string $status): static
     {
         $this->status = $status;
-        return $this;
-    }
-
-    public function isClubMatch(): ?bool
-    {
-        return $this->isClubMatch;
-    }
-
-    public function setIsClubMatch(bool $isClubMatch): static
-    {
-        $this->isClubMatch = $isClubMatch;
         return $this;
     }
 

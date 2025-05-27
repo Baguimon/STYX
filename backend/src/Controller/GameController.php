@@ -30,7 +30,6 @@ class GameController extends AbstractController
             'player_count' => $game->getPlayerCount(),
             'created_at' => $game->getCreatedAt()?->format('Y-m-d H:i:s'),
             'status' => $game->getStatus(),
-            'is_club_match' => $game->isClubMatch(),
         ], $games);
 
         return $this->json($data);
@@ -59,7 +58,6 @@ class GameController extends AbstractController
             'player_count' => $game->getPlayerCount(),
             'created_at' => $game->getCreatedAt()?->format('Y-m-d H:i:s'),
             'status' => $game->getStatus(),
-            'is_club_match' => $game->isClubMatch(),
             'players' => $players,
         ];
 
@@ -79,7 +77,6 @@ class GameController extends AbstractController
         $game->setPlayerCount($data['player_count']);
         $game->setCreatedAt(isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime());
         $game->setStatus($data['status']);
-        $game->setIsClubMatch($data['is_club_match']);
 
         $em->persist($game);
         $em->flush();
@@ -98,7 +95,6 @@ class GameController extends AbstractController
         $game->setMaxPlayers($data['max_players']);
         $game->setPlayerCount($data['player_count']);
         $game->setStatus($data['status']);
-        $game->setIsClubMatch($data['is_club_match']);
 
         $em->flush();
 
