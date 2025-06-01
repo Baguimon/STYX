@@ -195,17 +195,21 @@ class ClubController extends AbstractController
         }
 
         // 💡 Ajoute ça pour gérer la sélection de logo prédéfini
-        if (isset($data['image'])) {
-            // (Optionnel) Vérifie que l'image fait partie des logos autorisés
-            $allowed = [
-                '/assets/club-imgs/ecusson-1.png',
-                '/assets/club-imgs/ecusson-2.png',
-                '/assets/club-imgs/ecusson-3.png',
-            ];
-            if (!in_array($data['image'], $allowed)) {
-                return $this->json(['error' => 'Logo non autorisé.'], 400);
+        if (array_key_exists('image', $data)) {
+            if ($data['image'] !== null && $data['image'] !== '') {
+                $allowed = [
+                    '/assets/club-imgs/ecusson-1.png',
+                    '/assets/club-imgs/ecusson-2.png',
+                    '/assets/club-imgs/ecusson-3.png',
+                ];
+                if (!in_array($data['image'], $allowed)) {
+                    return $this->json(['error' => 'Logo non autorisé.'], 400);
+                }
+                $club->setImage($data['image']);
+            } else {
+                // Si tu veux effacer l'image (remettre à null)
+                $club->setImage(null);
             }
-            $club->setImage($data['image']);
         }
 
         $em->flush();
