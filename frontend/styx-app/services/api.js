@@ -110,11 +110,6 @@ export const transferCaptain = async (clubId, newCaptainId) => {
 export const updateClub = (clubId, data) =>
   api.patch(`/clubs/${clubId}`, data);
 
-export const uploadClubLogo = (clubId, formData) =>
-  api.post(`/clubs/${clubId}/upload-logo`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
-
 export const kickMember = (clubId, memberId) =>
   api.post(`/clubs/${clubId}/kick`, { memberId });
 

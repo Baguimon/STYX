@@ -3,13 +3,19 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   Image, Alert, ScrollView, ActivityIndicator, Modal, Pressable
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { getClub, getClubMembers, updateClub, uploadClubLogo, kickMember, blockMember, setUserPoste, transferCaptain } from '../services/api';
+import { getClub, getClubMembers, updateClub, kickMember, blockMember, setUserPoste, transferCaptain } from '../services/api';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
 
 const defaultPlayerImage = require('../assets/player-default.png');
+
+// === Logos prédéfinis à proposer ===
+const CLUB_LOGO_CHOICES = [
+  require('../assets/club-imgs/ecusson-1.png'),
+  require('../assets/club-imgs/ecusson-2.png'),
+  require('../assets/club-imgs/ecusson-3.png'),
+];
 
 const POSTES_11 = [
   { key: 'GB', label: 'GB' },
@@ -34,14 +40,28 @@ export default function ClubManageScreen() {
   const [members, setMembers] = useState(initialMembers || []);
   const [name, setName] = useState(initialClub?.name || '');
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   // Pour la mini-fenêtre de changement de poste
   const [posteModal, setPosteModal] = useState({ open: false, member: null });
+  // Pour la modal de sélection de logo
+  const [logoModalVisible, setLogoModalVisible] = useState(false);
 
   const { userInfo } = useContext(AuthContext);
 
-  // Refetch club infos (factorisé)
+  // Fonction utilitaire pour extraire le nom de fichier d'un require (expo)
+  function getAssetFilename(asset) {
+    if (typeof asset === 'object' && asset.uri) {
+      const parts = asset.uri.split('/');
+      return parts[parts.length - 1];
+    }
+    if (typeof asset === 'string') {
+      const parts = asset.split('/');
+      return parts[parts.length - 1];
+    }
+    return '';
+  }
+
+  // Rafraîchir club et membres
   const fetchClubData = useCallback(async () => {
     if (!club?.id) return;
     setLoading(true);
@@ -58,46 +78,6 @@ export default function ClubManageScreen() {
   }, [club?.id]);
 
   useEffect(() => { fetchClubData(); }, [fetchClubData]);
-
-  // Logo
-  const handlePickLogo = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-      allowsEditing: true,
-      aspect: [1, 1]
-    });
-    if (!result.cancelled && result.assets && result.assets.length > 0) {
-      setUploading(true);
-      try {
-        const uri = result.assets[0].uri;
-        const filename = uri.split('/').pop();
-        const type = 'image/' + filename.split('.').pop();
-        const formData = new FormData();
-        formData.append('logo', { uri, name: filename, type });
-
-        const updated = await uploadClubLogo(club.id, formData);
-        setClub(c => ({ ...c, image: updated.image }));
-        await fetchClubData();
-        Alert.alert('Succès', "Logo mis à jour !");
-      } catch (e) {
-        let backendMsg = '';
-        if (e.response && e.response.data) {
-          backendMsg = typeof e.response.data === 'object'
-            ? JSON.stringify(e.response.data)
-            : e.response.data;
-        }
-        Alert.alert(
-          'Erreur',
-          "Erreur lors de l’upload du logo.\n"
-          + (e.message ? 'Front: ' + e.message : '')
-          + (backendMsg ? '\nBack: ' + backendMsg : '')
-        );
-        console.error('Erreur lors de l’upload du logo :', e, e.response?.data);
-      }
-      setUploading(false);
-    }
-  };
 
   // Nom du club
   const handleSaveName = async () => {
@@ -205,6 +185,23 @@ export default function ClubManageScreen() {
     );
   };
 
+  // Gestion du choix du logo
+  const handleChooseLogo = async (imgSrc) => {
+    setLoading(true);
+    try {
+      const filename = getAssetFilename(imgSrc);
+      // On envoie le nom du fichier en tant que logo (pas d'upload !)
+      await updateClub(club.id, { image: `/assets/club-imgs/${filename}` }); // Ajuste selon ton backend si besoin
+      setLogoModalVisible(false);
+      await fetchClubData();
+      Alert.alert('Succès', "Logo mis à jour !");
+    } catch (e) {
+      Alert.alert('Erreur', "Erreur lors du changement de logo.");
+      setLogoModalVisible(false);
+    }
+    setLoading(false);
+  };
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111' }}>
@@ -217,12 +214,18 @@ export default function ClubManageScreen() {
     <View style={{ flex: 1, backgroundColor: '#111' }}>
       <ScrollView style={{ flex: 1 }}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={handlePickLogo}>
+          {/* Affichage du logo du club, on ouvre la modal de sélection */}
+          <TouchableOpacity onPress={() => setLogoModalVisible(true)}>
             <Image
-              source={club?.image ? { uri: club.image } : require('../assets/club-default.png')}
+              source={
+                club?.image
+                  ? CLUB_LOGO_CHOICES.find(img =>
+                      club.image.endsWith(getAssetFilename(img))
+                    ) || CLUB_LOGO_CHOICES[0]
+                  : CLUB_LOGO_CHOICES[0]
+              }
               style={styles.clubImage}
             />
-            {uploading && <ActivityIndicator color="#00D9FF" style={styles.uploadLoader} />}
             <Ionicons name="camera" size={22} color="#00D9FF" style={styles.editIcon} />
           </TouchableOpacity>
           <View style={{ flex: 1, marginLeft: 16 }}>
@@ -289,6 +292,42 @@ export default function ClubManageScreen() {
         ))}
         <View style={{ height: 60 }} />
       </ScrollView>
+
+      {/* MODAL - Sélection du logo */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={logoModalVisible}
+        onRequestClose={() => setLogoModalVisible(false)}
+      >
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setLogoModalVisible(false)}
+        />
+        <View style={styles.logoModalContainer}>
+          <Text style={styles.logoModalTitle}>Choisis un logo pour ton club</Text>
+          <ScrollView contentContainerStyle={styles.logoGrid}>
+            {CLUB_LOGO_CHOICES.map((imgSrc, idx) => (
+              <TouchableOpacity
+                key={idx}
+                onPress={() => handleChooseLogo(imgSrc)}
+                style={[
+                  styles.logoChoice,
+                  club?.image &&
+                  club.image.endsWith(getAssetFilename(imgSrc))
+                    ? styles.logoSelected
+                    : null
+                ]}
+              >
+                <Image source={imgSrc} style={styles.logoImagePreview} />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity style={styles.closeSheetBtn} onPress={() => setLogoModalVisible(false)}>
+            <Text style={{ color: '#00D9FF', fontWeight: 'bold' }}>Fermer</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
 
       {/* MODAL Mini BottomSheet pour choisir le poste */}
       <Modal
@@ -369,13 +408,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#111',
     padding: 4,
     borderRadius: 20
-  },
-  uploadLoader: {
-    position: 'absolute',
-    alignSelf: 'center',
-    top: 28,
-    left: 28,
-    zIndex: 10
   },
   nameInput: {
     color: '#fff',
@@ -502,5 +534,47 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingVertical: 8,
     paddingHorizontal: 16,
+  },
+  logoModalContainer: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0,
+    backgroundColor: '#191B2B',
+    borderTopLeftRadius: 19,
+    borderTopRightRadius: 19,
+    padding: 20,
+    zIndex: 10,
+    elevation: 10,
+    alignItems: 'center',
+  },
+  logoModalTitle: {
+    color: '#00D9FF',
+    fontWeight: '700',
+    fontSize: 21,
+    marginBottom: 15,
+    textAlign: 'center'
+  },
+  logoGrid: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 18,
+    paddingBottom: 8,
+  },
+  logoChoice: {
+    marginHorizontal: 8,
+    borderWidth: 3,
+    borderColor: 'transparent',
+    borderRadius: 60,
+    padding: 6,
+    backgroundColor: '#191B2B',
+  },
+  logoSelected: {
+    borderColor: '#00D9FF',
+    backgroundColor: '#23284a',
+  },
+  logoImagePreview: {
+    width: 78,
+    height: 78,
+    borderRadius: 40,
+    backgroundColor: '#222',
   },
 });
