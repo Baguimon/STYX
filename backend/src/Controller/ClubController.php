@@ -118,11 +118,11 @@ class ClubController extends AbstractController
         int $userId
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
-        $poste = $data['poste'] ?? null;
 
-        if ($poste === null) {
+        if (!array_key_exists('poste', $data)) {
             return $this->json(['error' => 'Aucun poste précisé'], 400);
         }
+        $poste = $data['poste'];
 
         $club = $clubRepository->find($clubId);
         $user = $userRepository->find($userId);
@@ -136,7 +136,7 @@ class ClubController extends AbstractController
         }
 
         // Un seul joueur par poste... sauf pour les remplaçants !
-        if ($poste !== 'REMPLACANT') {
+        if ($poste !== null && $poste !== 'REMPLACANT') {
             $usersDuClub = $userRepository->findBy(['club' => $club]);
             foreach ($usersDuClub as $membre) {
                 if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {

@@ -342,7 +342,9 @@ export default function ClubDetailScreen({ route }) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.playerName}>{item.username || item.nom}</Text>
-                  <Text style={styles.playerPosteList}>Poste : {item.poste || '-'}</Text>
+                  <Text style={styles.playerPosteList}>
+                    Poste : {item.poste ? item.poste : 'Aucun'}
+                  </Text>
                 </View>
                 <TouchableOpacity style={styles.profileBtn}>
                   <Text style={styles.profileBtnText}>Profil</Text>
