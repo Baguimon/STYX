@@ -46,8 +46,6 @@ export default function CreateGameScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempTime, setTempTime] = useState(date);
-
-  // ⬇️ On retire is_club_match du form
   const [form, setForm] = useState({
     location: '',
     location_details: '',
@@ -80,7 +78,6 @@ export default function CreateGameScreen() {
     }
   };
 
-  // ⬇️ On retire l’étape "Match de club ?" et l’affichage du club dans le résumé
   const steps = [
     {
       title: 'Sélectionnez la date',
