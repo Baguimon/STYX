@@ -38,7 +38,6 @@ class GameController extends AbstractController
     #[Route('/{id}', name: 'game_show', methods: ['GET'])]
     public function show(Game $game): JsonResponse
     {
-        // Joueurs inscrits au match (optionnel, adapte selon ton usage)
         $players = [];
         foreach ($game->getGamePlayers() as $gp) {
             $user = $gp->getUser();
@@ -76,13 +75,15 @@ class GameController extends AbstractController
         $game->setMaxPlayers($data['max_players']);
         $game->setPlayerCount($data['player_count']);
         $game->setCreatedAt(isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime());
-        $game->setStatus($data['status']);
+        // On force le statut à "ouvert"
+        $game->setStatus('ouvert');
 
         $em->persist($game);
         $em->flush();
 
         return $this->json(['message' => 'Match créé avec succès !'], Response::HTTP_CREATED);
     }
+
 
     #[Route('/{id}', name: 'game_update', methods: ['PUT'])]
     public function update(Request $request, Game $game, EntityManagerInterface $em): JsonResponse
@@ -94,7 +95,7 @@ class GameController extends AbstractController
         $game->setLocationDetails($data['location_details'] ?? null);
         $game->setMaxPlayers($data['max_players']);
         $game->setPlayerCount($data['player_count']);
-        $game->setStatus($data['status']);
+        // Ici tu peux gérer le statut si besoin, mais tu peux aussi le rendre non éditable via update
 
         $em->flush();
 
@@ -131,6 +132,12 @@ class GameController extends AbstractController
             return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_NOT_FOUND);
         }
 
+        // Interdit si status "fermé"
+        if ($game->getStatus() === 'fermé') {
+            return $this->json(['error' => 'Le match est fermé'], Response::HTTP_CONFLICT);
+        }
+
+        // Interdit si déjà inscrit
         if (method_exists($game, 'getGamePlayers')) {
             foreach ($game->getGamePlayers() as $gp) {
                 if ($gp->getUser() === $user) {
@@ -139,7 +146,10 @@ class GameController extends AbstractController
             }
         }
 
+        // Interdit si déjà complet
         if ($game->getPlayerCount() >= $game->getMaxPlayers()) {
+            $game->setStatus('fermé'); // On ferme le match si complet (juste au cas où)
+            $em->flush();
             return $this->json(['error' => 'Le match est complet'], Response::HTTP_CONFLICT);
         }
 
@@ -151,6 +161,11 @@ class GameController extends AbstractController
         $em->persist($gamePlayer);
 
         $game->setPlayerCount($game->getPlayerCount() + 1);
+
+        // Ferme le match si on atteint le max
+        if ($game->getPlayerCount() >= $game->getMaxPlayers()) {
+            $game->setStatus('fermé');
+        }
 
         $em->flush();
 

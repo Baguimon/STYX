@@ -51,7 +51,6 @@ export default function CreateGameScreen() {
     location_details: '',
     max_players: '',
     player_count: '',
-    status: '',
   });
 
   const handleChange = (name, value) => {
@@ -66,7 +65,6 @@ export default function CreateGameScreen() {
         location_details: form.location_details,
         max_players: parseInt(form.max_players, 10),
         player_count: parseInt(form.player_count, 10),
-        status: form.status,
         created_at: new Date().toISOString(),
       };
       await createGame(payload);
@@ -256,35 +254,6 @@ export default function CreateGameScreen() {
       ),
     },
     {
-      title: 'Statut',
-      content: (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Statut</Text>
-          <View style={styles.toggleContainer}>
-            {['Ouvert', 'Fermé'].map(option => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.toggleButton,
-                  form.status === option && styles.toggleButtonActive
-                ]}
-                onPress={() => handleChange('status', option)}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    form.status === option && styles.toggleTextActive
-                  ]}
-                >
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )
-    },
-    {
       title: 'Récapitulatif',
       content: (
         <View style={styles.summaryCard}>
@@ -312,10 +281,6 @@ export default function CreateGameScreen() {
               {form.player_count} / {form.max_players}
             </Text>
           </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Statut</Text>
-            <Text style={styles.summaryValue}>{form.status}</Text>
-          </View>
         </View>
       ),
     }
@@ -330,7 +295,6 @@ export default function CreateGameScreen() {
       case 2: return !!form.location && form.location.trim().length > 0;
       case 3: return form.max_players && parseInt(form.max_players, 10) >= 2;
       case 4: return form.player_count && parseInt(form.player_count, 10) >= 0;
-      case 5: return !!form.status;
       default: return true;
     }
   };
