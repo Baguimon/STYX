@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  Image, Alert, ScrollView, ActivityIndicator
+  Image, Alert, ScrollView, ActivityIndicator, Modal, Pressable
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getClub, getClubMembers, updateClub, uploadClubLogo, kickMember, blockMember, setUserPoste, transferCaptain } from '../services/api';
@@ -11,8 +11,20 @@ import { AuthContext } from '../contexts/AuthContext';
 
 const defaultPlayerImage = require('../assets/player-default.png');
 
-// Rôles disponibles
-const POSTES = ['Gardien', 'Défenseur', 'Milieu', 'Attaquant', 'Coach', 'Remplaçant'];
+const POSTES_11 = [
+  { key: 'GB', label: 'Gardien' },
+  { key: 'DG', label: 'DG' },
+  { key: 'DC1', label: 'DC' },
+  { key: 'DC2', label: 'DC' },
+  { key: 'DD', label: 'DD' },
+  { key: 'MG', label: 'MG' },
+  { key: 'MC', label: 'MC' },
+  { key: 'MD', label: 'MD' },
+  { key: 'AG', label: 'AG' },
+  { key: 'BU', label: 'BU' },
+  { key: 'AD', label: 'AD' },
+  { key: 'REMPLACANT', label: 'Remplaçant' },
+];
 
 export default function ClubManageScreen() {
   const navigation = useNavigation();
@@ -24,9 +36,12 @@ export default function ClubManageScreen() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  // Pour la mini-fenêtre de changement de poste
+  const [posteModal, setPosteModal] = useState({ open: false, member: null });
+
   const { userInfo } = useContext(AuthContext);
 
-  // Refetch club infos (factorisé pour pouvoir l'utiliser partout)
+  // Refetch club infos (factorisé)
   const fetchClubData = useCallback(async () => {
     if (!club?.id) return;
     setLoading(true);
@@ -42,9 +57,7 @@ export default function ClubManageScreen() {
     setLoading(false);
   }, [club?.id]);
 
-  useEffect(() => {
-    fetchClubData();
-  }, [fetchClubData]);
+  useEffect(() => { fetchClubData(); }, [fetchClubData]);
 
   // Logo
   const handlePickLogo = async () => {
@@ -54,20 +67,33 @@ export default function ClubManageScreen() {
       allowsEditing: true,
       aspect: [1, 1]
     });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
+    if (!result.cancelled && result.assets && result.assets.length > 0) {
       setUploading(true);
       try {
         const uri = result.assets[0].uri;
         const filename = uri.split('/').pop();
-        const ext = filename.split('.').pop();
-        const type = ext ? 'image/' + ext : 'image';
+        const type = 'image/' + filename.split('.').pop();
         const formData = new FormData();
         formData.append('logo', { uri, name: filename, type });
-        await uploadClubLogo(club.id, formData);
+
+        const updated = await uploadClubLogo(club.id, formData);
+        setClub(c => ({ ...c, image: updated.image }));
         await fetchClubData();
         Alert.alert('Succès', "Logo mis à jour !");
       } catch (e) {
-        Alert.alert('Erreur', "Erreur lors de l’upload du logo");
+        let backendMsg = '';
+        if (e.response && e.response.data) {
+          backendMsg = typeof e.response.data === 'object'
+            ? JSON.stringify(e.response.data)
+            : e.response.data;
+        }
+        Alert.alert(
+          'Erreur',
+          "Erreur lors de l’upload du logo.\n"
+          + (e.message ? 'Front: ' + e.message : '')
+          + (backendMsg ? '\nBack: ' + backendMsg : '')
+        );
+        console.error('Erreur lors de l’upload du logo :', e, e.response?.data);
       }
       setUploading(false);
     }
@@ -140,41 +166,18 @@ export default function ClubManageScreen() {
     );
   };
 
-  // Changement de poste via boutons
-  const handleChangePoste = (userId, currentPoste) => {
-    Alert.alert(
-      "Changer le poste",
-      "Choisis le nouveau poste pour ce joueur :",
-      POSTES.map(role => ({
-        text: role,
-        onPress: async () => {
-          setLoading(true);
-          try {
-            await setUserPoste(club.id, userId, role);
-            await fetchClubData();
-          } catch (e) {
-            Alert.alert('Erreur', "Impossible de modifier le poste");
-          }
-          setLoading(false);
-        }
-      })).concat([
-        {
-          text: "Retirer le poste",
-          onPress: async () => {
-            setLoading(true);
-            try {
-              await setUserPoste(club.id, userId, null);
-              await fetchClubData();
-            } catch (e) {
-              Alert.alert('Erreur', "Impossible de retirer le poste");
-            }
-            setLoading(false);
-          },
-          style: 'destructive'
-        },
-        { text: "Annuler", style: "cancel" }
-      ])
-    );
+  // Changement de poste via mini fenetre
+  const handleSelectPosteBtn = async (memberId, posteKey) => {
+    setLoading(true);
+    try {
+      await setUserPoste(club.id, memberId, posteKey);
+      setPosteModal({ open: false, member: null }); // ferme la modal
+      await fetchClubData();
+    } catch (e) {
+      Alert.alert('Erreur', e?.response?.data?.error || "Impossible de changer le poste");
+      setPosteModal({ open: false, member: null });
+    }
+    setLoading(false);
   };
 
   // Transfert de capitanat
@@ -211,79 +214,130 @@ export default function ClubManageScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#111' }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handlePickLogo}>
-          <Image
-            source={club?.image ? { uri: club.image } : require('../assets/club-default.png')}
-            style={styles.clubImage}
-          />
-          {uploading && <ActivityIndicator color="#00D9FF" style={styles.uploadLoader} />}
-          <Ionicons name="camera" size={22} color="#00D9FF" style={styles.editIcon} />
-        </TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 16 }}>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            style={styles.nameInput}
-            placeholder="Nom du club"
-            placeholderTextColor="#555"
-            editable={!loading}
-          />
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveName} disabled={loading}>
-            <Text style={styles.saveBtnText}>Modifier le nom</Text>
+    <View style={{ flex: 1, backgroundColor: '#111' }}>
+      <ScrollView style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handlePickLogo}>
+            <Image
+              source={club?.image ? { uri: club.image } : require('../assets/club-default.png')}
+              style={styles.clubImage}
+            />
+            {uploading && <ActivityIndicator color="#00D9FF" style={styles.uploadLoader} />}
+            <Ionicons name="camera" size={22} color="#00D9FF" style={styles.editIcon} />
           </TouchableOpacity>
-        </View>
-      </View>
-
-      <Text style={styles.sectionTitle}>Gestion des membres</Text>
-      {members.map((m) => (
-        <View key={m.id} style={styles.memberRow}>
-          <Image
-            source={m.image ? { uri: m.image } : defaultPlayerImage}
-            style={styles.memberAvatar}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>{m.username || m.nom}</Text>
-            <Text style={{ color: '#82E482', fontSize: 13 }}>Poste : {m.poste || '-'}</Text>
+          <View style={{ flex: 1, marginLeft: 16 }}>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              style={styles.nameInput}
+              placeholder="Nom du club"
+              placeholderTextColor="#555"
+              editable={!loading}
+            />
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveName} disabled={loading}>
+              <Text style={styles.saveBtnText}>Modifier le nom</Text>
+            </TouchableOpacity>
           </View>
-          {/* Changement de poste via boutons */}
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => handleChangePoste(m.id, m.poste)}
-          >
-            <Ionicons name="pencil" size={18} color="#00D9FF" />
-          </TouchableOpacity>
-          {/* Boutons réservés aux autres membres que moi-même */}
-          {userInfo?.id !== m.id && (
-            <>
+        </View>
+
+        <Text style={styles.sectionTitle}>Gestion des membres</Text>
+        {members.map((m) => (
+          <View key={m.id} style={styles.memberRow}>
+            <Image
+              source={m.image ? { uri: m.image } : defaultPlayerImage}
+              style={styles.memberAvatar}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>{m.username || m.nom}</Text>
+              <Text style={{ color: '#82E482', fontSize: 13 }}>Poste : {m.poste || '-'}</Text>
               <TouchableOpacity
-                style={styles.iconBtn}
-                onPress={() => handleKick(m.id)}
+                style={styles.editPosteBtn}
+                onPress={() => setPosteModal({ open: true, member: m })}
               >
-                <Ionicons name="person-remove" size={19} color="#e23030" />
+                <Ionicons name="pencil" size={16} color="#00D9FF" />
+                <Text style={{ color: '#00D9FF', marginLeft: 4, fontWeight: 'bold' }}>Changer poste</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.iconBtn}
-                onPress={() => handleBlock(m.id)}
-              >
-                <Ionicons name="close-circle" size={20} color="#b70000" />
-              </TouchableOpacity>
-              {/* Transfert capitanat : affiché uniquement si ce n'est pas le capitaine actuel */}
-              {club.clubCaptain?.id !== m.id && (
+            </View>
+            {/* Actions membres */}
+            {userInfo?.id !== m.id && (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <TouchableOpacity
                   style={styles.iconBtn}
-                  onPress={() => handleTransferCaptain(m)}
+                  onPress={() => handleKick(m.id)}
                 >
-                  <Ionicons name="star" size={19} color="#FFD700" />
+                  <Ionicons name="person-remove" size={19} color="#e23030" />
                 </TouchableOpacity>
-              )}
-            </>
-          )}
+                <TouchableOpacity
+                  style={styles.iconBtn}
+                  onPress={() => handleBlock(m.id)}
+                >
+                  <Ionicons name="close-circle" size={20} color="#b70000" />
+                </TouchableOpacity>
+                {club.clubCaptain?.id !== m.id && (
+                  <TouchableOpacity
+                    style={styles.iconBtn}
+                    onPress={() => handleTransferCaptain(m)}
+                  >
+                    <Ionicons name="star" size={19} color="#FFD700" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </View>
+        ))}
+        <View style={{ height: 60 }} />
+      </ScrollView>
+
+      {/* MODAL Mini BottomSheet pour choisir le poste */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={posteModal.open}
+        onRequestClose={() => setPosteModal({ open: false, member: null })}
+      >
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setPosteModal({ open: false, member: null })}
+        />
+        <View style={styles.bottomSheet}>
+          <Text style={styles.bottomSheetTitle}>Choisir un poste pour {posteModal.member?.username || posteModal.member?.nom}</Text>
+          <View style={styles.bottomSheetContent}>
+            {POSTES_11.map(p => (
+              <TouchableOpacity
+                key={p.key}
+                style={[
+                  styles.bottomSheetPosteBtn,
+                  posteModal.member?.poste === p.key && styles.selectedSheetPosteBtn
+                ]}
+                onPress={() => handleSelectPosteBtn(posteModal.member.id, p.key)}
+              >
+                <Text style={[
+                  styles.bottomSheetPosteBtnText,
+                  posteModal.member?.poste === p.key && styles.selectedSheetPosteBtnText
+                ]}>{p.label}</Text>
+              </TouchableOpacity>
+            ))}
+            {/* Aucun */}
+            <TouchableOpacity
+              style={[
+                styles.bottomSheetPosteBtn,
+                posteModal.member?.poste == null && styles.selectedSheetPosteBtn,
+                { backgroundColor: '#c73030', borderColor: '#c73030' }
+              ]}
+              onPress={() => handleSelectPosteBtn(posteModal.member.id, null)}
+            >
+              <Text style={styles.bottomSheetPosteBtnText}>Aucun</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.closeSheetBtn}
+            onPress={() => setPosteModal({ open: false, member: null })}
+          >
+            <Text style={{ color: '#00D9FF', fontWeight: 'bold' }}>Fermer</Text>
+          </TouchableOpacity>
         </View>
-      ))}
-      <View style={{ height: 60 }} />
-    </ScrollView>
+      </Modal>
+    </View>
   );
 }
 
@@ -368,11 +422,83 @@ const styles = StyleSheet.create({
     marginRight: 13,
     backgroundColor: '#222'
   },
+  editPosteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0,217,255,0.11)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 7,
+  },
   iconBtn: {
     marginHorizontal: 2,
     padding: 6,
     borderRadius: 16,
     backgroundColor: '#161D2C',
     marginLeft: 4,
-  }
+  },
+  // Mini bottom sheet styles
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.37)',
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+  },
+  bottomSheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#191B2B',
+    borderTopLeftRadius: 19,
+    borderTopRightRadius: 19,
+    padding: 20,
+    zIndex: 2,
+    elevation: 5,
+  },
+  bottomSheetTitle: {
+    color: '#00D9FF',
+    fontWeight: '700',
+    fontSize: 19,
+    marginBottom: 12,
+    textAlign: 'center'
+  },
+  bottomSheetContent: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 7,
+    marginBottom: 16,
+  },
+  bottomSheetPosteBtn: {
+    backgroundColor: '#23284a',
+    borderRadius: 15,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#888',
+    margin: 3,
+  },
+  selectedSheetPosteBtn: {
+    backgroundColor: '#00D9FF',
+    borderColor: '#00D9FF',
+  },
+  bottomSheetPosteBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  selectedSheetPosteBtnText: {
+    color: '#181818'
+  },
+  closeSheetBtn: {
+    marginTop: 6,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
 });

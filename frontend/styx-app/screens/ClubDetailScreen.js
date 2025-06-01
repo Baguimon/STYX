@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions, Alert, Share } from 'react-native';
-import { getClub, getClubMembers, setUserPoste, leaveClub, transferCaptain } from '../services/api';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Alert, Share } from 'react-native';
+import { getClub, getClubMembers, setUserPoste, leaveClub } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 const defaultClubImage = require('../assets/club-default.png');
@@ -33,18 +33,29 @@ export default function ClubDetailScreen({ route }) {
   const { userInfo } = useContext(AuthContext);
   const navigation = useNavigation();
 
-  useEffect(() => {
+  // Fonction pour charger club + membres (appelée au focus et au mount)
+  const fetchClub = useCallback(async () => {
     setLoading(true);
-    Promise.all([
-      getClub(clubId),
-      getClubMembers(clubId)
-    ])
-      .then(([clubData, memberList]) => {
-        setClub(clubData);
-        setMembers(memberList);
-      })
-      .finally(() => setLoading(false));
+    try {
+      const [clubData, memberList] = await Promise.all([
+        getClub(clubId),
+        getClubMembers(clubId)
+      ]);
+      setClub(clubData);
+      setMembers(memberList);
+    } catch (err) {
+      setClub(null);
+      setMembers([]);
+    }
+    setLoading(false);
   }, [clubId]);
+
+  useEffect(() => { fetchClub(); }, [fetchClub]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchClub();
+    }, [fetchClub])
+  );
 
   // Capitaine
   const captainId = club?.clubCaptain?.id || club?.clubCaptain;
@@ -62,20 +73,23 @@ export default function ClubDetailScreen({ route }) {
   const fieldMemberIds = POSTES_11.map(pos => getPlayerForPoste(pos.key)?.id).filter(Boolean);
   const remplacants = members.filter(m => m.poste === 'REMPLACANT');
 
+  // --- Correction ici ---
   const handleSelectPoste = async (posteKey) => {
     if (!userInfo?.id) return;
     try {
       await setUserPoste(clubId, userInfo.id, posteKey);
+
       setMembers(prev =>
         prev.map(m =>
           m.id === userInfo.id
             ? { ...m, poste: posteKey }
-            : (m.poste === posteKey ? { ...m, poste: null } : m)
+            // CORRECTION: on retire l'ancien poste UNIQUEMENT pour les postes uniques (pas "REMPLACANT")
+            : (posteKey && posteKey !== 'REMPLACANT' && m.poste === posteKey ? { ...m, poste: null } : m)
         )
       );
     } catch (e) {
       if (e?.response?.data?.error === 'Poste déjà pris') {
-        // Attribuer remplaçant automatiquement !
+        // Attribuer remplaçant automatiquement
         await setUserPoste(clubId, userInfo.id, 'REMPLACANT');
         setMembers(prev =>
           prev.map(m =>
@@ -358,7 +372,8 @@ export default function ClubDetailScreen({ route }) {
 
 const AVATAR_SIZE = 50;
 const styles = StyleSheet.create({
-  // Header et infos club
+  // ... mêmes styles que toi
+  // (tu peux garder exactement tes styles)
   header: {
     backgroundColor: '#181818',
     flexDirection: 'row',
@@ -399,8 +414,6 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     letterSpacing: 1,
   },
-
-  // Section titres
   sectionTitle: {
     color: '#00D9FF',
     fontWeight: '700',
@@ -409,8 +422,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textAlign: 'left',
   },
-
-  // Bloc composition AVEC terrain en fond
   compoContainer: {
     width: '100%',
     aspectRatio: 0.8,
@@ -435,7 +446,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.38)',
     zIndex: 1,
   },
-
   playerOnField: {
     position: 'absolute',
     alignItems: 'center',
@@ -495,8 +505,6 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     numberOfLines: 1,
   },
-
-  // Remplaçants
   remplacantsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -516,8 +524,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Liste joueurs
   playerCard: {
     width: '96%',
     backgroundColor: '#242640',
@@ -563,7 +569,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
-
   captainDotField: {
     position: 'absolute',
     top: 2,
@@ -588,7 +593,6 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     zIndex: 10,
   },
-
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -612,7 +616,6 @@ const styles = StyleSheet.create({
     fontSize: 14.7,
     letterSpacing: 0.4,
   },
-
   sectionTitleBar: {
     width: 7,
     height: 28,
@@ -629,7 +632,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
-
   actionBar: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -673,5 +675,4 @@ const styles = StyleSheet.create({
     fontSize: 16.5,
     letterSpacing: 0.7,
   },
-
 });

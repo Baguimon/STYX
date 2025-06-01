@@ -77,6 +77,10 @@ class ClubController extends AbstractController
         if (empty($data['name']) || empty($data['clubCaptainId'])) {
             return $this->json(['error' => 'Missing required fields'], 400);
         }
+        $name = trim($data['name']);
+        if (mb_strlen($name) > 32) {
+            return $this->json(['error' => 'Le nom du club ne doit pas dépasser 32 caractères.'], 400);
+        }
         $captain = $userRepository->find($data['clubCaptainId']);
         if (!$captain) {
             return $this->json(['error' => 'Club captain not found'], 404);
@@ -89,7 +93,7 @@ class ClubController extends AbstractController
             return $this->json(['error' => 'Vous êtes déjà capitaine d’un club'], 400);
         }
         $club = new Club();
-        $club->setName($data['name']);
+        $club->setName($name);
         $club->setCreatedAt(new \DateTime());
         $club->setClubCaptain($captain);
         $em->persist($club);
@@ -103,6 +107,7 @@ class ClubController extends AbstractController
             'clubCaptain' => $club->getClubCaptain()?->getId(),
         ]);
     }
+
     #[Route('/{clubId}/set-poste/{userId}', name: 'set_user_poste', methods: ['POST'])]
     public function setUserPoste(
         Request $request,
@@ -115,7 +120,7 @@ class ClubController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $poste = $data['poste'] ?? null;
 
-        if (!$poste) {
+        if ($poste === null) {
             return $this->json(['error' => 'Aucun poste précisé'], 400);
         }
 
@@ -130,17 +135,13 @@ class ClubController extends AbstractController
             return $this->json(['error' => 'Ce joueur n\'est pas dans ce club'], 403);
         }
 
-        // Vérifier si le poste est déjà pris par un autre membre
-        $usersDuClub = $userRepository->findBy(['club' => $club]);
-        foreach ($usersDuClub as $membre) {
-            if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {
-                return $this->json(['error' => 'Poste déjà pris'], 409);
-            }
-        }
-
-        foreach ($usersDuClub as $membre) {
-            if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {
-                return $this->json(['error' => 'Poste déjà pris'], 409);
+        // Un seul joueur par poste... sauf pour les remplaçants !
+        if ($poste !== 'REMPLACANT') {
+            $usersDuClub = $userRepository->findBy(['club' => $club]);
+            foreach ($usersDuClub as $membre) {
+                if ($membre->getId() !== $user->getId() && $membre->getPoste() === $poste) {
+                    return $this->json(['error' => 'Poste déjà pris'], 409);
+                }
             }
         }
 
@@ -149,6 +150,7 @@ class ClubController extends AbstractController
 
         return $this->json(['success' => true]);
     }
+
     #[Route('/{clubId}/transfer-captain', name: 'transfer_captain', methods: ['POST'])]
     public function transferCaptain(
         $clubId,
@@ -183,7 +185,15 @@ class ClubController extends AbstractController
         if (!$club) return $this->json(['error' => 'Club not found'], 404);
 
         $data = json_decode($request->getContent(), true);
-        if (isset($data['name'])) $club->setName($data['name']);
+
+        if (isset($data['name'])) {
+            $name = trim($data['name']);
+            if (mb_strlen($name) > 32) {
+                return $this->json(['error' => 'Le nom du club ne doit pas dépasser 32 caractères.'], 400);
+            }
+            $club->setName($name);
+        }
+
         $em->flush();
         return $this->json([
             'success' => true,
@@ -196,7 +206,8 @@ class ClubController extends AbstractController
     }
 
 
-    #[Route('/api/clubs/{id}/upload-logo', name: 'upload_club_logo', methods: ['POST'])]
+
+    #[Route('/{id}/upload-logo', name: 'api_club_upload_club_logo', methods: ['POST'])]
     public function uploadLogo(Request $request, Club $club, EntityManagerInterface $em): JsonResponse
     {
         /** @var UploadedFile $file */
