@@ -8,14 +8,18 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
 
-const defaultPlayerImage = require('../assets/player-default.png');
-
-// === Logos prédéfinis à proposer ===
+// === Mapping logos prédéfinis club ===
 const CLUB_LOGO_CHOICES = [
-  require('../assets/club-imgs/ecusson-1.png'),
-  require('../assets/club-imgs/ecusson-2.png'),
-  require('../assets/club-imgs/ecusson-3.png'),
+  { uri: '/assets/club-imgs/ecusson-1.png', img: require('../assets/club-imgs/ecusson-1.png') },
+  { uri: '/assets/club-imgs/ecusson-2.png', img: require('../assets/club-imgs/ecusson-2.png') },
+  { uri: '/assets/club-imgs/ecusson-3.png', img: require('../assets/club-imgs/ecusson-3.png') },
 ];
+function getClubLogoSource(image) {
+  const found = CLUB_LOGO_CHOICES.find(c => c.uri === image);
+  return found ? found.img : require('../assets/club-default.png');
+}
+
+const defaultPlayerImage = require('../assets/player-default.png');
 
 const POSTES_11 = [
   { key: 'GB', label: 'GB' },
@@ -47,19 +51,6 @@ export default function ClubManageScreen() {
   const [logoModalVisible, setLogoModalVisible] = useState(false);
 
   const { userInfo } = useContext(AuthContext);
-
-  // Fonction utilitaire pour extraire le nom de fichier d'un require (expo)
-  function getAssetFilename(asset) {
-    if (typeof asset === 'object' && asset.uri) {
-      const parts = asset.uri.split('/');
-      return parts[parts.length - 1];
-    }
-    if (typeof asset === 'string') {
-      const parts = asset.split('/');
-      return parts[parts.length - 1];
-    }
-    return '';
-  }
 
   // Rafraîchir club et membres
   const fetchClubData = useCallback(async () => {
@@ -186,12 +177,10 @@ export default function ClubManageScreen() {
   };
 
   // Gestion du choix du logo
-  const handleChooseLogo = async (imgSrc) => {
+  const handleChooseLogo = async (imgObj) => {
     setLoading(true);
     try {
-      const filename = getAssetFilename(imgSrc);
-      // On envoie le nom du fichier en tant que logo (pas d'upload !)
-      await updateClub(club.id, { image: `/assets/club-imgs/${filename}` }); // Ajuste selon ton backend si besoin
+      await updateClub(club.id, { image: imgObj.uri });
       setLogoModalVisible(false);
       await fetchClubData();
       Alert.alert('Succès', "Logo mis à jour !");
@@ -217,13 +206,7 @@ export default function ClubManageScreen() {
           {/* Affichage du logo du club, on ouvre la modal de sélection */}
           <TouchableOpacity onPress={() => setLogoModalVisible(true)}>
             <Image
-              source={
-                club?.image
-                  ? CLUB_LOGO_CHOICES.find(img =>
-                      club.image.endsWith(getAssetFilename(img))
-                    ) || CLUB_LOGO_CHOICES[0]
-                  : CLUB_LOGO_CHOICES[0]
-              }
+              source={club?.image ? getClubLogoSource(club.image) : require('../assets/club-default.png')}
               style={styles.clubImage}
             />
             <Ionicons name="camera" size={22} color="#00D9FF" style={styles.editIcon} />
@@ -306,20 +289,17 @@ export default function ClubManageScreen() {
         />
         <View style={styles.logoModalContainer}>
           <Text style={styles.logoModalTitle}>Choisis un logo pour ton club</Text>
-          <ScrollView contentContainerStyle={styles.logoGrid}>
-            {CLUB_LOGO_CHOICES.map((imgSrc, idx) => (
+          <ScrollView contentContainerStyle={styles.logoGrid} horizontal>
+            {CLUB_LOGO_CHOICES.map((imgObj) => (
               <TouchableOpacity
-                key={idx}
-                onPress={() => handleChooseLogo(imgSrc)}
+                key={imgObj.uri}
+                onPress={() => handleChooseLogo(imgObj)}
                 style={[
                   styles.logoChoice,
-                  club?.image &&
-                  club.image.endsWith(getAssetFilename(imgSrc))
-                    ? styles.logoSelected
-                    : null
+                  club?.image === imgObj.uri ? styles.logoSelected : null
                 ]}
               >
-                <Image source={imgSrc} style={styles.logoImagePreview} />
+                <Image source={imgObj.img} style={styles.logoImagePreview} />
               </TouchableOpacity>
             ))}
           </ScrollView>

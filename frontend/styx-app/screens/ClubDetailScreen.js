@@ -9,6 +9,18 @@ const defaultClubImage = require('../assets/club-default.png');
 const defaultPlayerImage = require('../assets/player-default.png');
 const FIELD_IMAGE = require('../assets/field-club.jpg');
 
+// === Les logos prédéfinis dispo côté front ===
+const CLUB_LOGO_CHOICES = [
+  { uri: '/assets/club-imgs/ecusson-1.png', img: require('../assets/club-imgs/ecusson-1.png') },
+  { uri: '/assets/club-imgs/ecusson-2.png', img: require('../assets/club-imgs/ecusson-2.png') },
+  { uri: '/assets/club-imgs/ecusson-3.png', img: require('../assets/club-imgs/ecusson-3.png') },
+];
+// Helper pour trouver la bonne image à afficher pour le logo du club
+function getClubLogoSource(image) {
+  const found = CLUB_LOGO_CHOICES.find(c => c.uri === image);
+  return found ? found.img : defaultClubImage;
+}
+
 const Y_OFFSET = -0.1;
 
 const POSTES_11 = [
@@ -184,7 +196,10 @@ export default function ClubDetailScreen({ route }) {
             {club.stats?.win ?? '-'}-{club.stats?.draw ?? '-'}-{club.stats?.lose ?? '-'}
           </Text>
         </View>
-        <Image source={club.image ? { uri: club.image } : defaultClubImage} style={styles.clubImage} />
+        <Image
+          source={getClubLogoSource(club.image)}
+          style={styles.clubImage}
+        />
         <View style={styles.statsBlock}>
           <Text style={styles.statsLabel}>Joueurs</Text>
           <Text style={styles.statsValue}>{members.length || '-'}</Text>
