@@ -12,10 +12,10 @@ import { AuthContext } from '../contexts/AuthContext';
 const defaultPlayerImage = require('../assets/player-default.png');
 
 const POSTES_11 = [
-  { key: 'GB', label: 'Gardien' },
+  { key: 'GB', label: 'GB' },
   { key: 'DG', label: 'DG' },
-  { key: 'DC1', label: 'DC' },
-  { key: 'DC2', label: 'DC' },
+  { key: 'DC1', label: 'DC1' },
+  { key: 'DC2', label: 'DC2' },
   { key: 'DD', label: 'DD' },
   { key: 'MG', label: 'MG' },
   { key: 'MC', label: 'MC' },
@@ -23,7 +23,7 @@ const POSTES_11 = [
   { key: 'AG', label: 'AG' },
   { key: 'BU', label: 'BU' },
   { key: 'AD', label: 'AD' },
-  { key: 'REMPLACANT', label: 'Remplaçant' },
+  { key: 'REMPLACANT', label: 'REMPLACANT' },
 ];
 
 export default function ClubManageScreen() {
@@ -249,7 +249,9 @@ export default function ClubManageScreen() {
             />
             <View style={{ flex: 1 }}>
               <Text style={{ color: '#fff', fontWeight: '700' }}>{m.username || m.nom}</Text>
-              <Text style={{ color: '#82E482', fontSize: 13 }}>Poste : {m.poste || '-'}</Text>
+              <Text style={{ color: '#82E482', fontSize: 13 }}>
+                Poste : {m.poste === null ? 'Aucun' : m.poste}
+              </Text>
               <TouchableOpacity
                 style={styles.editPosteBtn}
                 onPress={() => setPosteModal({ open: true, member: m })}
