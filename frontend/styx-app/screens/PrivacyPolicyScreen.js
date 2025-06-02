@@ -22,7 +22,7 @@ export default function PrivacyPolicyScreen() {
         <Section title="2. Qui est responsable du traitement de vos données ?">
           Le responsable du traitement est le développeur de STYX dans le cadre d’un projet scolaire à <Text style={styles.bold}>Webtech Institute, Groupe Next-u</Text>.  
           Aucune structure commerciale n’est associée à l’application.  
-          Contact : <Text style={styles.bold}>[ton email étudiant]</Text>
+          Contact : <Text style={styles.bold}>equipe.styx@gmail.com</Text>
         </Section>
 
         <Section title="3. Quelles données sont collectées ?">
@@ -72,7 +72,7 @@ export default function PrivacyPolicyScreen() {
           <Bullet>Suppression : suppression du compte/données à tout moment</Bullet>
           <Bullet>Portabilité : recevoir vos données dans un format lisible</Bullet>
           <Bullet>Limitation et opposition au traitement</Bullet>
-          Contact : <Text style={styles.bold}>[ton email étudiant]</Text>
+          Contact : <Text style={styles.bold}>equipe.styx@gmail.com</Text>
         </Section>
 
         <Section title="11. Droit de réclamation">
@@ -93,7 +93,7 @@ export default function PrivacyPolicyScreen() {
         <Section title="14. Modification de la politique">
           Cette politique pourra être modifiée. Les utilisateurs seront informés en cas de changement important.
           <Text>{"\n"}</Text>
-          Pour toute question ou exercice de vos droits : <Text style={styles.bold}>[ton email étudiant]</Text>
+          Pour toute question ou exercice de vos droits : <Text style={styles.bold}>equipe.styx@gmail.com</Text>
         </Section>
       </ScrollView>
     </View>
