@@ -3,106 +3,101 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaVi
 import { AuthContext } from '../contexts/AuthContext';
 
 const DEFAULT_AVATAR = require('../assets/player-default.png');
-const DEFAULT_CLUB = require('../assets/club-default.png');
 
 export default function ProfileScreen() {
   const { userInfo } = useContext(AuthContext);
 
-  // Fallback de démo si pas connecté
-  const fakeUser = {
-    username: 'Pogba',
-    email: 'pogba@bleus.fr',
-    level: 'Débutant',
-    poste: 'MC',
-    club: { name: 'Webscen' },
-    createdAt: '2024-06-01',
-    // Ce qui manque dans le back :
-    // matchsJoues: 18,
-    // amis: 23,
-    // stats: { win: 3, draw: 0, lose: 1 },
-  };
-  const user = userInfo || fakeUser;
+  if (!userInfo) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: '#fff', fontSize: 18 }}>Non connecté</Text>
+      </View>
+    );
+  }
+
+  const username = userInfo.username || '---';
+  const level = userInfo.level || '---';
+  const clubName = userInfo.club?.name || '---';
+  const clubPlayerCount = userInfo.club?.playerCount !== undefined
+    ? userInfo.club.playerCount
+    : '---';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#181818' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#111' }}>
       <ScrollView contentContainerStyle={styles.container}>
-
-        {/* TOP HEADER + AVATAR */}
-        <View style={styles.topHeader}>
-          <TouchableOpacity style={styles.menuBtn}>
-            <Text style={{ color: '#fff', fontSize: 24, fontWeight: '900' }}>⋯</Text>
-          </TouchableOpacity>
-          <Image source={DEFAULT_AVATAR} style={styles.avatar} />
-          <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={styles.username}>{user.username}</Text>
-            <Text style={styles.userAge}>• --</Text>
+        {/* Top Avatar + infos */}
+        <View style={styles.headerContainer}>
+          <View style={styles.avatarWrapper}>
+            <Image
+              source={DEFAULT_AVATAR}
+              style={styles.avatar}
+            />
           </View>
+          <View style={styles.headerText}>
+            <Text style={styles.username}>{username}</Text>
+            <Text style={styles.userAge}>---</Text>
+          </View>
+          <TouchableOpacity>
+            <Text style={styles.menuDots}>⋯</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* INFOS JEUX */}
-        <View style={styles.userStatsRow}>
-          <View style={styles.statsBloc}>
-            <Text style={styles.statsNumber}>{'--'}</Text>
+        {/* Matchs joués / amis */}
+        <View style={styles.statsRow}>
+          <View style={styles.statsCol}>
+            <Text style={styles.statsNumber}>---</Text>
             <Text style={styles.statsLabel}>Matchs joués</Text>
           </View>
-          <View style={styles.statsBloc}>
-            <Text style={styles.statsNumber}>{'--'}</Text>
+          <View style={styles.statsCol}>
+            <Text style={styles.statsNumber}>---</Text>
             <Text style={styles.statsLabel}>Amis</Text>
           </View>
         </View>
 
-        {/* NIVEAU & BARRE */}
-        <View style={styles.levelRow}>
+        {/* Niveau */}
+        <View style={styles.levelBlock}>
           <Text style={styles.levelIcon}>🙂</Text>
-          <Text style={styles.levelLabel}>{user.level || '---'}</Text>
-          <Text style={styles.levelHour}>--h</Text>
+          <Text style={styles.levelText}>{level}</Text>
+          <Text style={styles.levelDuration}>---</Text>
         </View>
-        <View style={styles.levelBarContainer}>
-          <View style={styles.levelBarBg}>
-            {/* Barre vide */}
-          </View>
+        <View style={styles.levelBarBG}>
+          <View style={[styles.levelBarFill, { width: '40%' }]} />
         </View>
 
-        {/* STATS DU JOUEUR */}
+        {/* Section stats */}
         <Text style={styles.sectionTitle}>Stats du joueur</Text>
-        <View style={styles.sectionCard}>
-          <Text style={styles.statsLine}>
-            --- &nbsp; <Text style={{ color: '#7dff91', fontWeight: 'bold' }}>V</Text>
-            -<Text style={{ color: '#ffd700', fontWeight: 'bold' }}>N</Text>
-            -<Text style={{ color: '#e23030', fontWeight: 'bold' }}>D</Text>
-          </Text>
-          <Text style={styles.mvpLine}>-- MVP</Text>
-          <Text style={styles.infoLine}>Sport le plus joué <Text style={styles.sportMain}>---</Text></Text>
+        <View style={styles.statDetails}>
+          <Text style={styles.statsMainRow}>--- <Text style={{color: '#13D76F'}}>V</Text>-<Text style={{color: '#EAC94B'}}>N</Text>-<Text style={{color: '#E33232'}}>D</Text></Text>
+          <Text style={styles.statsSubRow}>--- MVP</Text>
+          {/* LIGNE SUPPRIMÉE: Sport le plus joué */}
         </View>
 
-        {/* DERNIERS MATCHS */}
+        {/* Derniers matchs */}
         <Text style={styles.sectionTitle}>Derniers Matchs</Text>
-        <View style={[styles.sectionCard, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 78 }]}>
-          <Text style={{ color: '#999' }}>Aucun match à afficher pour le moment.</Text>
+        <View style={styles.matchCard}>
+          <Text style={styles.matchPlaceholder}>---</Text>
         </View>
 
-        {/* CLUB DU JOUEUR */}
+        {/* Bloc club */}
         <Text style={styles.sectionTitle}>Club du Joueur</Text>
-        <View style={[styles.sectionCard, { flexDirection: 'row', alignItems: 'center', minHeight: 90, paddingHorizontal: 10 }]}>
-          <Image source={DEFAULT_CLUB} style={styles.clubLogo} />
-          <View style={{ flex: 1, marginLeft: 16 }}>
-            <Text style={styles.clubName}>{user.club?.name || 'Sans club'}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Text style={styles.clubStatLabel}>Joueurs</Text>
-              <Text style={styles.clubStatValue}>--/11</Text>
-              <Text style={[styles.clubStatLabel, { marginLeft: 8 }]}>V-N-D</Text>
-              <Text style={styles.clubStatValue}>--- </Text>
+        <View style={styles.clubBlock}>
+          <Image source={require('../assets/club-default.png')} style={styles.clubLogo} />
+          <View style={{ marginLeft: 14 }}>
+            <Text style={styles.clubName}>{clubName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+              <Text style={styles.clubStatSmall}>Joueurs </Text>
+              <Text style={styles.clubStatNum}>{clubPlayerCount}</Text>
+              <Text style={[styles.clubStatSmall, { marginLeft: 18 }]}>V-N-D </Text>
+              <Text style={[styles.clubStatNum, { color: '#13D76F', marginLeft: 2 }]}>---</Text>
             </View>
-            <Text style={styles.clubSport}>
-              Sport du club <Text style={{ color: '#34e5ff', fontWeight: 'bold' }}>---</Text>
-            </Text>
+            {/* LIGNE SUPPRIMÉE: Sport du club */}
           </View>
         </View>
         <TouchableOpacity style={styles.clubBtn}>
           <Text style={styles.clubBtnText}>Voir le club</Text>
         </TouchableOpacity>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -110,199 +105,217 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 18,
+    paddingTop: 22,
     alignItems: 'center',
-    backgroundColor: '#181818',
+    backgroundColor: '#111',
+    minHeight: '100%',
   },
-  topHeader: {
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'stretch',
-    marginHorizontal: 16,
-    marginBottom: 8,
-    marginTop: 7,
+    marginBottom: 9,
+    marginTop: 2,
+    width: '93%',
+    alignSelf: 'center',
+    justifyContent: 'space-between'
   },
-  menuBtn: {
-    position: 'absolute',
-    right: 8,
-    top: 8,
-    zIndex: 10,
+  avatarWrapper: {
+    borderWidth: 3,
+    borderColor: '#00D9FF',
+    borderRadius: 45,
+    width: 70,
+    height: 70,
+    backgroundColor: '#222',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden'
   },
   avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 45,
-    borderWidth: 4,
-    borderColor: '#00D9FF',
-    backgroundColor: '#202d3c',
-    marginRight: 18,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: '#222',
+  },
+  headerText: {
+    marginLeft: 18,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   username: {
+    fontSize: 23,
     color: '#fff',
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    marginTop: 12,
-    marginBottom: 2,
-    textAlign: 'center',
+    fontWeight: 'bold',
+    marginRight: 9,
   },
   userAge: {
-    color: '#ccc',
-    fontWeight: '600',
-    fontSize: 16,
-    marginTop: -2,
-    marginBottom: 7,
+    color: '#A9A9A9',
+    fontSize: 19,
+    fontWeight: '500',
   },
-  userStatsRow: {
+  menuDots: {
+    color: '#AAA',
+    fontSize: 30,
+    marginRight: 7,
+    fontWeight: '700'
+  },
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 32,
-    width: '100%',
-    marginBottom: 6,
+    width: '75%',
+    justifyContent: 'space-between',
+    alignSelf: 'center',
+    marginBottom: 2,
+    marginTop: 6
   },
-  statsBloc: {
-    alignItems: 'center',
-    flex: 1,
+  statsCol: {
+    alignItems: 'center'
   },
   statsNumber: {
     color: '#fff',
-    fontWeight: '700',
-    fontSize: 18,
+    fontWeight: 'bold',
+    fontSize: 19,
   },
   statsLabel: {
-    color: '#b5b6c0',
+    color: '#A9A9A9',
     fontSize: 14,
-    fontWeight: '500',
-    marginTop: 2,
   },
-  levelRow: {
+  levelBlock: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    marginVertical: 8,
-    marginBottom: 2,
-    gap: 7,
+    marginVertical: 7,
   },
   levelIcon: {
-    color: '#fff',
-    fontSize: 16,
-    marginRight: 4,
+    fontSize: 18,
+    marginRight: 7,
+    color: '#fff'
   },
-  levelLabel: {
+  levelText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
-    marginHorizontal: 2,
+    marginRight: 13
   },
-  levelHour: {
-    color: '#b5b6c0',
+  levelDuration: {
+    color: '#A9A9A9',
     fontSize: 14,
-    marginLeft: 6,
-    fontWeight: '500',
   },
-  levelBarContainer: {
-    width: '70%',
+  levelBarBG: {
+    backgroundColor: '#191B2B',
+    width: '77%',
+    height: 7,
+    borderRadius: 4,
     alignSelf: 'center',
-    marginTop: 1,
     marginBottom: 18,
+    marginTop: 1,
+    overflow: 'hidden'
   },
-  levelBarBg: {
-    width: '100%',
-    height: 6,
-    borderRadius: 8,
-    backgroundColor: '#303846',
-    marginTop: 0,
+  levelBarFill: {
+    height: 7,
+    backgroundColor: '#00D9FF',
+    borderRadius: 4,
   },
   sectionTitle: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 20,
-    marginTop: 20,
-    marginBottom: 9,
-    letterSpacing: 0.5,
-    alignSelf: 'flex-start',
-    marginLeft: 20,
-  },
-  sectionCard: {
-    backgroundColor: '#1e212e',
-    borderRadius: 18,
-    padding: 18,
-    width: '89%',
-    marginBottom: 12,
-    alignSelf: 'center',
-  },
-  statsLine: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 19,
+    marginLeft: 21,
     marginBottom: 6,
+    alignSelf: 'flex-start'
   },
-  mvpLine: {
-    color: '#82e482',
+  statDetails: {
+    width: '83%',
+    backgroundColor: '#191B2B',
+    borderRadius: 12,
+    padding: 13,
+    marginBottom: 18,
+    alignSelf: 'center'
+  },
+  statsMainRow: {
+    color: '#fff',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 16,
     marginBottom: 2,
+    letterSpacing: 2,
   },
-  infoLine: {
-    color: '#b8e6fa',
-    fontSize: 14,
-    fontWeight: '400',
-    marginTop: 1,
-  },
-  sportMain: {
-    color: '#34e5ff',
-    fontWeight: '700',
+  statsSubRow: {
+    color: '#82E482',
     fontSize: 15,
-    marginLeft: 3,
+    fontWeight: '600',
+    marginBottom: 3,
+  },
+  statsLabel2: {
+    color: '#A9A9A9',
+    fontSize: 13,
+    marginTop: 2
+  },
+  matchCard: {
+    width: '86%',
+    height: 75,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    alignSelf: 'center',
+    marginBottom: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#00D9FF',
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  matchPlaceholder: {
+    color: '#A9A9A9',
+    fontSize: 19,
+    fontWeight: 'bold',
+  },
+  clubBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#23284a',
+    borderRadius: 14,
+    padding: 12,
+    width: '87%',
+    alignSelf: 'center',
+    marginBottom: 10
   },
   clubLogo: {
     width: 54,
     height: 54,
     borderRadius: 27,
+    backgroundColor: '#fff',
     borderWidth: 2,
-    borderColor: '#00D9FF',
-    backgroundColor: '#1e212e',
+    borderColor: '#00D9FF'
   },
   clubName: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
-    letterSpacing: 0.3,
-    marginBottom: 4,
+    marginBottom: 1
   },
-  clubStatLabel: {
-    color: '#7cffe3',
-    fontSize: 14,
-    fontWeight: '500',
+  clubStatSmall: {
+    color: '#A9A9A9',
+    fontSize: 13,
+    fontWeight: '500'
   },
-  clubStatValue: {
+  clubStatNum: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
-    marginHorizontal: 2,
-    marginLeft: 0,
-    marginRight: 2,
-  },
-  clubSport: {
-    color: '#b8e6fa',
-    fontSize: 13,
-    fontWeight: '400',
-    marginTop: 4,
+    fontSize: 15,
+    marginLeft: 3
   },
   clubBtn: {
-    backgroundColor: 'transparent',
-    borderColor: '#34e5ff',
-    borderWidth: 1.7,
-    borderRadius: 22,
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    marginTop: 7,
     alignSelf: 'center',
+    borderWidth: 2,
+    borderColor: '#00D9FF',
+    borderRadius: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 33,
+    marginBottom: 18,
+    marginTop: 1
   },
   clubBtnText: {
-    color: '#34e5ff',
+    color: '#00D9FF',
     fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 0.8,
+    fontSize: 16
   },
 });
