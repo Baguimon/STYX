@@ -158,7 +158,11 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Club du Joueur</Text>
         {clubId ? (
           <View style={styles.clubBlock}>
-            <Image source={getClubLogoSource(clubImage)} style={styles.clubLogo} />
+            <Image
+              source={getClubLogoSource(clubImage)}
+              style={styles.clubImageZoomed}
+              resizeMode="contain"
+            />
             <View style={{ marginLeft: 14 }}>
               <Text style={styles.clubName}>{clubName}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
@@ -351,7 +355,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#23284a',
     borderRadius: 14,
-    padding: 12,
     width: '87%',
     alignSelf: 'center',
     marginBottom: 10
@@ -429,5 +432,9 @@ const styles = StyleSheet.create({
     color: '#A9A9A9',
     fontSize: 15,
     fontWeight: '600'
-  }
+  },
+  clubImageZoomed: {
+  width: 120,
+  height: 120,
+  },
 });
