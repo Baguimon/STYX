@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useContext, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  Image, Alert, ScrollView, ActivityIndicator, Modal, Pressable
+  Image, Alert, ScrollView, ActivityIndicator, Modal, Pressable, RefreshControl
 } from 'react-native';
-import { getClub, getClubMembers, updateClub, kickMember, blockMember, setUserPoste, transferCaptain } from '../services/api';
+import { getClub, getClubMembers, updateClub, kickMember, setUserPoste, transferCaptain } from '../services/api';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
@@ -39,9 +39,10 @@ const POSTES_11 = [
 export default function ClubManageScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { club: initialClub, members: initialMembers } = route.params || {};
-  const [club, setClub] = useState(initialClub || null);
-  const [members, setMembers] = useState(initialMembers || []);
+  const initialClub = route.params?.club || null;
+  const initialMembers = route.params?.members || [];
+  const [club, setClub] = useState(initialClub);
+  const [members, setMembers] = useState(initialMembers);
   const [name, setName] = useState(initialClub?.name || '');
   const [loading, setLoading] = useState(false);
 
@@ -49,6 +50,9 @@ export default function ClubManageScreen() {
   const [posteModal, setPosteModal] = useState({ open: false, member: null });
   // Pour la modal de sélection de logo
   const [logoModalVisible, setLogoModalVisible] = useState(false);
+
+  // Pull to refresh
+  const [refreshing, setRefreshing] = useState(false);
 
   const { userInfo } = useContext(AuthContext);
 
@@ -64,9 +68,17 @@ export default function ClubManageScreen() {
       setClub(freshClub);
       setMembers(freshMembers);
       setName(freshClub.name);
-    } catch (e) {}
+    } catch (e) {
+      Alert.alert('Erreur', "Impossible de rafraîchir le club.");
+    }
     setLoading(false);
   }, [club?.id]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchClubData();
+    setRefreshing(false);
+  }, [fetchClubData]);
 
   useEffect(() => { fetchClubData(); }, [fetchClubData]);
 
@@ -88,7 +100,7 @@ export default function ClubManageScreen() {
   };
 
   // Virer un membre
-  const handleKick = memberId => {
+  const handleKick = async (memberId) => {
     Alert.alert(
       "Exclure ce joueur",
       "Tu es sûr de vouloir virer ce joueur du club ?",
@@ -102,33 +114,13 @@ export default function ClubManageScreen() {
             try {
               await kickMember(club.id, memberId);
               await fetchClubData();
+              Alert.alert('Succès', 'Joueur exclu !');
             } catch (e) {
-              Alert.alert('Erreur', "Impossible de virer ce joueur");
-            }
-            setLoading(false);
-          }
-        }
-      ]
-    );
-  };
-
-  // Bloquer un membre
-  const handleBlock = memberId => {
-    Alert.alert(
-      "Bloquer ce joueur",
-      "Le joueur sera bloqué et ne pourra plus revenir. Continuer ?",
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Bloquer',
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              await blockMember(club.id, memberId);
-              await fetchClubData();
-            } catch (e) {
-              Alert.alert('Erreur', "Impossible de bloquer ce joueur");
+              const message =
+                e?.response?.data?.error ||
+                e?.message ||
+                "Impossible de virer ce joueur";
+              Alert.alert('Erreur', message);
             }
             setLoading(false);
           }
@@ -201,7 +193,17 @@ export default function ClubManageScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#111' }}>
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#00D9FF']}
+            tintColor="#00D9FF"
+          />
+        }
+      >
         <View style={styles.header}>
           {/* Affichage du logo du club, on ouvre la modal de sélection */}
           <TouchableOpacity onPress={() => setLogoModalVisible(true)} style={styles.clubLogoWrapper}>
@@ -252,15 +254,9 @@ export default function ClubManageScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <TouchableOpacity
                   style={styles.iconBtn}
-                  onPress={() => handleKick(m.id)}
+                  onPress={async () => await handleKick(m.id)}
                 >
                   <Ionicons name="person-remove" size={19} color="#e23030" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.iconBtn}
-                  onPress={() => handleBlock(m.id)}
-                >
-                  <Ionicons name="close-circle" size={20} color="#b70000" />
                 </TouchableOpacity>
                 {club.clubCaptain?.id !== m.id && (
                   <TouchableOpacity
@@ -301,7 +297,11 @@ export default function ClubManageScreen() {
                 ]}
               >
                 <View style={styles.logoPreviewWrapper}>
-                  <Image source={imgObj.img} style={styles.logoImageZoomed} resizeMode="contain" />
+                  <Image
+                    source={imgObj.img}
+                    style={styles.logoImageZoomed}
+                    resizeMode="contain"
+                  />
                 </View>
               </TouchableOpacity>
             ))}
