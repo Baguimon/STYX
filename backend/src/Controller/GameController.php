@@ -17,9 +17,19 @@ use Symfony\Component\HttpFoundation\Response;
 class GameController extends AbstractController
 {
     #[Route('', name: 'game_index', methods: ['GET'])]
-    public function index(GameRepository $gameRepository): JsonResponse
+    public function index(GameRepository $gameRepository, EntityManagerInterface $em): JsonResponse
     {
         $games = $gameRepository->findAll();
+        $now = new \DateTime();
+
+        // Ferme les matchs passés
+        foreach ($games as $game) {
+            if ($game->getStatus() === 'ouvert' && $game->getDate() < $now) {
+                $game->setStatus('fermé');
+                $em->persist($game);
+            }
+        }
+        $em->flush();
 
         $data = array_map(fn(Game $game) => [
             'id' => $game->getId(),
@@ -36,8 +46,16 @@ class GameController extends AbstractController
     }
 
     #[Route('/{id}', name: 'game_show', methods: ['GET'])]
-    public function show(Game $game): JsonResponse
+    public function show(Game $game, EntityManagerInterface $em): JsonResponse
     {
+        // Ferme le match si la date est passée
+        $now = new \DateTime();
+        if ($game->getStatus() === 'ouvert' && $game->getDate() < $now) {
+            $game->setStatus('fermé');
+            $em->persist($game);
+            $em->flush();
+        }
+
         $players = [];
         foreach ($game->getGamePlayers() as $gp) {
             $user = $gp->getUser();
@@ -68,7 +86,7 @@ class GameController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        // On récupère l'id du créateur (obligatoire)
+        // L'utilisateur qui crée le match doit être transmis (id) dans le payload
         $creatorId = $data['creator_id'] ?? null;
         if (!$creatorId) {
             return $this->json(['error' => 'creator_id requis'], Response::HTTP_BAD_REQUEST);
@@ -87,14 +105,16 @@ class GameController extends AbstractController
         $game->setCreatedAt(isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime());
         $game->setStatus('ouvert');
 
-        // Inscription automatique du créateur
+        $em->persist($game);
+
+        // Inscrire le créateur comme GamePlayer dans l'équipe 1 (ou au choix)
         $gamePlayer = new GamePlayer();
         $gamePlayer->setGame($game);
         $gamePlayer->setUser($creator);
-        $gamePlayer->setTeam(1); // Par défaut, team 1 (tu peux changer la logique ici)
+        $gamePlayer->setTeam(1);
 
-        $em->persist($game);
         $em->persist($gamePlayer);
+
         $em->flush();
 
         return $this->json(['message' => 'Match créé avec succès !'], Response::HTTP_CREATED);
@@ -109,8 +129,7 @@ class GameController extends AbstractController
         $game->setLocation($data['location']);
         $game->setLocationDetails($data['location_details'] ?? null);
         $game->setMaxPlayers($data['max_players']);
-        $game->setPlayerCount($data['player_count']);
-        // Le statut peut rester non éditable via update, à adapter si besoin
+        // Ne pas éditer playerCount ici directement
 
         $em->flush();
 
@@ -152,17 +171,15 @@ class GameController extends AbstractController
         }
 
         // Interdit si déjà inscrit
-        if (method_exists($game, 'getGamePlayers')) {
-            foreach ($game->getGamePlayers() as $gp) {
-                if ($gp->getUser() === $user) {
-                    return $this->json(['error' => 'Vous êtes déjà inscrit à ce match'], Response::HTTP_CONFLICT);
-                }
+        foreach ($game->getGamePlayers() as $gp) {
+            if ($gp->getUser() === $user) {
+                return $this->json(['error' => 'Vous êtes déjà inscrit à ce match'], Response::HTTP_CONFLICT);
             }
         }
 
         // Interdit si déjà complet
         if ($game->getPlayerCount() >= $game->getMaxPlayers()) {
-            $game->setStatus('fermé'); // On ferme le match si complet
+            $game->setStatus('fermé');
             $em->flush();
             return $this->json(['error' => 'Le match est complet'], Response::HTTP_CONFLICT);
         }
@@ -176,7 +193,6 @@ class GameController extends AbstractController
 
         $game->setPlayerCount($game->getPlayerCount() + 1);
 
-        // Ferme le match si on atteint le max
         if ($game->getPlayerCount() >= $game->getMaxPlayers()) {
             $game->setStatus('fermé');
         }
