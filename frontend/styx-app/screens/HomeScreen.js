@@ -37,7 +37,6 @@ export default function HomeScreen() {
 
   const [userGames, setUserGames] = useState([]);
 
-  // Rafraîchit à chaque fois que tu reviens sur la Home (après avoir rejoint un match)
   useEffect(() => {
     if (userInfo?.id && isFocused) {
       getUserGames(userInfo.id).then(setUserGames).catch(console.error);
@@ -83,7 +82,7 @@ export default function HomeScreen() {
           contentContainerStyle={{ minHeight: screenHeight * 2 }}
           style={{ flex: 1 }}
         >
-          {/* PAGE 1 : Landing (pas de filtre sombre) */}
+          {/* PAGE 1 : Landing */}
           <TouchableWithoutFeedback onPress={scrollToMenu}>
             <View style={[styles.section, { height: screenHeight }]}>
               <View style={styles.header}>
@@ -108,9 +107,7 @@ export default function HomeScreen() {
 
           {/* PAGE 2 : Menu principal avec filtre sombre */}
           <View style={[styles.section, { height: screenHeight, position: 'relative' }]}>
-            {/* FILTRE sombre SUR le fond mais SOUS le contenu, va jusqu'en bas */}
             <View style={styles.page2DarkOverlay} pointerEvents="none" />
-
             <View style={{ height: Platform.OS === 'ios' ? 80 : 55 }} />
             <Text style={styxV3.mainTitle}>MENU</Text>
 
@@ -146,7 +143,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Bloc MES MATCHS À VENIR aligné sur la même largeur que les cartes */}
+            {/* Bloc MES MATCHS À VENIR */}
             <View style={styxV3.upcomingBlock}>
               <View style={styxV3.upcomingHeader}>
                 <Text style={styxV3.upcomingTitle}>Mes matchs à venir</Text>
@@ -157,7 +154,7 @@ export default function HomeScreen() {
               {userGames.length === 0 ? (
                 <Text style={styxV3.empty}>Aucun match à venir.</Text>
               ) : (
-                userGames.slice(0, 2).map((g) => ( // Affichage limité à 2 matchs max
+                userGames.slice(0, 2).map((g) => (
                   <TouchableOpacity
                     key={g.id}
                     style={styxV3.matchCard}
@@ -173,7 +170,6 @@ export default function HomeScreen() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styxV3.matchMain}>{formatDateFR(g.date)}</Text>
-                      {/* Adresse sur une seule ligne */}
                       <Text style={styxV3.matchSub} numberOfLines={1}>{g.location}</Text>
                     </View>
                     <View style={styxV3.rightInfo}>
@@ -184,10 +180,17 @@ export default function HomeScreen() {
                 ))
               )}
             </View>
-            {/* Espace en bas pour que le footer ne chevauche rien */}
             <View style={{ height: 38 }} />
           </View>
         </Animated.ScrollView>
+
+        {/* Lien Politique de confidentialité */}
+        <TouchableOpacity
+          style={styles.privacyLink}
+          onPress={() => navigation.navigate('PrivacyPolicy')}
+        >
+          <Text style={styles.privacyText}>Politique de confidentialité</Text>
+        </TouchableOpacity>
 
         {/* Footer toujours visible, sans fond */}
         <View style={styles.footerAbsolute} pointerEvents="none">
@@ -243,7 +246,7 @@ const styles = StyleSheet.create({
   arrowContainer: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 10, bottom: 44 },
   arrow:          { fontSize: 32, color: '#FFF' },
 
-  // FILTRE sombre juste pour la 2ème page (menu)
+  // Overlay pour la page 2
   page2DarkOverlay: {
     position: 'absolute',
     left: 0, right: 0, top: 0, bottom: 0,
@@ -273,6 +276,22 @@ const styles = StyleSheet.create({
   overlay:        { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.22)' },
   featureText:    { position: 'absolute', top: '35%', color: '#FFF', fontSize: 20, fontWeight: '600' },
   featureSubtitle:{ position: 'absolute', top: '55%', color: '#FFF', fontSize: 14, textAlign: 'center', width: '100%' },
+
+  privacyLink: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: Platform.OS === 'ios' ? 42 : 32,
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  privacyText: {
+    color: '#AAA',
+    fontSize: 12,
+    fontWeight: '300',
+    textDecorationLine: 'underline',
+    marginBottom : -8,
+  },
 
   // Footer ABSOLU, transparent
   footerAbsolute: {
@@ -380,8 +399,6 @@ const styxV3 = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     marginBottom: 0,
-    // Ajout du maxWidth si tu veux vraiment couper pareil partout :
-    // maxWidth: 160,
   },
   rightInfo: {
     alignItems: 'flex-end',
