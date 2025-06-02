@@ -168,6 +168,9 @@ class UserController extends AbstractController
         if (!$user) {
             return $this->json(['error' => 'User not found'], 404);
         }
+
+        $club = $user->getClub();
+
         return $this->json([
             'id' => $user->getId(),
             'username' => $user->getUsername(),
@@ -175,10 +178,11 @@ class UserController extends AbstractController
             'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
             'role' => $user->getRole(),
             'level' => $user->getLevel(),
-            'clubId' => $user->getClub()?->getId(),
+            'clubId' => $club?->getId(),
+            'clubName' => $club ? $club->getName() : null,  // Ajout du nom du club
+            'clubMembersCount' => $club ? $club->getMembers()->count() : 0, // Ajout du nombre de membres
             'poste' => $user->getPoste(),
-            // Si tu ajoutes la photo de profil plus tard, tu pourras rajouter ici 'image' => $user->getImage()
+            // Tu pourras rajouter ici 'image' => $user->getImage() si besoin plus tard
         ]);
     }
-
 }

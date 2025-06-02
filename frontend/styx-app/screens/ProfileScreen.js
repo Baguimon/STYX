@@ -1,13 +1,70 @@
-import React, { useContext } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView, RefreshControl, ActivityIndicator, Modal, Pressable, Alert } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
+import { getUserById, getClubMembers } from '../services/api';
 
 const DEFAULT_AVATAR = require('../assets/player-default.png');
+const DEFAULT_CLUB = require('../assets/club-default.png');
 
 export default function ProfileScreen() {
   const { userInfo } = useContext(AuthContext);
+  const [freshUser, setFreshUser] = useState(null);
+  const [clubMembers, setClubMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  if (!userInfo) {
+  // Pour l'overlay
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const fetchUserAndClub = useCallback(async () => {
+    if (!userInfo?.id) return;
+    setLoading(true);
+    try {
+      const data = await getUserById(userInfo.id);
+      setFreshUser(data);
+      if (data.clubId) {
+        try {
+          const members = await getClubMembers(data.clubId);
+          setClubMembers(members);
+        } catch (e) {
+          setClubMembers([]);
+        }
+      } else {
+        setClubMembers([]);
+      }
+    } catch (e) {
+      setFreshUser(null);
+      setClubMembers([]);
+    }
+    setLoading(false);
+  }, [userInfo]);
+
+  useEffect(() => { fetchUserAndClub(); }, [fetchUserAndClub]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchUserAndClub();
+    setRefreshing(false);
+  }, [fetchUserAndClub]);
+
+  // PLACEHOLDER: à remplacer par ta vraie logique
+  const handleEditAccount = () => {
+    setModalVisible(false);
+    Alert.alert('✏️ Modifier', 'Fonction à implémenter.');
+  };
+  const handleDeleteAccount = () => {
+    setModalVisible(false);
+    Alert.alert('❌ Supprimer', 'Fonction à implémenter.');
+  };
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#00D9FF" size="large" />
+      </View>
+    );
+  }
+  if (!freshUser) {
     return (
       <View style={{ flex: 1, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
         <Text style={{ color: '#fff', fontSize: 18 }}>Non connecté</Text>
@@ -15,42 +72,42 @@ export default function ProfileScreen() {
     );
   }
 
-  const username = userInfo.username || '---';
-  const level = userInfo.level || '---';
-  const clubName = userInfo.club?.name || '---';
-  const clubPlayerCount = userInfo.club?.playerCount !== undefined
-    ? userInfo.club.playerCount
-    : '---';
+  const username = freshUser.username || '---';
+  const level = freshUser.level || '---';
+  const clubName = freshUser.club?.name || '---';
+  const nbClubMembers = clubMembers?.length ?? '---';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#111' }}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00D9FF"
+            colors={['#00D9FF']}
+          />
+        }
+      >
         {/* Top Avatar + infos */}
         <View style={styles.headerContainer}>
           <View style={styles.avatarWrapper}>
-            <Image
-              source={DEFAULT_AVATAR}
-              style={styles.avatar}
-            />
+            <Image source={DEFAULT_AVATAR} style={styles.avatar} />
           </View>
           <View style={styles.headerText}>
             <Text style={styles.username}>{username}</Text>
-            <Text style={styles.userAge}>---</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
             <Text style={styles.menuDots}>⋯</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Matchs joués / amis */}
+        {/* Matchs joués */}
         <View style={styles.statsRow}>
           <View style={styles.statsCol}>
             <Text style={styles.statsNumber}>---</Text>
             <Text style={styles.statsLabel}>Matchs joués</Text>
-          </View>
-          <View style={styles.statsCol}>
-            <Text style={styles.statsNumber}>---</Text>
-            <Text style={styles.statsLabel}>Amis</Text>
           </View>
         </View>
 
@@ -58,18 +115,13 @@ export default function ProfileScreen() {
         <View style={styles.levelBlock}>
           <Text style={styles.levelIcon}>🙂</Text>
           <Text style={styles.levelText}>{level}</Text>
-          <Text style={styles.levelDuration}>---</Text>
-        </View>
-        <View style={styles.levelBarBG}>
-          <View style={[styles.levelBarFill, { width: '40%' }]} />
         </View>
 
         {/* Section stats */}
         <Text style={styles.sectionTitle}>Stats du joueur</Text>
         <View style={styles.statDetails}>
-          <Text style={styles.statsMainRow}>--- <Text style={{color: '#13D76F'}}>V</Text>-<Text style={{color: '#EAC94B'}}>N</Text>-<Text style={{color: '#E33232'}}>D</Text></Text>
+          <Text style={styles.statsMainRow}>--- <Text style={{ color: '#13D76F' }}>V</Text>-<Text style={{ color: '#EAC94B' }}>N</Text>-<Text style={{ color: '#E33232' }}>D</Text></Text>
           <Text style={styles.statsSubRow}>--- MVP</Text>
-          {/* LIGNE SUPPRIMÉE: Sport le plus joué */}
         </View>
 
         {/* Derniers matchs */}
@@ -80,21 +132,56 @@ export default function ProfileScreen() {
 
         {/* Bloc club */}
         <Text style={styles.sectionTitle}>Club du Joueur</Text>
-        <View style={styles.clubBlock}>
-          <Image source={require('../assets/club-default.png')} style={styles.clubLogo} />
-          <View style={{ marginLeft: 14 }}>
-            <Text style={styles.clubName}>{clubName}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-              <Text style={styles.clubStatSmall}>Joueurs </Text>
-              <Text style={styles.clubStatNum}>{clubPlayerCount}</Text>
-              <Text style={[styles.clubStatSmall, { marginLeft: 18 }]}>V-N-D </Text>
-              <Text style={[styles.clubStatNum, { color: '#13D76F', marginLeft: 2 }]}>---</Text>
+        {freshUser.clubId ? (
+          <View style={styles.clubBlock}>
+            <Image source={DEFAULT_CLUB} style={styles.clubLogo} />
+            <View style={{ marginLeft: 14 }}>
+              <Text style={styles.clubName}>{clubName}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                <Text style={styles.clubStatSmall}>Joueurs </Text>
+                <Text style={styles.clubStatNum}>{nbClubMembers}</Text>
+                <Text style={[styles.clubStatSmall, { marginLeft: 18 }]}>V-N-D </Text>
+                <Text style={[styles.clubStatNum, { color: '#13D76F', marginLeft: 2 }]}>---</Text>
+              </View>
             </View>
-            {/* LIGNE SUPPRIMÉE: Sport du club */}
           </View>
-        </View>
+        ) : (
+          <View style={{ alignItems: 'center', marginVertical: 25 }}>
+            <Text style={{ color: '#aaa', fontSize: 19, fontWeight: 'bold', paddingVertical: 20 }}>
+              Aucun club
+            </Text>
+          </View>
+        )}
+
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      {/* --------- OVERLAY MODAL --------- */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Gérer mon compte</Text>
+            <TouchableOpacity style={styles.modalBtn} onPress={handleEditAccount}>
+              <Text style={styles.modalBtnText}>Modifier le compte</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#E33232' }]} onPress={handleDeleteAccount}>
+              <Text style={[styles.modalBtnText, { color: '#fff' }]}>Supprimer le compte</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalCancel} onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalCancelText}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+      {/* --------- FIN MODAL --------- */}
     </SafeAreaView>
   );
 }
@@ -144,11 +231,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginRight: 9,
   },
-  userAge: {
-    color: '#A9A9A9',
-    fontSize: 19,
-    fontWeight: '500',
-  },
   menuDots: {
     color: '#AAA',
     fontSize: 30,
@@ -157,8 +239,8 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    width: '75%',
-    justifyContent: 'space-between',
+    width: '55%',
+    justifyContent: 'center',
     alignSelf: 'center',
     marginBottom: 2,
     marginTop: 6
@@ -192,25 +274,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 13
   },
-  levelDuration: {
-    color: '#A9A9A9',
-    fontSize: 14,
-  },
-  levelBarBG: {
-    backgroundColor: '#191B2B',
-    width: '77%',
-    height: 7,
-    borderRadius: 4,
-    alignSelf: 'center',
-    marginBottom: 18,
-    marginTop: 1,
-    overflow: 'hidden'
-  },
-  levelBarFill: {
-    height: 7,
-    backgroundColor: '#00D9FF',
-    borderRadius: 4,
-  },
   sectionTitle: {
     color: '#fff',
     fontWeight: 'bold',
@@ -239,11 +302,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 3,
-  },
-  statsLabel2: {
-    color: '#A9A9A9',
-    fontSize: 13,
-    marginTop: 2
   },
   matchCard: {
     width: '86%',
@@ -299,19 +357,53 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 3
   },
-  clubBtn: {
-    alignSelf: 'center',
-    borderWidth: 2,
-    borderColor: '#00D9FF',
-    borderRadius: 12,
-    paddingVertical: 9,
-    paddingHorizontal: 33,
-    marginBottom: 18,
-    marginTop: 1
+  // ------ MODAL OVERLAY -----
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.39)',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  clubBtnText: {
-    color: '#00D9FF',
+  modalContainer: {
+    backgroundColor: '#222A',
+    borderRadius: 19,
+    padding: 26,
+    minWidth: 260,
+    alignItems: 'center'
+  },
+  modalTitle: {
+    color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16
+    fontSize: 20,
+    marginBottom: 18,
+    letterSpacing: 1,
+    textAlign: 'center'
   },
+  modalBtn: {
+    backgroundColor: '#00D9FF',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 33,
+    alignItems: 'center',
+    marginBottom: 13,
+    width: 195,
+  },
+  modalBtnText: {
+    color: '#003249',
+    fontWeight: 'bold',
+    fontSize: 16,
+    letterSpacing: 1,
+    textAlign: 'center'
+  },
+  modalCancel: {
+    marginTop: 1,
+    padding: 10,
+    width: '100%',
+    alignItems: 'center'
+  },
+  modalCancelText: {
+    color: '#A9A9A9',
+    fontSize: 15,
+    fontWeight: '600'
+  }
 });
