@@ -17,9 +17,19 @@ use Symfony\Component\HttpFoundation\Response;
 class GameController extends AbstractController
 {
     #[Route('', name: 'game_index', methods: ['GET'])]
-    public function index(GameRepository $gameRepository): JsonResponse
+    public function index(GameRepository $gameRepository, EntityManagerInterface $em): JsonResponse
     {
         $games = $gameRepository->findAll();
+        $now = new \DateTime();
+
+        // Ferme les matchs passés
+        foreach ($games as $game) {
+            if ($game->getStatus() === 'ouvert' && $game->getDate() < $now) {
+                $game->setStatus('fermé');
+                $em->persist($game);
+            }
+        }
+        $em->flush();
 
         $data = array_map(fn(Game $game) => [
             'id' => $game->getId(),
@@ -36,8 +46,16 @@ class GameController extends AbstractController
     }
 
     #[Route('/{id}', name: 'game_show', methods: ['GET'])]
-    public function show(Game $game): JsonResponse
+    public function show(Game $game, EntityManagerInterface $em): JsonResponse
     {
+        // Ferme le match si la date est passée
+        $now = new \DateTime();
+        if ($game->getStatus() === 'ouvert' && $game->getDate() < $now) {
+            $game->setStatus('fermé');
+            $em->persist($game);
+            $em->flush();
+        }
+
         $players = [];
         foreach ($game->getGamePlayers() as $gp) {
             $user = $gp->getUser();
@@ -64,22 +82,18 @@ class GameController extends AbstractController
     }
 
     #[Route('', name: 'game_create', methods: ['POST'])]
-    public function create(
-        Request $request,
-        EntityManagerInterface $em,
-        UserRepository $userRepository
-    ): JsonResponse
+    public function create(Request $request, EntityManagerInterface $em, UserRepository $userRepository): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
-        // L'ID du créateur doit être envoyé dans le champ 'creator_id'
-        if (!isset($data['creator_id'])) {
+        // L'utilisateur qui crée le match doit être transmis (id) dans le payload
+        $creatorId = $data['creator_id'] ?? null;
+        if (!$creatorId) {
             return $this->json(['error' => 'creator_id requis'], Response::HTTP_BAD_REQUEST);
         }
-
-        $user = $userRepository->find($data['creator_id']);
-        if (!$user) {
-            return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_NOT_FOUND);
+        $creator = $userRepository->find($creatorId);
+        if (!$creator) {
+            return $this->json(['error' => 'Utilisateur créateur introuvable'], Response::HTTP_NOT_FOUND);
         }
 
         $game = new Game();
@@ -87,17 +101,18 @@ class GameController extends AbstractController
         $game->setLocation($data['location']);
         $game->setLocationDetails($data['location_details'] ?? null);
         $game->setMaxPlayers($data['max_players']);
-        $game->setPlayerCount(1); // Le créateur est déjà inscrit
+        $game->setPlayerCount(1); // Créateur inscrit automatiquement
         $game->setCreatedAt(isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime());
         $game->setStatus('ouvert');
 
         $em->persist($game);
 
-        // Inscrire le créateur en tant que GamePlayer
+        // Inscrire le créateur comme GamePlayer dans l'équipe 1 (ou au choix)
         $gamePlayer = new GamePlayer();
         $gamePlayer->setGame($game);
-        $gamePlayer->setUser($user);
-        $gamePlayer->setTeam(1); // Par défaut, équipe 1
+        $gamePlayer->setUser($creator);
+        $gamePlayer->setTeam(1);
+
         $em->persist($gamePlayer);
 
         $em->flush();
@@ -114,8 +129,7 @@ class GameController extends AbstractController
         $game->setLocation($data['location']);
         $game->setLocationDetails($data['location_details'] ?? null);
         $game->setMaxPlayers($data['max_players']);
-        $game->setPlayerCount($data['player_count']);
-        // Le statut peut être géré automatiquement, donc pas besoin ici
+        // Ne pas éditer playerCount ici directement
 
         $em->flush();
 
@@ -131,7 +145,6 @@ class GameController extends AbstractController
         return $this->json(['message' => 'Match supprimé avec succès !']);
     }
 
-    // ----------- Route JOIN (Inscription à un match) -------------
     #[Route('/{id}/join', name: 'game_join', methods: ['POST'])]
     public function join(
         Request $request,
@@ -158,11 +171,9 @@ class GameController extends AbstractController
         }
 
         // Interdit si déjà inscrit
-        if (method_exists($game, 'getGamePlayers')) {
-            foreach ($game->getGamePlayers() as $gp) {
-                if ($gp->getUser() === $user) {
-                    return $this->json(['error' => 'Vous êtes déjà inscrit à ce match'], Response::HTTP_CONFLICT);
-                }
+        foreach ($game->getGamePlayers() as $gp) {
+            if ($gp->getUser() === $user) {
+                return $this->json(['error' => 'Vous êtes déjà inscrit à ce match'], Response::HTTP_CONFLICT);
             }
         }
 
@@ -182,7 +193,6 @@ class GameController extends AbstractController
 
         $game->setPlayerCount($game->getPlayerCount() + 1);
 
-        // Ferme le match si on atteint le max
         if ($game->getPlayerCount() >= $game->getMaxPlayers()) {
             $game->setStatus('fermé');
         }
