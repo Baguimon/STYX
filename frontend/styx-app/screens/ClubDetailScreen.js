@@ -1,28 +1,25 @@
 import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Alert, Share } from 'react-native';
+import { View,StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, ScrollView, Alert, Share, RefreshControl } from 'react-native';
 import { getClub, getClubMembers, setUserPoste, leaveClub } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 const defaultClubImage = require('../assets/club-default.png');
 const defaultPlayerImage = require('../assets/player-default.png');
 const FIELD_IMAGE = require('../assets/field-club.jpg');
 
-// === Les logos prédéfinis dispo côté front ===
 const CLUB_LOGO_CHOICES = [
   { uri: '/assets/club-imgs/ecusson-1.png', img: require('../assets/club-imgs/ecusson-1.png') },
   { uri: '/assets/club-imgs/ecusson-2.png', img: require('../assets/club-imgs/ecusson-2.png') },
   { uri: '/assets/club-imgs/ecusson-3.png', img: require('../assets/club-imgs/ecusson-3.png') },
 ];
-// Helper pour trouver la bonne image à afficher pour le logo du club
 function getClubLogoSource(image) {
   const found = CLUB_LOGO_CHOICES.find(c => c.uri === image);
   return found ? found.img : defaultClubImage;
 }
 
 const Y_OFFSET = -0.1;
-
 const POSTES_11 = [
   { key: 'GB', label: 'GB', x: 0.5, y: 0.94 + Y_OFFSET },
   { key: 'DG', label: 'DG', x: 0.15, y: 0.75 + Y_OFFSET },
@@ -44,8 +41,9 @@ export default function ClubDetailScreen({ route }) {
   const [members, setMembers] = useState([]);
   const { userInfo } = useContext(AuthContext);
   const navigation = useNavigation();
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fonction pour charger club + membres (appelée au focus et au mount)
+  // Chargement des infos du club
   const fetchClub = useCallback(async () => {
     setLoading(true);
     try {
@@ -62,6 +60,12 @@ export default function ClubDetailScreen({ route }) {
     setLoading(false);
   }, [clubId]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchClub();
+    setRefreshing(false);
+  }, [fetchClub]);
+
   useEffect(() => { fetchClub(); }, [fetchClub]);
   useFocusEffect(
     useCallback(() => {
@@ -69,10 +73,7 @@ export default function ClubDetailScreen({ route }) {
     }, [fetchClub])
   );
 
-  // Capitaine
   const captainId = club?.clubCaptain?.id || club?.clubCaptain;
-
-  // Trie pour mettre le capitaine en haut
   const sortedMembers = [...members].sort((a, b) => {
     if (a.id === captainId) return -1;
     if (b.id === captainId) return 1;
@@ -85,7 +86,6 @@ export default function ClubDetailScreen({ route }) {
   const fieldMemberIds = POSTES_11.map(pos => getPlayerForPoste(pos.key)?.id).filter(Boolean);
   const remplacants = members.filter(m => m.poste === 'REMPLACANT');
 
-  // --- Correction ici ---
   const handleSelectPoste = async (posteKey) => {
     if (!userInfo?.id) return;
     try {
@@ -95,13 +95,11 @@ export default function ClubDetailScreen({ route }) {
         prev.map(m =>
           m.id === userInfo.id
             ? { ...m, poste: posteKey }
-            // CORRECTION: on retire l'ancien poste UNIQUEMENT pour les postes uniques (pas "REMPLACANT")
             : (posteKey && posteKey !== 'REMPLACANT' && m.poste === posteKey ? { ...m, poste: null } : m)
         )
       );
     } catch (e) {
       if (e?.response?.data?.error === 'Poste déjà pris') {
-        // Attribuer remplaçant automatiquement
         await setUserPoste(clubId, userInfo.id, 'REMPLACANT');
         setMembers(prev =>
           prev.map(m =>
@@ -158,7 +156,6 @@ export default function ClubDetailScreen({ route }) {
               });
             } catch (e) {
               Alert.alert('Erreur', "Impossible de quitter le club");
-              console.log('Erreur leaveClub :', e?.response?.data, e.message, e);
             }
           }
         },
@@ -196,11 +193,13 @@ export default function ClubDetailScreen({ route }) {
             {club.stats?.win ?? '-'}-{club.stats?.draw ?? '-'}-{club.stats?.lose ?? '-'}
           </Text>
         </View>
-        <Image
-          key={club?.image || 'default'}
-          source={getClubLogoSource(club.image)}
-          style={styles.clubImage}
-        />
+        <View style={styles.clubLogoWrapper}>
+          <Image
+            source={getClubLogoSource(club.image)}
+            style={styles.clubImageZoomed}
+            resizeMode="contain"
+          />
+        </View>
         <View style={styles.statsBlock}>
           <Text style={styles.statsLabel}>Joueurs</Text>
           <Text style={styles.statsValue}>{members.length || '-'}</Text>
@@ -208,9 +207,19 @@ export default function ClubDetailScreen({ route }) {
       </View>
       <Text style={styles.clubName}>{club.name}</Text>
 
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#00D9FF']}
+            tintColor="#00D9FF"
+          />
+        }
+      >
         <View style={{ padding: 16 }}>
-          {/* COMPOSITION */}
+          {/* Composition */}
           <Text style={styles.sectionTitle}>Composition</Text>
           <View style={styles.compoContainer}>
             <Image
@@ -253,9 +262,8 @@ export default function ClubDetailScreen({ route }) {
                       source={player?.image ? { uri: player.image } : defaultPlayerImage}
                       style={styles.playerAvatar}
                     />
-                    {/* Capitaine point */}
                     {player && captainId && player.id === captainId && (
-                      <View style={styles.captainDotField} />
+                      <FontAwesome5 name="crown" size={20} color="#FFD700" style={styles.captainCrownField} />
                     )}
                   </View>
                   <Text style={styles.playerOnFieldText}>{slot.label}</Text>
@@ -279,7 +287,6 @@ export default function ClubDetailScreen({ route }) {
           {/* REMPLAÇANTS */}
           <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
           <View style={styles.remplacantsRow}>
-            {/* 1. Le bouton d’action “+” ou “X”, toujours à gauche */}
             <TouchableOpacity
               style={[
                 styles.remplacantEmpty,
@@ -306,8 +313,6 @@ export default function ClubDetailScreen({ route }) {
                 <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
               )}
             </TouchableOpacity>
-
-            {/* 2. Si je suis remplaçant, mon avatar juste après le “+” */}
             {isUserRemplacant && (
               <View style={[styles.remplacantEmpty, { borderColor: '#00D9FF', borderWidth: 2 }]}>
                 <Image
@@ -316,8 +321,6 @@ export default function ClubDetailScreen({ route }) {
                 />
               </View>
             )}
-
-            {/* 3. Les autres remplaçants ensuite (sauf moi) */}
             {remplacants
               .filter(r => r.id !== userInfo?.id)
               .map(r => (
@@ -351,9 +354,8 @@ export default function ClubDetailScreen({ route }) {
                     source={item.image ? { uri: item.image } : defaultPlayerImage}
                     style={styles.playerListAvatar}
                   />
-                  {/* Capitaine point collé à l’avatar */}
                   {item.id === captainId && (
-                    <View style={styles.captainDotList} />
+                    <FontAwesome5 name="crown" size={18} color="#FFD700" style={styles.captainCrownList} />
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
@@ -388,10 +390,9 @@ export default function ClubDetailScreen({ route }) {
   );
 }
 
+
 const AVATAR_SIZE = 50;
 const styles = StyleSheet.create({
-  // ... mêmes styles que toi
-  // (tu peux garder exactement tes styles)
   header: {
     backgroundColor: '#181818',
     flexDirection: 'row',
@@ -401,13 +402,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 10,
   },
-  clubImage: {  
+  clubLogoWrapper: {
     width: 70,
     height: 70,
     borderRadius: 35,
     borderWidth: 2,
     borderColor: '#fff',
     backgroundColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  clubImageZoomed: {
+    width: 120,
+    height: 120,
   },
   statsBlock: {
     alignItems: 'center',
@@ -481,6 +489,22 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     backgroundColor: 'transparent',
     marginBottom: 2,
+  },
+  // COURONNE CAPITAINE terrain
+  captainCrownField: {
+    position: 'absolute',
+    top: -7,
+    right: -2,
+    zIndex: 10,
+    backgroundColor: 'transparent',
+  },
+  // COURONNE CAPITAINE liste
+  captainCrownList: {
+    position: 'absolute',
+    bottom: -5,
+    right: -7,
+    zIndex: 10,
+    backgroundColor: 'transparent',
   },
   playerOnFieldText: {
     color: '#fff',
@@ -586,30 +610,6 @@ const styles = StyleSheet.create({
     color: '#050A23',
     fontWeight: '700',
     fontSize: 13,
-  },
-  captainDotField: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 13,
-    height: 13,
-    borderRadius: 8,
-    backgroundColor: '#e23030',
-    borderWidth: 2,
-    borderColor: '#fff',
-    zIndex: 10,
-  },
-  captainDotList: {
-    position: 'absolute',
-    bottom: -3,   
-    right: -3,    
-    width: 13,
-    height: 13,
-    borderRadius: 8,
-    backgroundColor: '#e23030',
-    borderWidth: 2,
-    borderColor: '#fff',
-    zIndex: 10,
   },
   sectionTitleRow: {
     flexDirection: 'row',

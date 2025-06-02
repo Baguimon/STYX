@@ -111,9 +111,6 @@ export const updateClub = (clubId, data) =>
   api.patch(`/clubs/${clubId}`, data);
 
 export const kickMember = (clubId, memberId) =>
-  api.post(`/clubs/${clubId}/kick`, { memberId });
-
-export const blockMember = (clubId, memberId) =>
-  api.post(`/clubs/${clubId}/block`, { memberId });
+  api.post(`/clubs/${clubId}/kick-member/${memberId}`);
 
 export default api;
