@@ -15,25 +15,19 @@ const CLUB_LOGO_CHOICES = [
   { uri: '/assets/club-imgs/ecusson-3.png', img: require('../assets/club-imgs/ecusson-3.png') },
 ];
 function getClubLogoSource(image) {
-  const found = CLUB_LOGO_CHOICES.find(c => c.uri === image);
-  return found ? found.img : require('../assets/club-default.png');
+  if (!image) return require('../assets/club-default.png');
+  const imgName = image.split('/').pop()?.toLowerCase()?.trim();
+  // On matche sur la fin du nom
+  const found = CLUB_LOGO_CHOICES.find(c => c.uri.toLowerCase().endsWith(imgName));
+  if (found) return found.img;
+  console.log('[LOGO] AUCUN MATCH POUR:', image, '(imgName:', imgName, ')');
+  return require('../assets/club-default.png');
 }
 
 const defaultPlayerImage = require('../assets/player-default.png');
-
 const POSTES_11 = [
-  { key: 'GB', label: 'GB' },
-  { key: 'DG', label: 'DG' },
-  { key: 'DC1', label: 'DC1' },
-  { key: 'DC2', label: 'DC2' },
-  { key: 'DD', label: 'DD' },
-  { key: 'MG', label: 'MG' },
-  { key: 'MC', label: 'MC' },
-  { key: 'MD', label: 'MD' },
-  { key: 'AG', label: 'AG' },
-  { key: 'BU', label: 'BU' },
-  { key: 'AD', label: 'AD' },
-  { key: 'REMPLACANT', label: 'REMPLACANT' },
+  { key: 'GB', label: 'GB' }, { key: 'DG', label: 'DG' }, { key: 'DC1', label: 'DC1' }, { key: 'DC2', label: 'DC2' }, { key: 'DD', label: 'DD' },
+  { key: 'MG', label: 'MG' }, { key: 'MC', label: 'MC' }, { key: 'MD', label: 'MD' }, { key: 'AG', label: 'AG' }, { key: 'BU', label: 'BU' }, { key: 'AD', label: 'AD' }, { key: 'REMPLACANT', label: 'REMPLACANT' },
 ];
 
 export default function ClubManageScreen() {
@@ -52,6 +46,11 @@ export default function ClubManageScreen() {
 
   const { userInfo } = useContext(AuthContext);
 
+  // LOG CLUB.IMAGE CHAQUE FOIS QU'IL CHANGE
+  useEffect(() => {
+    console.log('[DEBUG] club.image value :', club?.image);
+  }, [club]);
+
   // Rafraîchir club et membres
   const fetchClubData = useCallback(async () => {
     if (!club?.id) return;
@@ -61,6 +60,7 @@ export default function ClubManageScreen() {
         getClub(club.id),
         getClubMembers(club.id)
       ]);
+      console.log("=== DEBUG CLUB ===", freshClub);
       setClub(freshClub);
       setMembers(freshMembers);
       setName(freshClub.name);
@@ -206,7 +206,7 @@ export default function ClubManageScreen() {
           {/* Affichage du logo du club, on ouvre la modal de sélection */}
           <TouchableOpacity onPress={() => setLogoModalVisible(true)}>
             <Image
-              source={club?.image ? getClubLogoSource(club.image) : require('../assets/club-default.png')}
+              source={getClubLogoSource(club?.image)}
               style={styles.clubImage}
             />
             <Ionicons name="camera" size={22} color="#00D9FF" style={styles.editIcon} />
@@ -296,7 +296,8 @@ export default function ClubManageScreen() {
                 onPress={() => handleChooseLogo(imgObj)}
                 style={[
                   styles.logoChoice,
-                  club?.image === imgObj.uri ? styles.logoSelected : null
+                  club?.image && imgObj.uri.endsWith(club?.image.split('/').pop())
+                    ? styles.logoSelected : null
                 ]}
               >
                 <Image source={imgObj.img} style={styles.logoImagePreview} />
