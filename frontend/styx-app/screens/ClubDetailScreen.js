@@ -197,6 +197,7 @@ export default function ClubDetailScreen({ route }) {
           </Text>
         </View>
         <Image
+          key={club?.image || 'default'}
           source={getClubLogoSource(club.image)}
           style={styles.clubImage}
         />
