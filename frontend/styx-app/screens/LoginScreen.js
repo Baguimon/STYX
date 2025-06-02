@@ -5,7 +5,6 @@ import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
 import styxLogo from '../assets/styx-logo.png';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useContext(AuthContext);
@@ -20,19 +19,15 @@ export default function LoginScreen({ navigation }) {
         password
       });
 
-      console.log('Réponse:', data);
+      // 👉 Log la réponse pour vérifier TOUT ce que tu reçois
+      console.log('Réponse data.user:', data.user);
+
       if (!data.user) {
         Alert.alert('Erreur', 'Réponse du serveur invalide.');
         return;
       }
 
-      await login(data.user);
-
-      // *** AJOUTE CETTE PARTIE ***
-      await AsyncStorage.setItem('userId', data.user.id?.toString() || '');
-      await AsyncStorage.setItem('userName', data.user.name || '');
-      await AsyncStorage.setItem('userEmail', data.user.email || '');
-      // ***************************
+      await login(data.user); // <-- Tout passe ici, pas besoin de AsyncStorage manuelle
 
       Alert.alert('✅ Connexion réussie');
     } catch (error) {

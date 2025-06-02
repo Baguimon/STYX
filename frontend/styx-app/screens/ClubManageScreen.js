@@ -52,7 +52,6 @@ export default function ClubManageScreen() {
 
   // LOG CLUB.IMAGE CHAQUE FOIS QU'IL CHANGE
   useEffect(() => {
-    console.log('[DEBUG] club.image value :', club?.image);
   }, [club]);
 
   // Rafraîchir club et membres
@@ -64,7 +63,6 @@ export default function ClubManageScreen() {
         getClub(club.id),
         getClubMembers(club.id)
       ]);
-      console.log("=== DEBUG CLUB ===", freshClub);
       setClub(freshClub);
       setMembers(freshMembers);
       setName(freshClub.name);

@@ -81,6 +81,8 @@ class AuthController extends AbstractController
                 'club' => $user->getClub() ? [
                     'id' => $user->getClub()->getId(),
                     'name' => $user->getClub()->getName(),
+                    // Ajoute ça :
+                    'playerCount' => $user->getClub()->getMembers()->count(),
                 ] : null,
                 'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
             ]
