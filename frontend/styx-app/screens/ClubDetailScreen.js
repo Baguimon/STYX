@@ -3,7 +3,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Alert, Share } from 'react-native';
 import { getClub, getClubMembers, setUserPoste, leaveClub } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons'; // <-- Ajout FontAwesome
 
 const defaultClubImage = require('../assets/club-default.png');
 const defaultPlayerImage = require('../assets/player-default.png');
@@ -85,7 +85,6 @@ export default function ClubDetailScreen({ route }) {
   const fieldMemberIds = POSTES_11.map(pos => getPlayerForPoste(pos.key)?.id).filter(Boolean);
   const remplacants = members.filter(m => m.poste === 'REMPLACANT');
 
-  // --- Correction ici ---
   const handleSelectPoste = async (posteKey) => {
     if (!userInfo?.id) return;
     try {
@@ -95,13 +94,11 @@ export default function ClubDetailScreen({ route }) {
         prev.map(m =>
           m.id === userInfo.id
             ? { ...m, poste: posteKey }
-            // CORRECTION: on retire l'ancien poste UNIQUEMENT pour les postes uniques (pas "REMPLACANT")
             : (posteKey && posteKey !== 'REMPLACANT' && m.poste === posteKey ? { ...m, poste: null } : m)
         )
       );
     } catch (e) {
       if (e?.response?.data?.error === 'Poste déjà pris') {
-        // Attribuer remplaçant automatiquement
         await setUserPoste(clubId, userInfo.id, 'REMPLACANT');
         setMembers(prev =>
           prev.map(m =>
@@ -255,9 +252,9 @@ export default function ClubDetailScreen({ route }) {
                       source={player?.image ? { uri: player.image } : defaultPlayerImage}
                       style={styles.playerAvatar}
                     />
-                    {/* Capitaine point */}
+                    {/* COURONNE CAPITAINE */}
                     {player && captainId && player.id === captainId && (
-                      <View style={styles.captainDotField} />
+                      <FontAwesome5 name="crown" size={20} color="#FFD700" style={styles.captainCrownField} />
                     )}
                   </View>
                   <Text style={styles.playerOnFieldText}>{slot.label}</Text>
@@ -353,9 +350,9 @@ export default function ClubDetailScreen({ route }) {
                     source={item.image ? { uri: item.image } : defaultPlayerImage}
                     style={styles.playerListAvatar}
                   />
-                  {/* Capitaine point collé à l’avatar */}
+                  {/* COURONNE CAPITAINE LISTE */}
                   {item.id === captainId && (
-                    <View style={styles.captainDotList} />
+                    <FontAwesome5 name="crown" size={18} color="#FFD700" style={styles.captainCrownList} />
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
@@ -392,8 +389,6 @@ export default function ClubDetailScreen({ route }) {
 
 const AVATAR_SIZE = 50;
 const styles = StyleSheet.create({
-  // ... mêmes styles que toi
-  // (tu peux garder exactement tes styles)
   header: {
     backgroundColor: '#181818',
     flexDirection: 'row',
@@ -404,18 +399,18 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   clubLogoWrapper: {
-  width: 70,         // Taille du cercle apparent (adapte à ton design)
-  height: 70,
-  borderRadius: 35,
-  borderWidth: 2,
-  borderColor: '#fff',
-  backgroundColor: '#333',
-  alignItems: 'center',
-  justifyContent: 'center',
-  overflow: 'hidden',   // INDISPENSABLE pour couper ce qui dépasse
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 2,
+    borderColor: '#fff',
+    backgroundColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   clubImageZoomed: {
-    width: 120,         // Ici tu “zoomes” dans le PNG (essaie 120, 140…)
+    width: 120,
     height: 120,
   },
   statsBlock: {
@@ -490,6 +485,22 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     backgroundColor: 'transparent',
     marginBottom: 2,
+  },
+  // COURONNE CAPITAINE terrain
+  captainCrownField: {
+    position: 'absolute',
+    top: -7,
+    right: -2,
+    zIndex: 10,
+    backgroundColor: 'transparent',
+  },
+  // COURONNE CAPITAINE liste
+  captainCrownList: {
+    position: 'absolute',
+    bottom: -5,
+    right: -7,
+    zIndex: 10,
+    backgroundColor: 'transparent',
   },
   playerOnFieldText: {
     color: '#fff',
@@ -595,30 +606,6 @@ const styles = StyleSheet.create({
     color: '#050A23',
     fontWeight: '700',
     fontSize: 13,
-  },
-  captainDotField: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 13,
-    height: 13,
-    borderRadius: 8,
-    backgroundColor: '#e23030',
-    borderWidth: 2,
-    borderColor: '#fff',
-    zIndex: 10,
-  },
-  captainDotList: {
-    position: 'absolute',
-    bottom: -3,   
-    right: -3,    
-    width: 13,
-    height: 13,
-    borderRadius: 8,
-    backgroundColor: '#e23030',
-    borderWidth: 2,
-    borderColor: '#fff',
-    zIndex: 10,
   },
   sectionTitleRow: {
     flexDirection: 'row',
