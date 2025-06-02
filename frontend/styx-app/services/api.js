@@ -67,7 +67,7 @@ export const joinGame = async (gameId, userId, team) => {
 };
 
 export const getUserGames = async (userId) => {
-  const response = await api.get(`/users/${userId}/games`);
+  const response = await api.get(`/games/user/${userId}`);
   return response.data;
 };
 
