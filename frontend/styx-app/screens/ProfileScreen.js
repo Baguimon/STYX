@@ -6,14 +6,22 @@ import { getUserById, getClubMembers } from '../services/api';
 const DEFAULT_AVATAR = require('../assets/player-default.png');
 const DEFAULT_CLUB = require('../assets/club-default.png');
 
+// --- Mapping d'images de clubs locaux et fallback url distante
+function getClubLogoSource(image) {
+  if (!image || image === '') return DEFAULT_CLUB;
+  if (image === '/assets/club-imgs/ecusson-1.png') return require('../assets/club-imgs/ecusson-1.png');
+  if (image === '/assets/club-imgs/ecusson-2.png') return require('../assets/club-imgs/ecusson-2.png');
+  if (image === '/assets/club-imgs/ecusson-3.png') return require('../assets/club-imgs/ecusson-3.png');
+  if (typeof image === 'string' && image.startsWith('http')) return { uri: image };
+  return DEFAULT_CLUB;
+}
+
 export default function ProfileScreen() {
   const { userInfo } = useContext(AuthContext);
   const [freshUser, setFreshUser] = useState(null);
   const [clubMembers, setClubMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  // Pour l'overlay
   const [modalVisible, setModalVisible] = useState(false);
 
   const fetchUserAndClub = useCallback(async () => {
@@ -47,7 +55,7 @@ export default function ProfileScreen() {
     setRefreshing(false);
   }, [fetchUserAndClub]);
 
-  // PLACEHOLDER: à remplacer par ta vraie logique
+  // Overlay actions
   const handleEditAccount = () => {
     setModalVisible(false);
     Alert.alert('✏️ Modifier', 'Fonction à implémenter.');
@@ -74,7 +82,23 @@ export default function ProfileScreen() {
 
   const username = freshUser.username || '---';
   const level = freshUser.level || '---';
-  const clubName = freshUser.club?.name || '---';
+
+  // --- CLub datas: récupère depuis freshUser.club, sinon premier membre
+  let clubId = freshUser.club?.id || freshUser.clubId || null;
+  let clubName = freshUser.club?.name || freshUser.clubName || '';
+  let clubImage = freshUser.club?.image || freshUser.clubImage || null;
+
+  // Fallback (si pas trouvé dans freshUser)
+  if ((!clubId || !clubName || !clubImage) && clubMembers.length > 0 && clubMembers[0]?.club) {
+    const memberClub = clubMembers[0].club;
+    clubId = clubId || memberClub.id;
+    if (!clubName || clubName === '' || clubName === '---') clubName = memberClub.name || '---';
+    if (!clubImage || clubImage === '') clubImage = memberClub.image || '';
+  }
+
+  // Si malgré tout on n'a pas de nom
+  if (!clubName) clubName = '---';
+
   const nbClubMembers = clubMembers?.length ?? '---';
 
   return (
@@ -132,9 +156,9 @@ export default function ProfileScreen() {
 
         {/* Bloc club */}
         <Text style={styles.sectionTitle}>Club du Joueur</Text>
-        {freshUser.clubId ? (
+        {clubId ? (
           <View style={styles.clubBlock}>
-            <Image source={DEFAULT_CLUB} style={styles.clubLogo} />
+            <Image source={getClubLogoSource(clubImage)} style={styles.clubLogo} />
             <View style={{ marginLeft: 14 }}>
               <Text style={styles.clubName}>{clubName}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
