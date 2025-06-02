@@ -64,26 +64,46 @@ class GameController extends AbstractController
     }
 
     #[Route('', name: 'game_create', methods: ['POST'])]
-    public function create(Request $request, EntityManagerInterface $em): JsonResponse
+    public function create(
+        Request $request,
+        EntityManagerInterface $em,
+        UserRepository $userRepository
+    ): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+
+        // L'ID du créateur doit être envoyé dans le champ 'creator_id'
+        if (!isset($data['creator_id'])) {
+            return $this->json(['error' => 'creator_id requis'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $userRepository->find($data['creator_id']);
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_NOT_FOUND);
+        }
 
         $game = new Game();
         $game->setDate(new \DateTime($data['date']));
         $game->setLocation($data['location']);
         $game->setLocationDetails($data['location_details'] ?? null);
         $game->setMaxPlayers($data['max_players']);
-        $game->setPlayerCount($data['player_count']);
+        $game->setPlayerCount(1); // Le créateur est déjà inscrit
         $game->setCreatedAt(isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime());
-        // On force le statut à "ouvert"
         $game->setStatus('ouvert');
 
         $em->persist($game);
+
+        // Inscrire le créateur en tant que GamePlayer
+        $gamePlayer = new GamePlayer();
+        $gamePlayer->setGame($game);
+        $gamePlayer->setUser($user);
+        $gamePlayer->setTeam(1); // Par défaut, équipe 1
+        $em->persist($gamePlayer);
+
         $em->flush();
 
         return $this->json(['message' => 'Match créé avec succès !'], Response::HTTP_CREATED);
     }
-
 
     #[Route('/{id}', name: 'game_update', methods: ['PUT'])]
     public function update(Request $request, Game $game, EntityManagerInterface $em): JsonResponse
@@ -95,7 +115,7 @@ class GameController extends AbstractController
         $game->setLocationDetails($data['location_details'] ?? null);
         $game->setMaxPlayers($data['max_players']);
         $game->setPlayerCount($data['player_count']);
-        // Ici tu peux gérer le statut si besoin, mais tu peux aussi le rendre non éditable via update
+        // Le statut peut être géré automatiquement, donc pas besoin ici
 
         $em->flush();
 
@@ -148,7 +168,7 @@ class GameController extends AbstractController
 
         // Interdit si déjà complet
         if ($game->getPlayerCount() >= $game->getMaxPlayers()) {
-            $game->setStatus('fermé'); // On ferme le match si complet (juste au cas où)
+            $game->setStatus('fermé');
             $em->flush();
             return $this->json(['error' => 'Le match est complet'], Response::HTTP_CONFLICT);
         }
