@@ -69,12 +69,20 @@ class AuthController extends AbstractController
             return $this->json(['error' => 'Mot de passe incorrect.'], Response::HTTP_UNAUTHORIZED);
         }
 
+        // <-- ICI : RÉPONSE COMPLETE
         return $this->json([
             'message' => 'Connexion réussie.',
             'user' => [
                 'id' => $user->getId(),
                 'username' => $user->getUsername(),
                 'email' => $user->getEmail(),
+                'level' => $user->getLevel(),
+                'poste' => $user->getPoste(),
+                'club' => $user->getClub() ? [
+                    'id' => $user->getClub()->getId(),
+                    'name' => $user->getClub()->getName(),
+                ] : null,
+                'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
             ]
         ]);
     }

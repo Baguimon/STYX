@@ -1,351 +1,308 @@
-// ProfileScreen.js
-import React from 'react';
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
-import * as Progress from 'react-native-progress';
+import React, { useContext } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { AuthContext } from '../contexts/AuthContext';
+
+const DEFAULT_AVATAR = require('../assets/player-default.png');
+const DEFAULT_CLUB = require('../assets/club-default.png');
 
 export default function ProfileScreen() {
-  // Exemples de données statiques (à remplacer par tes vrais props ou useContext)
-  const user = {
-    name: 'Pogba',
-    age: 28,
-    avatar: require('../assets/avatar.png'),
-    matches: 18,
-    friends: 23,
+  const { userInfo } = useContext(AuthContext);
+
+  // Fallback de démo si pas connecté
+  const fakeUser = {
+    username: 'Pogba',
+    email: 'pogba@bleus.fr',
     level: 'Débutant',
-    xpPercent: 0.8,
-    totalHours: 26,
-    stats: {
-      V: 9,
-      N: 2,
-      D: 7,
-      mvp: 2,
-      sport: 'Football',
-    },
-    lastGames: [
-      {
-        sport: 'Football',
-        result: 'Victoire',
-        score: '4 - 2',
-        mvp: 'User4562891',
-        opponent: 'FC Barcelone',
-        details: true,
-      },
-      {
-        sport: 'Football',
-        result: 'Défaite',
-        score: '1 - 2',
-        mvp: 'User4350291',
-        opponent: 'Real Madrid',
-        details: true,
-      },
-    ],
-    club: {
-      name: 'Webscen',
-      joueurs: '4/11',
-      stats: { V: 3, N: 0, D: 1 },
-      sport: 'Football',
-    },
+    poste: 'MC',
+    club: { name: 'Webscen' },
+    createdAt: '2024-06-01',
+    // Ce qui manque dans le back :
+    // matchsJoues: 18,
+    // amis: 23,
+    // stats: { win: 3, draw: 0, lose: 1 },
   };
+  const user = userInfo || fakeUser;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
-      {/* HEADER PROFIL */}
-      <View style={styles.headerRow}>
-        <Image source={user.avatar} style={styles.avatar} />
-        <View style={{ flex: 1, marginLeft: 20 }}>
-          <Text style={styles.name}>
-            {user.name} <Text style={styles.age}>• {user.age}</Text>
-          </Text>
-          <View style={styles.statsSummaryRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{user.matches}</Text>
-              <Text style={styles.statLabel}>Matchs joués</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{user.friends}</Text>
-              <Text style={styles.statLabel}>Amis</Text>
-            </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#181818' }}>
+      <ScrollView contentContainerStyle={styles.container}>
+
+        {/* TOP HEADER + AVATAR */}
+        <View style={styles.topHeader}>
+          <TouchableOpacity style={styles.menuBtn}>
+            <Text style={{ color: '#fff', fontSize: 24, fontWeight: '900' }}>⋯</Text>
+          </TouchableOpacity>
+          <Image source={DEFAULT_AVATAR} style={styles.avatar} />
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={styles.username}>{user.username}</Text>
+            <Text style={styles.userAge}>• --</Text>
           </View>
-          <View style={styles.levelRow}>
-            <Text style={styles.levelIcon}></Text>
-            <Text style={styles.levelText}>{user.level}</Text>
-            <Text style={styles.hours}>{user.totalHours}h</Text>
-          </View>
-          <Progress.Bar
-            progress={user.xpPercent}
-            color="#8BEAFF"
-            unfilledColor="#333"
-            borderWidth={0}
-            height={7}
-            width={200}
-            style={{ marginTop: 5, marginLeft: -5 }}
-          />
         </View>
-        <TouchableOpacity style={styles.menuBtn}>
-          <Text style={styles.menuDots}>•••</Text>
+
+        {/* INFOS JEUX */}
+        <View style={styles.userStatsRow}>
+          <View style={styles.statsBloc}>
+            <Text style={styles.statsNumber}>{'--'}</Text>
+            <Text style={styles.statsLabel}>Matchs joués</Text>
+          </View>
+          <View style={styles.statsBloc}>
+            <Text style={styles.statsNumber}>{'--'}</Text>
+            <Text style={styles.statsLabel}>Amis</Text>
+          </View>
+        </View>
+
+        {/* NIVEAU & BARRE */}
+        <View style={styles.levelRow}>
+          <Text style={styles.levelIcon}>🙂</Text>
+          <Text style={styles.levelLabel}>{user.level || '---'}</Text>
+          <Text style={styles.levelHour}>--h</Text>
+        </View>
+        <View style={styles.levelBarContainer}>
+          <View style={styles.levelBarBg}>
+            {/* Barre vide */}
+          </View>
+        </View>
+
+        {/* STATS DU JOUEUR */}
+        <Text style={styles.sectionTitle}>Stats du joueur</Text>
+        <View style={styles.sectionCard}>
+          <Text style={styles.statsLine}>
+            --- &nbsp; <Text style={{ color: '#7dff91', fontWeight: 'bold' }}>V</Text>
+            -<Text style={{ color: '#ffd700', fontWeight: 'bold' }}>N</Text>
+            -<Text style={{ color: '#e23030', fontWeight: 'bold' }}>D</Text>
+          </Text>
+          <Text style={styles.mvpLine}>-- MVP</Text>
+          <Text style={styles.infoLine}>Sport le plus joué <Text style={styles.sportMain}>---</Text></Text>
+        </View>
+
+        {/* DERNIERS MATCHS */}
+        <Text style={styles.sectionTitle}>Derniers Matchs</Text>
+        <View style={[styles.sectionCard, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 78 }]}>
+          <Text style={{ color: '#999' }}>Aucun match à afficher pour le moment.</Text>
+        </View>
+
+        {/* CLUB DU JOUEUR */}
+        <Text style={styles.sectionTitle}>Club du Joueur</Text>
+        <View style={[styles.sectionCard, { flexDirection: 'row', alignItems: 'center', minHeight: 90, paddingHorizontal: 10 }]}>
+          <Image source={DEFAULT_CLUB} style={styles.clubLogo} />
+          <View style={{ flex: 1, marginLeft: 16 }}>
+            <Text style={styles.clubName}>{user.club?.name || 'Sans club'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={styles.clubStatLabel}>Joueurs</Text>
+              <Text style={styles.clubStatValue}>--/11</Text>
+              <Text style={[styles.clubStatLabel, { marginLeft: 8 }]}>V-N-D</Text>
+              <Text style={styles.clubStatValue}>--- </Text>
+            </View>
+            <Text style={styles.clubSport}>
+              Sport du club <Text style={{ color: '#34e5ff', fontWeight: 'bold' }}>---</Text>
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.clubBtn}>
+          <Text style={styles.clubBtnText}>Voir le club</Text>
         </TouchableOpacity>
-      </View>
 
-      {/* Stats du joueur */}
-      <Text style={styles.sectionTitle}>Stats du joueur</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
-        <Text style={styles.vnd}>
-          <Text style={styles.victory}>{user.stats.V}</Text>-
-          <Text style={styles.draw}>{user.stats.N}</Text>-
-          <Text style={styles.defeat}>{user.stats.D}</Text>
-        </Text>
-        <Text style={styles.vndLegend}>
-          {'  '}
-          <Text style={styles.victory}>V</Text>-
-          <Text style={styles.draw}>N</Text>-
-          <Text style={styles.defeat}>D</Text>
-        </Text>
-      </View>
-      <Text style={styles.mvp}>{user.stats.mvp} <Text style={{color:'#fff'}}>MVP</Text></Text>
-      <Text style={styles.sportMostPlayed}>
-        Sport le plus joué <Text style={styles.sportHighlight}>{user.stats.sport}</Text>
-      </Text>
-
-      {/* Derniers matchs */}
-      <Text style={styles.sectionTitle}>Deniers Matchs</Text>
-      <View style={styles.matchesRow}>
-        {user.lastGames.map((game, i) => (
-          <View key={i} style={styles.matchCard}>
-            <Text style={styles.matchSport}>{game.sport}</Text>
-            <Text
-              style={[
-                styles.matchResult,
-                game.result === 'Victoire' ? styles.resultWin : styles.resultLose,
-              ]}
-            >
-              {game.result}
-            </Text>
-            <Text style={styles.matchScore}>{game.score}</Text>
-            <Text style={styles.matchMvp}>
-              <Text style={styles.matchMvpLabel}>MVP </Text>
-              {game.mvp}
-            </Text>
-            <Text style={styles.matchOpponent}>VS: {game.opponent}</Text>
-            <View style={styles.matchDetailsRow}>
-              <Image source={game.img} style={styles.matchImg} />
-              <TouchableOpacity>
-                <Text style={styles.matchDetailsBtn}>Détails</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-      </View>
-
-      {/* Club du joueur */}
-      <Text style={styles.sectionTitle}>Club du Joueur</Text>
-      <View style={styles.clubSection}>
-        <Image source={user.club.logo} style={styles.clubLogo} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.clubName}>{user.club.name}</Text>
-          <Text style={styles.clubStatLabel}>Joueurs <Text style={styles.clubStatValue}>{user.club.joueurs}</Text></Text>
-          <Text style={styles.clubStats}>
-            <Text style={styles.victory}>{user.club.stats.V}</Text>-
-            <Text style={styles.draw}>{user.club.stats.N}</Text>-
-            <Text style={styles.defeat}>{user.club.stats.D}</Text> {'  '}
-            <Text style={styles.vndLegend}>V-N-D</Text>
-          </Text>
-          <Text style={styles.sportMostPlayed}>
-            Sport du club <Text style={styles.sportHighlight}>{user.club.sport}</Text>
-          </Text>
-        </View>
-      </View>
-      <TouchableOpacity style={styles.clubBtn}>
-        <Text style={styles.clubBtnText}>Voir le club</Text>
-      </TouchableOpacity>
-
-      <View style={styles.bottomSpace} />
-    </ScrollView>
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#141414',
-    flex: 1,
-    padding: 18,
+    paddingTop: 18,
+    alignItems: 'center',
+    backgroundColor: '#181818',
   },
-  headerRow: {
+  topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 22,
-  },
-  avatar: {
-    width: 105,
-    height: 105,
-    borderRadius: 80,
-    borderWidth: 2.5,
-    borderColor: '#202127',
-  },
-  name: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 5,
-    marginBottom: 2,
-  },
-  age: {
-    color: '#ccc',
-    fontSize: 21,
-    fontWeight: 'normal',
+    alignSelf: 'stretch',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    marginTop: 7,
   },
   menuBtn: {
-    marginLeft: 10,
-    padding: 8,
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    zIndex: 10,
   },
-  menuDots: {
+  avatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 45,
+    borderWidth: 4,
+    borderColor: '#00D9FF',
+    backgroundColor: '#202d3c',
+    marginRight: 18,
+  },
+  username: {
     color: '#fff',
-    fontSize: 32,
-  },
-  statsSummaryRow: {
-    flexDirection: 'row',
-    marginTop: 4,
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginTop: 12,
     marginBottom: 2,
+    textAlign: 'center',
   },
-  statBox: {
-    marginRight: 30,
-    alignItems: 'center',
-  },
-  statNumber: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  statLabel: {
+  userAge: {
     color: '#ccc',
-    fontSize: 13,
+    fontWeight: '600',
+    fontSize: 16,
+    marginTop: -2,
+    marginBottom: 7,
+  },
+  userStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 32,
+    width: '100%',
+    marginBottom: 6,
+  },
+  statsBloc: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statsNumber: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 18,
+  },
+  statsLabel: {
+    color: '#b5b6c0',
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 2,
   },
   levelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 3,
+    alignSelf: 'center',
+    marginVertical: 8,
+    marginBottom: 2,
+    gap: 7,
   },
   levelIcon: {
-    fontSize: 19,
-    marginRight: 5,
-  },
-  levelText: {
     color: '#fff',
-    fontWeight: '600',
     fontSize: 16,
-    marginRight: 15,
+    marginRight: 4,
   },
-  hours: {
-    color: '#ccc',
-    fontSize: 15,
-    marginLeft: 10,
+  levelLabel: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginHorizontal: 2,
+  },
+  levelHour: {
+    color: '#b5b6c0',
+    fontSize: 14,
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  levelBarContainer: {
+    width: '70%',
+    alignSelf: 'center',
+    marginTop: 1,
+    marginBottom: 18,
+  },
+  levelBarBg: {
+    width: '100%',
+    height: 6,
+    borderRadius: 8,
+    backgroundColor: '#303846',
+    marginTop: 0,
   },
   sectionTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-    marginTop: 20,
-    marginBottom: 6,
-  },
-  vnd: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 20,
-    marginRight: 7,
+    marginTop: 20,
+    marginBottom: 9,
+    letterSpacing: 0.5,
+    alignSelf: 'flex-start',
+    marginLeft: 20,
   },
-  victory: { color: '#5ae169', fontWeight: 'bold' },
-  draw: { color: '#ffaa3c', fontWeight: 'bold' },
-  defeat: { color: '#f2475d', fontWeight: 'bold' },
-  vndLegend: { fontSize: 15, color: '#bbb' },
-  mvp: {
-    color: '#5ae1ec',
-    fontWeight: 'bold',
+  sectionCard: {
+    backgroundColor: '#1e212e',
+    borderRadius: 18,
+    padding: 18,
+    width: '89%',
+    marginBottom: 12,
+    alignSelf: 'center',
+  },
+  statsLine: {
     fontSize: 17,
-    marginBottom: 5,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 6,
   },
-  sportMostPlayed: {
-    color: '#ccc',
-    fontSize: 15,
-    marginBottom: 5,
-  },
-  sportHighlight: {
-    color: '#8BEAFF',
+  mvpLine: {
+    color: '#82e482',
     fontWeight: 'bold',
+    fontSize: 15,
+    marginBottom: 2,
+  },
+  infoLine: {
+    color: '#b8e6fa',
+    fontSize: 14,
+    fontWeight: '400',
+    marginTop: 1,
+  },
+  sportMain: {
+    color: '#34e5ff',
+    fontWeight: '700',
     fontSize: 15,
     marginLeft: 3,
   },
-  matchesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 12,
-  },
-  matchCard: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 14,
-    marginRight: 12,
-    marginBottom: 14,
-    width: 230,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  matchSport: { fontSize: 17, fontWeight: 'bold', color: '#1c1b24', marginBottom: 4 },
-  matchResult: { fontWeight: 'bold', fontSize: 15 },
-  resultWin: { color: '#5ae169' },
-  resultLose: { color: '#f2475d' },
-  matchScore: { fontSize: 16, color: '#18181B', fontWeight: '600' },
-  matchMvpLabel: { color: '#7ec1e3' },
-  matchMvp: { fontSize: 13, color: '#555', marginBottom: 2 },
-  matchOpponent: { fontSize: 13, color: '#222', marginBottom: 4 },
-  matchDetailsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, justifyContent: 'space-between' },
-  matchImg: { width: 54, height: 54, borderRadius: 12 },
-  matchDetailsBtn: {
-    color: '#7ec1e3',
-    fontWeight: '700',
-    fontSize: 16,
-    padding: 7,
-    borderRadius: 10,
-  },
-  clubSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 9,
-    backgroundColor: '#222428',
-    borderRadius: 15,
-    padding: 14,
-    marginBottom: 10,
-  },
   clubLogo: {
-    width: 68,
-    height: 68,
-    borderRadius: 40,
-    marginRight: 18,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     borderWidth: 2,
-    borderColor: '#8BEAFF',
+    borderColor: '#00D9FF',
+    backgroundColor: '#1e212e',
   },
-  clubName: { fontWeight: 'bold', color: '#fff', fontSize: 18, marginBottom: 5 },
-  clubStatLabel: { color: '#bbb', fontSize: 14, marginBottom: 2 },
-  clubStatValue: { color: '#fff', fontWeight: 'bold' },
-  clubStats: { fontSize: 15, marginBottom: 2 },
+  clubName: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+    letterSpacing: 0.3,
+    marginBottom: 4,
+  },
+  clubStatLabel: {
+    color: '#7cffe3',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  clubStatValue: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginHorizontal: 2,
+    marginLeft: 0,
+    marginRight: 2,
+  },
+  clubSport: {
+    color: '#b8e6fa',
+    fontSize: 13,
+    fontWeight: '400',
+    marginTop: 4,
+  },
   clubBtn: {
     backgroundColor: 'transparent',
-    borderColor: '#8BEAFF',
-    borderWidth: 1.5,
-    alignSelf: 'flex-start',
-    borderRadius: 16,
-    marginTop: 2,
-    paddingHorizontal: 28,
+    borderColor: '#34e5ff',
+    borderWidth: 1.7,
+    borderRadius: 22,
     paddingVertical: 10,
+    paddingHorizontal: 30,
+    marginTop: 7,
+    alignSelf: 'center',
   },
-  clubBtnText: { color: '#8BEAFF', fontSize: 16, fontWeight: '600' },
-  bottomSpace: { height: 60 },
+  clubBtnText: {
+    color: '#34e5ff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    letterSpacing: 0.8,
+  },
 });

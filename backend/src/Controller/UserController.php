@@ -161,4 +161,24 @@ class UserController extends AbstractController
         return $this->json($matches);
     }
 
+    #[Route('/users/{id}', name: 'user_detail', methods: ['GET'])]
+    public function userDetail($id, UserRepository $userRepository): JsonResponse
+    {
+        $user = $userRepository->find($id);
+        if (!$user) {
+            return $this->json(['error' => 'User not found'], 404);
+        }
+        return $this->json([
+            'id' => $user->getId(),
+            'username' => $user->getUsername(),
+            'email' => $user->getEmail(),
+            'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'role' => $user->getRole(),
+            'level' => $user->getLevel(),
+            'clubId' => $user->getClub()?->getId(),
+            'poste' => $user->getPoste(),
+            // Si tu ajoutes la photo de profil plus tard, tu pourras rajouter ici 'image' => $user->getImage()
+        ]);
+    }
+
 }

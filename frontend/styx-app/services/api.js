@@ -19,6 +19,12 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// --- Détails d’un utilisateur par ID ---
+export const getUserById = async (userId) => {
+  const response = await api.get(`/users/${userId}`);
+  return response.data;
+};
+
 // ========== USERS ==========
 
 export const getUsers = async () => {
