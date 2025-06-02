@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { createGame } from '../services/api';
 import LocationInput from '../components/LocationInput';
 import EvenNumberPicker from '../components/EvenNumberPicker';
+import { AuthContext } from '../contexts/AuthContext';
 
 function getCityFromAddressComponents(components, fallbackName = '') {
   if (!components) return '';
@@ -42,6 +43,7 @@ function getCityFromAddressComponents(components, fallbackName = '') {
 
 export default function CreateGameScreen() {
   const navigation = useNavigation();
+  const { userInfo } = useContext(AuthContext);
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -50,7 +52,6 @@ export default function CreateGameScreen() {
     location: '',
     location_details: '',
     max_players: '',
-    player_count: '',
   });
 
   const handleChange = (name, value) => {
@@ -59,13 +60,17 @@ export default function CreateGameScreen() {
 
   const handleSubmit = async () => {
     try {
+      if (!userInfo?.id) {
+        Alert.alert('Erreur', "Impossible de récupérer l'utilisateur connecté.");
+        return;
+      }
       const payload = {
         date: date.toISOString(),
         location: form.location,
         location_details: form.location_details,
         max_players: parseInt(form.max_players, 10),
-        player_count: parseInt(form.player_count, 10),
         created_at: new Date().toISOString(),
+        creator_id: userInfo.id, // On envoie l'id du créateur
       };
       await createGame(payload);
       Alert.alert('Succès', 'Match créé avec succès');
@@ -238,22 +243,6 @@ export default function CreateGameScreen() {
       ),
     },
     {
-      title: 'Joueurs actuels',
-      content: (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Joueurs actuels</Text>
-          <TextInput
-            style={styles.input}
-            value={form.player_count}
-            onChangeText={t => handleChange('player_count', t)}
-            keyboardType="numeric"
-            placeholder="Ex : 3"
-            placeholderTextColor="#888"
-          />
-        </View>
-      ),
-    },
-    {
       title: 'Récapitulatif',
       content: (
         <View style={styles.summaryCard}>
@@ -276,9 +265,9 @@ export default function CreateGameScreen() {
             </View>
           ) : null}
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Joueurs</Text>
+            <Text style={styles.summaryLabel}>Joueurs max</Text>
             <Text style={styles.summaryValue}>
-              {form.player_count} / {form.max_players}
+              {form.max_players}
             </Text>
           </View>
         </View>
@@ -294,7 +283,6 @@ export default function CreateGameScreen() {
       case 1: return !!date;
       case 2: return !!form.location && form.location.trim().length > 0;
       case 3: return form.max_players && parseInt(form.max_players, 10) >= 2;
-      case 4: return form.player_count && parseInt(form.player_count, 10) >= 0;
       default: return true;
     }
   };
@@ -352,6 +340,7 @@ export default function CreateGameScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ... Tes styles inchangés ...
   container: {
     flex: 1,
     backgroundColor: '#050A23',
@@ -468,31 +457,6 @@ const styles = StyleSheet.create({
     color: '#050A23',
     fontSize: 16,
     fontWeight: '600',
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 8,
-  },
-  toggleButton: {
-    borderWidth: 1,
-    borderColor: '#AAD4E0',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: 'transparent',
-  },
-  toggleButtonActive: {
-    backgroundColor: '#00D9FF',
-    borderColor: '#00D9FF',
-  },
-  toggleText: {
-    color: '#AAD4E0',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  toggleTextActive: {
-    color: '#050A23',
   },
   summaryCard: {
     backgroundColor: '#2A2A40',

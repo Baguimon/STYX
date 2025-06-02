@@ -27,6 +27,7 @@ class ClubController extends AbstractController
                 'name' => $club->getName(),
                 'createdAt' => $club->getCreatedAt()?->format('Y-m-d H:i:s'),
                 'clubCaptain' => $club->getClubCaptain()?->getId(),
+                'image' => $club->getImage(), // Ajouté
             ];
         }
         return $this->json($data);
@@ -44,6 +45,7 @@ class ClubController extends AbstractController
             'name' => $club->getName(),
             'createdAt' => $club->getCreatedAt()?->format('Y-m-d H:i:s'),
             'clubCaptain' => $club->getClubCaptain()?->getId(),
+            'image' => $club->getImage(), // Ajouté
         ]);
     }
 
@@ -63,12 +65,11 @@ class ClubController extends AbstractController
                 'email' => $user->getEmail(),
                 'level' => $user->getLevel(),
                 'role' => $user->getRole(),
-                'poste' => $user->getPoste(), // AJOUT INDISPENSABLE !!!
+                'poste' => $user->getPoste(),
             ];
         }
         return $this->json($data);
     }
-
 
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(Request $request, EntityManagerInterface $em, UserRepository $userRepository): JsonResponse
@@ -105,6 +106,7 @@ class ClubController extends AbstractController
             'name' => $club->getName(),
             'createdAt' => $club->getCreatedAt()?->format('Y-m-d H:i:s'),
             'clubCaptain' => $club->getClubCaptain()?->getId(),
+            'image' => $club->getImage(), // Ajouté
         ]);
     }
 
@@ -176,7 +178,7 @@ class ClubController extends AbstractController
         $em->flush();
 
         return $this->json(['success' => true, 'newCaptainId' => $newCaptain->getId()]);
-    }   
+    }
 
     #[Route('/{id}', name: 'update_club', methods: ['PATCH', 'POST'])]
     public function updateClub($id, Request $request, ClubRepository $clubRepository, EntityManagerInterface $em): JsonResponse
@@ -223,9 +225,6 @@ class ClubController extends AbstractController
         ]);
     }
 
-
-
-
     #[Route('/{id}/upload-logo', name: 'api_club_upload_club_logo', methods: ['POST'])]
     public function uploadLogo(Request $request, Club $club, EntityManagerInterface $em): JsonResponse
     {
@@ -247,6 +246,7 @@ class ClubController extends AbstractController
             return $this->json(['error' => "Erreur d'upload"], 500);
         }
     }
+
     #[Route('/{clubId}/kick-member/{userId}', name: 'kick_member', methods: ['POST'])]
     public function kickMember($clubId, $userId, ClubRepository $clubRepository, UserRepository $userRepository, EntityManagerInterface $em): JsonResponse
     {
@@ -267,5 +267,4 @@ class ClubController extends AbstractController
 
         return $this->json(['success' => true]);
     }
-
 }

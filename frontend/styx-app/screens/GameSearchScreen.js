@@ -31,8 +31,10 @@ export default function GameSearchScreen() {
       .catch(console.error);
   }, []);
 
+  // Filtrer les games ouverts uniquement
   const filteredGames = games.filter(
     (game) =>
+      game.status === 'ouvert' &&
       (searchCity === '' ||
         (game.location && game.location.toLowerCase().includes(searchCity.toLowerCase())))
   );
@@ -75,11 +77,11 @@ export default function GameSearchScreen() {
         <Image source={require('../assets/balls-pattern.png')} style={styles.ballIcon} />
         <View style={styles.headerText}>
           <Text style={styles.location}>{item.location}</Text>
-          <Text style={styles.city}>{item.locationDetails}</Text>
+          <Text style={styles.city}>{item.location_details}</Text>
           <Text style={styles.date}>{formatDate(item.date)}</Text>
         </View>
         <View style={styles.right}>
-          <Text style={styles.players}>{item.playerCount}/{item.maxPlayers}</Text>
+          <Text style={styles.players}>{item.player_count}/{item.max_players}</Text>
           {item.status === 'ouvert' && <View style={styles.statusDot} />}
         </View>
       </View>
@@ -218,17 +220,21 @@ const styles = StyleSheet.create({
   },
   right: {
     alignItems: 'flex-end',
+    minWidth: 55,
   },
   players: {
     color: '#fff',
     fontWeight: 'bold',
+    marginBottom: 2,
+    fontSize: 15,
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#4cd137',
-    marginTop: 6,
+    marginTop: 3,
+    alignSelf: 'flex-end',
   },
   button: {
     alignSelf: 'center',
