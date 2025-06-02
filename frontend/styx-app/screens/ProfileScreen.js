@@ -93,10 +93,6 @@ export default function ProfileScreen() {
             {/* LIGNE SUPPRIMÉE: Sport du club */}
           </View>
         </View>
-        <TouchableOpacity style={styles.clubBtn}>
-          <Text style={styles.clubBtnText}>Voir le club</Text>
-        </TouchableOpacity>
-
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
