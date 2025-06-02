@@ -36,8 +36,8 @@ class GameController extends AbstractController
             'date' => $game->getDate()?->format('Y-m-d H:i:s'),
             'location' => $game->getLocation(),
             'location_details' => $game->getLocationDetails(),
-            'max_players' => $game->getMaxPlayers(),
-            'player_count' => $game->getPlayerCount(),
+            'maxPlayers' => $game->getMaxPlayers(),
+            'playerCount' => $game->getPlayerCount(),
             'created_at' => $game->getCreatedAt()?->format('Y-m-d H:i:s'),
             'status' => $game->getStatus(),
         ], $games);
@@ -71,8 +71,8 @@ class GameController extends AbstractController
             'date' => $game->getDate()?->format('Y-m-d H:i:s'),
             'location' => $game->getLocation(),
             'location_details' => $game->getLocationDetails(),
-            'max_players' => $game->getMaxPlayers(),
-            'player_count' => $game->getPlayerCount(),
+            'maxPlayers' => $game->getMaxPlayers(),
+            'playerCount' => $game->getPlayerCount(),
             'created_at' => $game->getCreatedAt()?->format('Y-m-d H:i:s'),
             'status' => $game->getStatus(),
             'players' => $players,
@@ -200,5 +200,44 @@ class GameController extends AbstractController
         $em->flush();
 
         return $this->json(['message' => 'Inscription réussie !']);
+    }
+
+    // ------------- NOUVEL ENDPOINT : matchs de l'utilisateur -------------
+
+    #[Route('/user/{userId}', name: 'games_by_user', methods: ['GET'])]
+    public function gamesByUser(
+        int $userId,
+        UserRepository $userRepository,
+        GameRepository $gameRepository
+    ): JsonResponse {
+        $user = $userRepository->find($userId);
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur introuvable'], 404);
+        }
+
+        $gamePlayers = $user->getGamePlayers();
+
+        $games = [];
+        foreach ($gamePlayers as $gp) {
+            $game = $gp->getGame();
+            if ($game) {
+                $games[] = [
+                    'id' => $game->getId(),
+                    'date' => $game->getDate()?->format('Y-m-d H:i:s'),
+                    'location' => $game->getLocation(),
+                    'location_details' => $game->getLocationDetails(),
+                    'maxPlayers' => $game->getMaxPlayers(),
+                    'playerCount' => $game->getPlayerCount(),
+                    'created_at' => $game->getCreatedAt()?->format('Y-m-d H:i:s'),
+                    'status' => $game->getStatus(),
+                    'team' => $gp->getTeam(), // la team du user dans ce match
+                ];
+            }
+        }
+
+        // Trié par date croissante
+        usort($games, fn($a, $b) => strcmp($a['date'], $b['date']));
+
+        return $this->json($games);
     }
 }
