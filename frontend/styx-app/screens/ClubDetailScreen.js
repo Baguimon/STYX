@@ -196,10 +196,13 @@ export default function ClubDetailScreen({ route }) {
             {club.stats?.win ?? '-'}-{club.stats?.draw ?? '-'}-{club.stats?.lose ?? '-'}
           </Text>
         </View>
-        <Image
-          source={getClubLogoSource(club.image)}
-          style={styles.clubImage}
-        />
+        <View style={styles.clubLogoWrapper}>
+          <Image
+            source={getClubLogoSource(club.image)}
+            style={styles.clubImageZoomed}
+            resizeMode="contain"
+          />
+        </View>
         <View style={styles.statsBlock}>
           <Text style={styles.statsLabel}>Joueurs</Text>
           <Text style={styles.statsValue}>{members.length || '-'}</Text>
@@ -400,13 +403,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 10,
   },
-  clubImage: {  
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 2,
-    borderColor: '#fff',
-    backgroundColor: '#333',
+  clubLogoWrapper: {
+  width: 70,         // Taille du cercle apparent (adapte à ton design)
+  height: 70,
+  borderRadius: 35,
+  borderWidth: 2,
+  borderColor: '#fff',
+  backgroundColor: '#333',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',   // INDISPENSABLE pour couper ce qui dépasse
+  },
+  clubImageZoomed: {
+    width: 120,         // Ici tu “zoomes” dans le PNG (essaie 120, 140…)
+    height: 120,
   },
   statsBlock: {
     alignItems: 'center',

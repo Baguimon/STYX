@@ -204,10 +204,11 @@ export default function ClubManageScreen() {
       <ScrollView style={{ flex: 1 }}>
         <View style={styles.header}>
           {/* Affichage du logo du club, on ouvre la modal de sélection */}
-          <TouchableOpacity onPress={() => setLogoModalVisible(true)}>
+          <TouchableOpacity onPress={() => setLogoModalVisible(true)} style={styles.clubLogoWrapper}>
             <Image
               source={club?.image ? getClubLogoSource(club.image) : require('../assets/club-default.png')}
-              style={styles.clubImage}
+              style={styles.clubImageZoomed}
+              resizeMode="contain"
             />
             <Ionicons name="camera" size={22} color="#00D9FF" style={styles.editIcon} />
           </TouchableOpacity>
@@ -299,7 +300,9 @@ export default function ClubManageScreen() {
                   club?.image === imgObj.uri ? styles.logoSelected : null
                 ]}
               >
-                <Image source={imgObj.img} style={styles.logoImagePreview} />
+                <View style={styles.logoPreviewWrapper}>
+                  <Image source={imgObj.img} style={styles.logoImageZoomed} resizeMode="contain" />
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -373,13 +376,22 @@ const styles = StyleSheet.create({
     margin: 14,
     marginBottom: 8
   },
-  clubImage: {
-    width: 82,
-    height: 82,
-    borderRadius: 50,
-    borderWidth: 3,
-    borderColor: '#00D9FF',
-    backgroundColor: '#222',
+  clubLogoWrapper: {
+  width: 82,
+  height: 82,
+  borderRadius: 50,
+  borderWidth: 3,
+  borderColor: '#00D9FF',
+  backgroundColor: '#222',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden', // INDISPENSABLE pour “cropper” le logo zoomé
+  position: 'relative',
+  },
+  clubImageZoomed: {
+    width: 140, // tu peux essayer plus ou moins, genre 140/150
+    height: 140,
+    // Tu peux rajouter un petit marginLeft/marginTop si besoin pour mieux centrer
   },
   editIcon: {
     position: 'absolute',
@@ -551,10 +563,17 @@ const styles = StyleSheet.create({
     borderColor: '#00D9FF',
     backgroundColor: '#23284a',
   },
-  logoImagePreview: {
-    width: 78,
-    height: 78,
-    borderRadius: 40,
-    backgroundColor: '#222',
+  logoPreviewWrapper: {
+  width: 78,
+  height: 78,
+  borderRadius: 39,
+  overflow: 'hidden',
+  backgroundColor: '#222',
+  alignItems: 'center',
+  justifyContent: 'center',
+  },
+  logoImageZoomed: {
+    width: 140,    // <--- Plus grand que le wrapper, donc zoomé
+    height: 140,
   },
 });
