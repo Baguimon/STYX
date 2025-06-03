@@ -1,11 +1,20 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, Image, ScrollView, Pressable } from 'react-native';
 import { createClub } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../contexts/AuthContext';
 
+// Logos prédéfinis
+const CLUB_LOGO_CHOICES = [
+  { uri: '/assets/club-imgs/ecusson-1.png', img: require('../assets/club-imgs/ecusson-1.png') },
+  { uri: '/assets/club-imgs/ecusson-2.png', img: require('../assets/club-imgs/ecusson-2.png') },
+  { uri: '/assets/club-imgs/ecusson-3.png', img: require('../assets/club-imgs/ecusson-3.png') },
+];
+
 export default function CreateClubScreen() {
   const [name, setName] = useState('');
+  const [logoModal, setLogoModal] = useState(false);
+  const [selectedLogo, setSelectedLogo] = useState(CLUB_LOGO_CHOICES[0]); // Default: 1er logo
   const navigation = useNavigation();
   const { userInfo } = useContext(AuthContext);
 
@@ -28,7 +37,11 @@ export default function CreateClubScreen() {
       return;
     }
     try {
-      await createClub({ name, clubCaptainId: userInfo?.id });
+      await createClub({
+        name,
+        clubCaptainId: userInfo?.id,
+        image: selectedLogo.uri,
+      });
       Alert.alert('Succès', 'Club créé !');
       navigation.navigate('ClubHome');
     } catch (e) {
@@ -48,10 +61,63 @@ export default function CreateClubScreen() {
           onChangeText={setName}
           style={styles.input}
         />
+        <Text style={[styles.cardTitle, { marginTop: 25, marginBottom: 10 }]}>Logo du club</Text>
+        <TouchableOpacity
+          style={styles.logoPreviewBtn}
+          onPress={() => setLogoModal(true)}
+          activeOpacity={0.85}
+        >
+          <Image
+            source={selectedLogo.img}
+            style={styles.logoPreview}
+            resizeMode="contain"
+          />
+          <Text style={{ color: '#00D9FF', marginTop: 9, fontWeight: 'bold' }}>Changer le logo</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={[styles.nextBtn, { marginTop: 20 }]} onPress={handleCreate}>
           <Text style={styles.nextText}>Créer</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal choix du logo */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={logoModal}
+        onRequestClose={() => setLogoModal(false)}
+      >
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setLogoModal(false)}
+        />
+        <View style={styles.logoModalContainer}>
+          <Text style={styles.logoModalTitle}>Choisis un logo pour ton club</Text>
+          <ScrollView contentContainerStyle={styles.logoGrid} horizontal>
+            {CLUB_LOGO_CHOICES.map((imgObj) => (
+              <TouchableOpacity
+                key={imgObj.uri}
+                onPress={() => { setSelectedLogo(imgObj); setLogoModal(false); }}
+                style={[
+                  styles.logoChoice,
+                  selectedLogo?.uri === imgObj.uri ? styles.logoSelected : null
+                ]}
+              >
+                <View style={styles.logoPreviewWrapper}>
+                  <Image
+                    source={imgObj.img}
+                    style={styles.logoImageZoomed}
+                    resizeMode="contain"
+                  />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity style={styles.closeSheetBtn} onPress={() => setLogoModal(false)}>
+            <Text style={{ color: '#00D9FF', fontWeight: 'bold' }}>Fermer</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -97,4 +163,84 @@ const styles = StyleSheet.create({
     minWidth: 180,
   },
   nextText: { color: '#050A23', fontSize: 16, fontWeight: '600', textAlign: 'center' },
+
+  logoPreviewBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  logoPreview: {
+    width: 80,
+    height: 80,
+    borderRadius: 44,
+    backgroundColor: '#222',
+    borderWidth: 2,
+    borderColor: '#00D9FF',
+  },
+
+  // Modal & logo choix
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+  },
+  logoModalContainer: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0,
+    backgroundColor: '#191B2B',
+    borderTopLeftRadius: 19,
+    borderTopRightRadius: 19,
+    padding: 20,
+    zIndex: 10,
+    elevation: 10,
+    alignItems: 'center',
+  },
+  logoModalTitle: {
+    color: '#00D9FF',
+    fontWeight: '700',
+    fontSize: 20,
+    marginBottom: 12,
+    textAlign: 'center'
+  },
+  logoGrid: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 18,
+    paddingBottom: 8,
+  },
+  logoChoice: {
+    marginHorizontal: 8,
+    borderWidth: 3,
+    borderColor: 'transparent',
+    borderRadius: 60,
+    padding: 6,
+    backgroundColor: '#191B2B',
+  },
+  logoSelected: {
+    borderColor: '#00D9FF',
+    backgroundColor: '#23284a',
+  },
+  logoPreviewWrapper: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    overflow: 'hidden',
+    backgroundColor: '#222',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoImageZoomed: {
+    width: 140,
+    height: 140,
+  },
+  closeSheetBtn: {
+    marginTop: 6,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
 });

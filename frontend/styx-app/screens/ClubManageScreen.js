@@ -154,12 +154,14 @@ export default function ClubManageScreen() {
             setLoading(true);
             try {
               await transferCaptain(club.id, member.id);
-              await fetchClubData();
+              setLoading(false);
+              // Redirige directement vers la page Club
+              navigation.navigate('Club');
               Alert.alert("Succès", "Le capitanat a été transféré.");
             } catch (e) {
+              setLoading(false);
               Alert.alert("Erreur", "Impossible de transférer le capitanat.");
             }
-            setLoading(false);
           }
         }
       ]
