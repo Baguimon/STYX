@@ -179,10 +179,10 @@ class UserController extends AbstractController
             'role' => $user->getRole(),
             'level' => $user->getLevel(),
             'clubId' => $club?->getId(),
-            'clubName' => $club ? $club->getName() : null,  // Ajout du nom du club
-            'clubMembersCount' => $club ? $club->getMembers()->count() : 0, // Ajout du nombre de membres
+            'clubName' => $club ? $club->getName() : null,
+            'clubMembersCount' => $club ? $club->getMembers()->count() : 0,
+            'clubImage' => $club ? $club->getImage() : null, // <--- AJOUTE CETTE LIGNE
             'poste' => $user->getPoste(),
-            // Tu pourras rajouter ici 'image' => $user->getImage() si besoin plus tard
         ]);
     }
 }
