@@ -1,11 +1,19 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, ScrollView } from 'react-native';
 import { createClub } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../contexts/AuthContext';
 
+// Les choix de logos possibles (doivent matcher le backend)
+const CLUB_LOGO_CHOICES = [
+  { uri: '/assets/club-imgs/ecusson-1.png', img: require('../assets/club-imgs/ecusson-1.png') },
+  { uri: '/assets/club-imgs/ecusson-2.png', img: require('../assets/club-imgs/ecusson-2.png') },
+  { uri: '/assets/club-imgs/ecusson-3.png', img: require('../assets/club-imgs/ecusson-3.png') },
+];
+
 export default function CreateClubScreen() {
   const [name, setName] = useState('');
+  const [selectedLogo, setSelectedLogo] = useState(CLUB_LOGO_CHOICES[0].uri); // Par défaut le 1er
   const navigation = useNavigation();
   const { userInfo } = useContext(AuthContext);
 
@@ -28,7 +36,7 @@ export default function CreateClubScreen() {
       return;
     }
     try {
-      await createClub({ name, clubCaptainId: userInfo?.id });
+      await createClub({ name, clubCaptainId: userInfo?.id, image: selectedLogo });
       Alert.alert('Succès', 'Club créé !');
       navigation.navigate('ClubHome');
     } catch (e) {
@@ -48,7 +56,24 @@ export default function CreateClubScreen() {
           onChangeText={setName}
           style={styles.input}
         />
-        <TouchableOpacity style={[styles.nextBtn, { marginTop: 20 }]} onPress={handleCreate}>
+        <Text style={[styles.cardTitle, { marginTop: 18, marginBottom: 8 }]}>
+          Choisis un logo pour ton club
+        </Text>
+        <ScrollView horizontal contentContainerStyle={{ flexDirection: 'row', justifyContent: 'center' }}>
+          {CLUB_LOGO_CHOICES.map((imgObj) => (
+            <TouchableOpacity
+              key={imgObj.uri}
+              onPress={() => setSelectedLogo(imgObj.uri)}
+              style={[
+                styles.logoChoice,
+                selectedLogo === imgObj.uri ? styles.logoSelected : null,
+              ]}
+            >
+              <Image source={imgObj.img} style={styles.logoImage} resizeMode="contain" />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        <TouchableOpacity style={[styles.nextBtn, { marginTop: 22 }]} onPress={handleCreate}>
           <Text style={styles.nextText}>Créer</Text>
         </TouchableOpacity>
       </View>
@@ -97,4 +122,22 @@ const styles = StyleSheet.create({
     minWidth: 180,
   },
   nextText: { color: '#050A23', fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  // Ajout styles logo
+  logoChoice: {
+    marginHorizontal: 8,
+    borderWidth: 3,
+    borderColor: 'transparent',
+    borderRadius: 50,
+    padding: 5,
+    backgroundColor: '#23284a',
+  },
+  logoSelected: {
+    borderColor: '#00D9FF',
+    backgroundColor: '#181E34',
+  },
+  logoImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
 });

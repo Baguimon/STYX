@@ -1,12 +1,14 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView, RefreshControl, ActivityIndicator, Modal, Pressable, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../contexts/AuthContext';
-import { getUserById, getClubMembers } from '../services/api';
+import { getUserById, getClubMembers, getUserGames } from '../services/api';
 
 const DEFAULT_AVATAR = require('../assets/player-default.png');
 const DEFAULT_CLUB = require('../assets/club-default.png');
+const MATCH_ICON = require('../assets/match-icon.png'); // change le chemin si besoin
 
-// --- Mapping d'images de clubs locaux et fallback url distante
+// Mapping d'images de clubs locaux et fallback url distante
 function getClubLogoSource(image) {
   if (!image || image === '') return DEFAULT_CLUB;
   if (image === '/assets/club-imgs/ecusson-1.png') return require('../assets/club-imgs/ecusson-1.png');
@@ -16,13 +18,25 @@ function getClubLogoSource(image) {
   return DEFAULT_CLUB;
 }
 
+function formatDateFR(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return (
+    date.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }) +
+    ' ' +
+    date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false })
+  );
+}
+
 export default function ProfileScreen() {
   const { userInfo } = useContext(AuthContext);
   const [freshUser, setFreshUser] = useState(null);
   const [clubMembers, setClubMembers] = useState([]);
+  const [userGames, setUserGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const navigation = useNavigation();
 
   const fetchUserAndClub = useCallback(async () => {
     if (!userInfo?.id) return;
@@ -40,9 +54,23 @@ export default function ProfileScreen() {
       } else {
         setClubMembers([]);
       }
+      // Récupère les matchs à venir
+      try {
+        const games = await getUserGames(userInfo.id);
+        // Optionnel : Filtre seulement les matchs à venir (date future)
+        const now = new Date();
+        setUserGames(
+          Array.isArray(games)
+            ? games.filter(g => new Date(g.date) > now).sort((a, b) => new Date(a.date) - new Date(b.date))
+            : []
+        );
+      } catch (e) {
+        setUserGames([]);
+      }
     } catch (e) {
       setFreshUser(null);
       setClubMembers([]);
+      setUserGames([]);
     }
     setLoading(false);
   }, [userInfo]);
@@ -83,23 +111,22 @@ export default function ProfileScreen() {
   const username = freshUser.username || '---';
   const level = freshUser.level || '---';
 
-  // --- CLub datas: récupère depuis freshUser.club, sinon premier membre
+  // --- Club datas
   let clubId = freshUser.club?.id || freshUser.clubId || null;
   let clubName = freshUser.club?.name || freshUser.clubName || '';
   let clubImage = freshUser.club?.image || freshUser.clubImage || null;
 
-  // Fallback (si pas trouvé dans freshUser)
   if ((!clubId || !clubName || !clubImage) && clubMembers.length > 0 && clubMembers[0]?.club) {
     const memberClub = clubMembers[0].club;
     clubId = clubId || memberClub.id;
     if (!clubName || clubName === '' || clubName === '---') clubName = memberClub.name || '---';
     if (!clubImage || clubImage === '') clubImage = memberClub.image || '';
   }
-
-  // Si malgré tout on n'a pas de nom
   if (!clubName) clubName = '---';
-
   const nbClubMembers = clubMembers?.length ?? '---';
+
+  // --- Section des matchs à venir (max 3 + bouton voir plus)
+  const maxGamesDisplay = 3;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#111' }}>
@@ -148,10 +175,40 @@ export default function ProfileScreen() {
           <Text style={styles.statsSubRow}>--- MVP</Text>
         </View>
 
-        {/* Derniers matchs */}
-        <Text style={styles.sectionTitle}>Derniers Matchs</Text>
-        <View style={styles.matchCard}>
-          <Text style={styles.matchPlaceholder}>---</Text>
+        {/* Matchs à venir */}
+        <Text style={styles.sectionTitle}>Mes matchs à venir</Text>
+        <View style={{ width: '86%', alignSelf: 'center' }}>
+          {userGames.length === 0 ? (
+            <Text style={{ color: '#bbb', fontSize: 16, textAlign: 'center', paddingVertical: 18 }}>
+              Aucun match à venir.
+            </Text>
+          ) : (
+            <>
+              {userGames.slice(0, maxGamesDisplay).map(g => (
+                <View key={g.id} style={styles.matchCardUpcoming}>
+                  <View style={styles.leftIconUpcoming}>
+                    <Image source={MATCH_ICON} style={{ width: 34, height: 34 }} resizeMode="contain" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.matchMainUpcoming}>{formatDateFR(g.date)}</Text>
+                    <Text style={styles.matchSubUpcoming} numberOfLines={1}>{g.location}</Text>
+                  </View>
+                  <View style={styles.rightInfoUpcoming}>
+                    <Text style={styles.matchPlayersUpcoming}>{g.playerCount} / {g.maxPlayers}</Text>
+                    <View style={styles.greenDotUpcoming} />
+                  </View>
+                </View>
+              ))}
+              {userGames.length > maxGamesDisplay && (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('MyGames')}
+                  style={styles.seeMoreBtn}
+                >
+                  <Text style={styles.seeMoreText}>Voir plus</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
         </View>
 
         {/* Bloc club */}
@@ -331,25 +388,78 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 3,
   },
-  matchCard: {
-    width: '86%',
-    height: 75,
+  // ----------- MATCHS À VENIR -----------
+  matchCardUpcoming: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3a3d46',
     borderRadius: 16,
-    backgroundColor: '#fff',
-    alignSelf: 'center',
-    marginBottom: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  leftIconUpcoming: {
+    marginRight: 13,
+    width: 40,
+    height: 40,
+    borderRadius: 22,
+    backgroundColor: '#23252b',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#00D9FF',
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
   },
-  matchPlaceholder: {
-    color: '#A9A9A9',
-    fontSize: 19,
+  matchMainUpcoming: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 2,
   },
+  matchSubUpcoming: {
+    color: '#b5bac7',
+    fontSize: 14,
+    fontWeight: '400',
+    marginBottom: 0,
+  },
+  rightInfoUpcoming: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginLeft: 14,
+    minWidth: 47,
+  },
+  matchPlayersUpcoming: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+    marginBottom: 1,
+  },
+  greenDotUpcoming: {
+    width: 9,
+    height: 9,
+    borderRadius: 10,
+    backgroundColor: '#27D34D',
+    marginTop: 2,
+    alignSelf: 'flex-end',
+  },
+  seeMoreBtn: {
+    backgroundColor: '#F3F3F3',
+    borderRadius: 22,
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    alignSelf: 'center',
+    marginTop: 7,
+    marginBottom: 2,
+  },
+  seeMoreText: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#21222A',
+  },
+  // ----------- FIN MATCHS À VENIR -------
+
   clubBlock: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -434,7 +544,7 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   clubImageZoomed: {
-  width: 120,
-  height: 120,
+    width: 120,
+    height: 120,
   },
 });

@@ -7,6 +7,8 @@ import JoinClubScreen from '../screens/JoinClubScreen';
 import ClubDetailScreen from '../screens/ClubDetailScreen';
 import NoClubScreen from '../screens/NoClubScreen';
 import ClubManageScreen from '../screens/ClubManageScreen';
+import PlayerProfileScreen from '../screens/PlayerProfileScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -19,6 +21,7 @@ export default function ClubStackNavigator() {
       <Stack.Screen name="JoinClub" component={JoinClubScreen} />
       <Stack.Screen name="ClubDetail" component={ClubDetailScreen} />
       <Stack.Screen name="ClubManageScreen" component={ClubManageScreen} />
+      <Stack.Screen name="PlayerProfile" component={PlayerProfileScreen}/>
     </Stack.Navigator>
   );
 }
