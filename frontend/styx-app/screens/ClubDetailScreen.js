@@ -364,7 +364,10 @@ export default function ClubDetailScreen({ route }) {
                     Poste : {item.poste ? item.poste : 'Aucun'}
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.profileBtn}>
+                <TouchableOpacity
+                  style={styles.profileBtn}
+                  onPress={() => navigation.navigate('PlayerProfile', { playerId: item.id })}
+                >
                   <Text style={styles.profileBtnText}>Profil</Text>
                 </TouchableOpacity>
               </View>
