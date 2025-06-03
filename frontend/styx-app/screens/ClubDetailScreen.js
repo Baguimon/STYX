@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { View,StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, ScrollView, Alert, Share, RefreshControl } from 'react-native';
+import { View, StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, ScrollView, Alert, Share, RefreshControl, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { getClub, getClubMembers, setUserPoste, leaveClub } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -42,6 +42,15 @@ export default function ClubDetailScreen({ route }) {
   const { userInfo } = useContext(AuthContext);
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
+
+  // Nouvel état pour les tabs
+  const [selectedTab, setSelectedTab] = useState('compo');
+
+  // Etat pour le chat (local, démo)
+  const [chatMessages, setChatMessages] = useState([
+    // {id: 1, user: "Capitaine", text: "Bienvenue dans le chat du club !"}
+  ]);
+  const [chatInput, setChatInput] = useState('');
 
   // Chargement des infos du club
   const fetchClub = useCallback(async () => {
@@ -164,6 +173,20 @@ export default function ClubDetailScreen({ route }) {
     );
   };
 
+  // Gestion envoi d’un message (local demo)
+  const handleSendMessage = () => {
+    if (chatInput.trim() === '') return;
+    setChatMessages(msgs => [
+      ...msgs,
+      {
+        id: Date.now(),
+        user: userInfo.username || 'Moi',
+        text: chatInput.trim(),
+      }
+    ]);
+    setChatInput('');
+  };
+
   if (loading) {
     return (
       <View style={{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#111' }}>
@@ -207,6 +230,11 @@ export default function ClubDetailScreen({ route }) {
       </View>
       <Text style={styles.clubName}>{club.name}</Text>
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={90}
+      >
       <ScrollView
         style={{ flex: 1 }}
         refreshControl={
@@ -217,121 +245,192 @@ export default function ClubDetailScreen({ route }) {
             tintColor="#00D9FF"
           />
         }
+        keyboardShouldPersistTaps="handled"
       >
         <View style={{ padding: 16 }}>
-          {/* Composition */}
-          <Text style={styles.sectionTitle}>Composition</Text>
-          <View style={styles.compoContainer}>
-            <Image
-              source={FIELD_IMAGE}
-              style={styles.terrainBackground}
-              resizeMode="cover"
-            />
-            <View style={styles.terrainOverlay} />
+          {/* Onglets */}
+          <View style={styles.tabHeaderRow}>
+            <TouchableOpacity
+              style={[
+                styles.tabBtn,
+                selectedTab === 'compo' && styles.tabBtnActive,
+              ]}
+              onPress={() => setSelectedTab('compo')}
+            >
+              <Text style={[
+                styles.tabBtnText,
+                selectedTab === 'compo' && styles.tabBtnTextActive
+              ]}>Composition</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabBtn,
+                selectedTab === 'chat' && styles.tabBtnActive,
+              ]}
+              onPress={() => setSelectedTab('chat')}
+            >
+              <Text style={[
+                styles.tabBtnText,
+                selectedTab === 'chat' && styles.tabBtnTextActive
+              ]}>Chat</Text>
+            </TouchableOpacity>
+          </View>
 
-            {POSTES_11.map(slot => {
-              const player = getPlayerForPoste(slot.key);
-              const isLibre = !player;
-              const isUser = player && player.id === userInfo?.id;
-              return (
+          {selectedTab === 'compo' ? (
+            <>
+              {/* Composition */}
+              <View style={styles.compoContainer}>
+                <Image
+                  source={FIELD_IMAGE}
+                  style={styles.terrainBackground}
+                  resizeMode="cover"
+                />
+                <View style={styles.terrainOverlay} />
+                {POSTES_11.map(slot => {
+                  const player = getPlayerForPoste(slot.key);
+                  const isLibre = !player;
+                  const isUser = player && player.id === userInfo?.id;
+                  return (
+                    <TouchableOpacity
+                      key={slot.key}
+                      style={[
+                        styles.playerOnField,
+                        {
+                          left: `${slot.x * 100}%`,
+                          top: `${slot.y * 100}%`,
+                          marginLeft: -AVATAR_SIZE / 2,
+                          marginTop: -AVATAR_SIZE / 2,
+                          borderColor: isUser ? '#00D9FF' : 'transparent',
+                          borderWidth: isUser ? 2 : 0,
+                          zIndex: 2,
+                        }
+                      ]}
+                      disabled={!isLibre && !isUser}
+                      onPress={() => {
+                        if (isLibre) {
+                          handleSelectPoste(slot.key);
+                        } else if (isUser) {
+                          handleSelectPoste(null);
+                        }
+                      }}
+                    >
+                      <View style={{ position: 'relative' }}>
+                        <Image
+                          source={player?.image ? { uri: player.image } : defaultPlayerImage}
+                          style={styles.playerAvatar}
+                        />
+                        {player && captainId && player.id === captainId && (
+                          <FontAwesome5 name="crown" size={20} color="#FFD700" style={styles.captainCrownField} />
+                        )}
+                      </View>
+                      <Text style={styles.playerOnFieldText}>{slot.label}</Text>
+                      <View style={styles.playerNameTag}>
+                        <Text
+                          style={[
+                            styles.playerNameOnField,
+                            { color: isLibre ? '#fff' : '#00D9FF' }
+                          ]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {isLibre ? 'Libre' : (player.username || player.nom)}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* REMPLAÇANTS */}
+              <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
+              <View style={styles.remplacantsRow}>
                 <TouchableOpacity
-                  key={slot.key}
                   style={[
-                    styles.playerOnField,
-                    {
-                      left: `${slot.x * 100}%`,
-                      top: `${slot.y * 100}%`,
-                      marginLeft: -AVATAR_SIZE / 2,
-                      marginTop: -AVATAR_SIZE / 2,
-                      borderColor: isUser ? '#00D9FF' : 'transparent',
-                      borderWidth: isUser ? 2 : 0,
-                      zIndex: 2,
-                    }
+                    styles.remplacantEmpty,
+                    isUserRemplacant && { borderColor: '#00D9FF', borderWidth: 2 }
                   ]}
-                  disabled={!isLibre && !isUser}
-                  onPress={() => {
-                    if (isLibre) {
-                      handleSelectPoste(slot.key);
-                    } else if (isUser) {
-                      handleSelectPoste(null);
+                  onPress={async () => {
+                    try {
+                      await setUserPoste(clubId, userInfo.id, isUserRemplacant ? null : 'REMPLACANT');
+                      setMembers(prev =>
+                        prev.map(m =>
+                          m.id === userInfo.id
+                            ? { ...m, poste: isUserRemplacant ? null : 'REMPLACANT' }
+                            : m
+                        )
+                      );
+                    } catch (e) {
+                      Alert.alert('Erreur', "Vous êtes êtes déjà remplaçant");
                     }
                   }}
                 >
-                  <View style={{position:'relative'}}>
-                    <Image
-                      source={player?.image ? { uri: player.image } : defaultPlayerImage}
-                      style={styles.playerAvatar}
-                    />
-                    {player && captainId && player.id === captainId && (
-                      <FontAwesome5 name="crown" size={20} color="#FFD700" style={styles.captainCrownField} />
-                    )}
-                  </View>
-                  <Text style={styles.playerOnFieldText}>{slot.label}</Text>
-                  <View style={styles.playerNameTag}>
-                    <Text
-                      style={[
-                        styles.playerNameOnField,
-                        { color: isLibre ? '#fff' : '#00D9FF' }
-                      ]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {isLibre ? 'Libre' : (player.username || player.nom)}
-                    </Text>
-                  </View>
+                  {isUserRemplacant ? (
+                    <Text style={{ color: '#00D9FF', fontWeight: 'bold', fontSize: 20 }}>X</Text>
+                  ) : (
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
+                  )}
                 </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* REMPLAÇANTS */}
-          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Remplaçants :</Text>
-          <View style={styles.remplacantsRow}>
-            <TouchableOpacity
-              style={[
-                styles.remplacantEmpty,
-                isUserRemplacant && { borderColor: '#00D9FF', borderWidth: 2 }
-              ]}
-              onPress={async () => {
-                try {
-                  await setUserPoste(clubId, userInfo.id, isUserRemplacant ? null : 'REMPLACANT');
-                  setMembers(prev =>
-                    prev.map(m =>
-                      m.id === userInfo.id
-                        ? { ...m, poste: isUserRemplacant ? null : 'REMPLACANT' }
-                        : m
-                    )
-                  );
-                } catch (e) {
-                  Alert.alert('Erreur', "Vous êtes êtes déjà remplaçant");
-                }
-              }}
-            >
-              {isUserRemplacant ? (
-                <Text style={{ color: '#00D9FF', fontWeight: 'bold', fontSize: 20 }}>X</Text>
-              ) : (
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>+</Text>
-              )}
-            </TouchableOpacity>
-            {isUserRemplacant && (
-              <View style={[styles.remplacantEmpty, { borderColor: '#00D9FF', borderWidth: 2 }]}>
-                <Image
-                  source={userInfo.image ? { uri: userInfo.image } : defaultPlayerImage}
-                  style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#222' }}
-                />
+                {isUserRemplacant && (
+                  <View style={[styles.remplacantEmpty, { borderColor: '#00D9FF', borderWidth: 2 }]}>
+                    <Image
+                      source={userInfo.image ? { uri: userInfo.image } : defaultPlayerImage}
+                      style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#222' }}
+                    />
+                  </View>
+                )}
+                {remplacants
+                  .filter(r => r.id !== userInfo?.id)
+                  .map(r => (
+                    <View key={r.id} style={styles.remplacantEmpty}>
+                      <Image
+                        source={r.image ? { uri: r.image } : defaultPlayerImage}
+                        style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#222' }}
+                      />
+                    </View>
+                  ))}
               </View>
-            )}
-            {remplacants
-              .filter(r => r.id !== userInfo?.id)
-              .map(r => (
-                <View key={r.id} style={styles.remplacantEmpty}>
-                  <Image
-                    source={r.image ? { uri: r.image } : defaultPlayerImage}
-                    style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#222' }}
-                  />
-                </View>
-              ))}
-          </View>
+            </>
+          ) : (
+            // TAB CHAT
+            <View style={styles.chatContainer}>
+              <ScrollView
+                style={styles.chatMessages}
+                contentContainerStyle={{ paddingBottom: 12 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {chatMessages.length === 0 ? (
+                  <Text style={{ color: "#aaa", marginBottom: 14 }}>Aucun message pour l’instant…</Text>
+                ) : (
+                  chatMessages.map(msg => (
+                    <View key={msg.id} style={[styles.chatMsgBubble, msg.user === (userInfo.username || 'Moi') ? styles.myChatMsg : styles.otherChatMsg]}>
+                      <Text style={styles.chatMsgUser}>{msg.user} :</Text>
+                      <Text style={styles.chatMsgText}>{msg.text}</Text>
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+              <View style={styles.chatInputRow}>
+                <TextInput
+                  style={styles.chatInput}
+                  value={chatInput}
+                  onChangeText={setChatInput}
+                  placeholder="Écris un message…"
+                  placeholderTextColor="#aaa"
+                  onSubmitEditing={handleSendMessage}
+                  returnKeyType="send"
+                  blurOnSubmit={false}
+                />
+                <TouchableOpacity
+                  style={styles.chatSendBtn}
+                  onPress={handleSendMessage}
+                  disabled={chatInput.trim() === ''}
+                >
+                  <Text style={styles.chatSendBtnText}>Envoyer</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* LISTE JOUEURS */}
           <View style={styles.sectionTitleRow}>
@@ -389,6 +488,7 @@ export default function ClubDetailScreen({ route }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -695,5 +795,103 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16.5,
     letterSpacing: 0.7,
+  },
+    tabHeaderRow: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    backgroundColor: '#23284a',
+    borderRadius: 15,
+    marginBottom: 13,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  tabBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 28,
+    backgroundColor: '#23284a',
+  },
+  tabBtnActive: {
+    backgroundColor: '#00D9FF',
+  },
+  tabBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  tabBtnTextActive: {
+    color: '#003249',
+  },
+  chatContainer: {
+    backgroundColor: '#181818',
+    borderRadius: 14,
+    padding: 13,
+    alignItems: 'stretch',
+    marginHorizontal: 6,
+    minHeight: 230,
+    marginBottom: 10,
+  },
+  chatMessages: {
+    minHeight: 80,
+    maxHeight: 210,
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: '#23284a',
+    padding: 6,
+  },
+  chatMsgBubble: {
+    padding: 9,
+    borderRadius: 12,
+    marginBottom: 7,
+    maxWidth: '88%',
+    alignSelf: 'flex-start',
+  },
+  myChatMsg: {
+    backgroundColor: '#00d9ff33',
+    alignSelf: 'flex-end',
+  },
+  otherChatMsg: {
+    backgroundColor: '#23284a',
+  },
+  chatMsgUser: {
+    color: '#00D9FF',
+    fontWeight: '700',
+    marginBottom: 1,
+    fontSize: 13,
+  },
+  chatMsgText: {
+    color: '#fff',
+    fontSize: 15,
+  },
+  chatInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chatInput: {
+    flex: 1,
+    color: '#fff',
+    backgroundColor: '#23284a',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 15,
+    marginRight: 7,
+    borderWidth: 1,
+    borderColor: '#00D9FF33',
+  },
+  chatSendBtn: {
+    backgroundColor: '#00D9FF',
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 75,
+  },
+  chatSendBtnText: {
+    color: '#003249',
+    fontWeight: 'bold',
+    fontSize: 15,
+    letterSpacing: 0.2,
   },
 });

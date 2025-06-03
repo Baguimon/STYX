@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, RefreshControl
+  View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity
 } from 'react-native';
 import { getUserById, getClubMembers } from '../services/api';
+import { useNavigation } from '@react-navigation/native';
 
 const DEFAULT_AVATAR = require('../assets/player-default.png');
 const DEFAULT_CLUB = require('../assets/club-default.png');
@@ -17,6 +18,7 @@ function getClubLogoSource(image) {
 }
 
 export default function PlayerProfileScreen({ route }) {
+  const navigation = useNavigation();
   const { playerId } = route.params;
   const [player, setPlayer] = useState(null);
   const [clubMembers, setClubMembers] = useState([]);
@@ -98,6 +100,11 @@ export default function PlayerProfileScreen({ route }) {
         />
       }
     >
+      {/* BOUTON RETOUR */}
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Text style={styles.backText}>← Retour</Text>
+      </TouchableOpacity>
+
       {/* Top Avatar + infos */}
       <View style={styles.headerContainer}>
         <View style={styles.avatarWrapper}>
@@ -160,16 +167,28 @@ export default function PlayerProfileScreen({ route }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 70,
+    paddingTop: 38,
     alignItems: 'center',
     backgroundColor: '#111',
     minHeight: '100%',
+  },
+  backButton: {
+    marginTop: 20,
+    marginLeft: 0,
+    marginBottom: 4,
+    alignSelf: 'flex-start',
+  },
+  backText: {
+    color: '#00D9FF',
+    fontSize: 17,
+    fontWeight: 'bold',
+    paddingLeft: 16,
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 9,
-    marginTop: 2,
+    marginTop: 20,
     width: '93%',
     alignSelf: 'center',
     justifyContent: 'space-between'
@@ -300,4 +319,3 @@ const styles = StyleSheet.create({
     marginLeft: 3
   },
 });
-
