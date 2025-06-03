@@ -10,10 +10,14 @@ import {
   Modal,
   TouchableOpacity,
   Alert,
+  Dimensions
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getGames, joinGame } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
+import matchIcon from '../assets/match-icon.png';
+
+const { width } = Dimensions.get('window');
 
 export default function GameSearchScreen() {
   const navigation = useNavigation();
@@ -39,15 +43,14 @@ export default function GameSearchScreen() {
         (game.location && game.location.toLowerCase().includes(searchCity.toLowerCase())))
   );
 
-  const formatDate = (dateStr) => {
+  const formatDateFR = (dateStr) => {
+    if (!dateStr) return "";
     const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('fr-FR', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
+    return (
+      date.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }) +
+      ' ' +
+      date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false })
+    );
   };
 
   // Fonction pour rejoindre le match
@@ -61,7 +64,6 @@ export default function GameSearchScreen() {
       await joinGame(selectedGame.id, userInfo.id, team);
       Alert.alert('Succès', "Tu as rejoint le match !");
       setModalVisible(false);
-      // On refresh la liste après inscription (pour voir l'évolution des places)
       getGames().then(setGames);
     } catch (err) {
       Alert.alert('Erreur', err.response?.data?.error || "Impossible de rejoindre ce match");
@@ -71,34 +73,59 @@ export default function GameSearchScreen() {
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <View style={styles.header}>
-        <Image source={require('../assets/balls-pattern.png')} style={styles.ballIcon} />
-        <View style={styles.headerText}>
-          <Text style={styles.location}>{item.location}</Text>
-          <Text style={styles.city}>{item.location_details}</Text>
-          <Text style={styles.date}>{formatDate(item.date)}</Text>
+  // Nouveau composant carte verticale
+  const renderItem = ({ item }) => {
+    let displayLocation = item.location?.length > 24
+      ? item.location.slice(0, 24) + '...'
+      : item.location;
+
+    const joueursDisplay =
+      typeof item.playerCount === 'number' && typeof item.maxPlayers === 'number'
+        ? `${item.playerCount} / ${item.maxPlayers}`
+        : typeof item.playerCount === 'number'
+        ? `${item.playerCount} joueurs`
+        : typeof item.maxPlayers === 'number'
+        ? `Max ${item.maxPlayers}`
+        : "—";
+
+    return (
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={styles.leftIcon}>
+            <Image source={matchIcon} style={styles.matchIcon} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{displayLocation || "Lieu inconnu"}</Text>
+            {item.locationDetails ? (
+              <Text style={styles.cardSub}>{item.locationDetails}</Text>
+            ) : null}
+            <Text style={styles.cardDate}>{formatDateFR(item.date)}</Text>
+          </View>
+          <View style={styles.rightInfo}>
+            <Text style={styles.cardPlayers}>{joueursDisplay}</Text>
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: item.playerCount < item.maxPlayers ? '#27D34D' : '#f44' }
+              ]}
+            />
+          </View>
         </View>
-        <View style={styles.right}>
-          <Text style={styles.players}>{item.player_count}/{item.max_players}</Text>
-          {item.status === 'ouvert' && <View style={styles.statusDot} />}
-        </View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            { backgroundColor: pressed ? '#329CB6' : '#46B3D0' },
+          ]}
+          onPress={() => {
+            setSelectedGame(item);
+            setModalVisible(true);
+          }}
+        >
+          <Text style={styles.buttonText}>Rejoindre</Text>
+        </Pressable>
       </View>
-      <Pressable
-        style={({ pressed }) => [
-          styles.button,
-          { backgroundColor: pressed ? '#329CB6' : '#46B3D0' },
-        ]}
-        onPress={() => {
-          setSelectedGame(item);
-          setModalVisible(true);
-        }}
-      >
-        <Text style={styles.buttonText}>Rejoindre</Text>
-      </Pressable>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -154,100 +181,97 @@ export default function GameSearchScreen() {
   );
 }
 
+const CARD_HEIGHT = 110;
+const CARD_RADIUS = 20;
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-    paddingHorizontal: 16,
-    paddingTop: 40,
-  },
-  backButton: {
-    marginBottom: 10,
-  },
-  backText: {
-    color: '#46B3D0',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  banner: {
-    width: '100%',
-    height: 90,
-    resizeMode: 'contain',
-    marginBottom: 10,
-  },
-  searchBar: {
-    backgroundColor: '#222',
-    color: '#fff',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  item: {
-    padding: 15,
+  container: { flex: 1, backgroundColor: "#111", paddingHorizontal: 16, paddingTop: 40 },
+  backButton: { marginBottom: 10 },
+  backText: { color: '#46B3D0', fontSize: 16, fontWeight: 'bold' },
+  banner: { width: '100%', height: 90, resizeMode: 'contain', marginBottom: 10 },
+  searchBar: { backgroundColor: '#222', color: '#fff', padding: 10, borderRadius: 8, marginBottom: 8 },
+  card: {
+    backgroundColor: "#272930",
+    borderRadius: CARD_RADIUS,
+    minHeight: CARD_HEIGHT,
     marginVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#1e1e1e',
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.09,
+    shadowRadius: 7,
+    elevation: 2,
     borderWidth: 1,
     borderColor: '#666',
+    flexDirection: "column",
+    alignItems: "stretch",
+    position: 'relative'
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
-  ballIcon: {
-    width: 42,
-    height: 42,
-    resizeMode: 'contain',
-    marginRight: 10,
+  leftIcon: {
+    marginRight: 15,
+    width: 48, height: 48,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  headerText: {
-    flex: 1,
+  matchIcon: { width: 44, height: 44, resizeMode: "contain" },
+  cardTitle: {
+    fontWeight: "bold",
+    color: "#fff",
+    fontSize: 16,
+    maxWidth: width * 0.45,
+    marginBottom: 0,
   },
-  location: {
+  cardSub: {
+    color: "#ccc",
+    fontSize: 13,
+    marginBottom: 1,
+  },
+  cardDate: {
+    color: "#b5bac7",
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  city: {
-    fontSize: 13,
-    color: '#ccc',
-  },
-  date: {
-    fontSize: 13,
-    color: '#fff',
-    marginTop: 4,
-  },
-  right: {
-    alignItems: 'flex-end',
-    minWidth: 55,
-  },
-  players: {
-    color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: "400",
     marginBottom: 2,
-    fontSize: 15,
+    marginTop: 1,
+  },
+  rightInfo: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+    minWidth: 44,
+    marginLeft: 8,
+  },
+  cardPlayers: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 18,
+    marginBottom: 2,
   },
   statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#4cd137',
-    marginTop: 3,
-    alignSelf: 'flex-end',
+    width: 10, height: 10,
+    borderRadius: 11,
+    marginTop: 6,
+    alignSelf: "flex-end",
   },
   button: {
+    marginTop: 10,
     alignSelf: 'center',
-    marginTop: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
+    width: "85%",
+    paddingVertical: 11,
     borderRadius: 20,
     alignItems: 'center',
+    backgroundColor: '#46B3D0',
+    marginBottom: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 1,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   // Modal
   modalOverlay: {
     flex: 1,
@@ -272,13 +296,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 25,
   },
-  modalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  closeBtn: {
-    position: 'absolute',
-    right: 8,
-    top: 8,
-  },
+  modalButtonText: { color: '#fff', fontSize: 16 },
+  closeBtn: { position: 'absolute', right: 8, top: 8 },
 });
