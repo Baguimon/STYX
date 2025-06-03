@@ -93,20 +93,39 @@ class ClubController extends AbstractController
         if ($existingCaptain) {
             return $this->json(['error' => 'Vous êtes déjà capitaine d’un club'], 400);
         }
+
+        // === Ajout gestion logo prédéfini dès la création ===
+        $image = $data['image'] ?? null;
+        if ($image !== null && $image !== '') {
+            $allowed = [
+                '/assets/club-imgs/ecusson-1.png',
+                '/assets/club-imgs/ecusson-2.png',
+                '/assets/club-imgs/ecusson-3.png',
+            ];
+            if (!in_array($image, $allowed)) {
+                return $this->json(['error' => 'Logo non autorisé.'], 400);
+            }
+        }
+
         $club = new Club();
         $club->setName($name);
         $club->setCreatedAt(new \DateTime());
         $club->setClubCaptain($captain);
+        if ($image) { // Si le logo est bien passé et autorisé
+            $club->setImage($image);
+        }
         $em->persist($club);
         $em->flush();
+
         $captain->setClub($club);
         $em->flush();
+
         return $this->json([
             'id' => $club->getId(),
             'name' => $club->getName(),
             'createdAt' => $club->getCreatedAt()?->format('Y-m-d H:i:s'),
             'clubCaptain' => $club->getClubCaptain()?->getId(),
-            'image' => $club->getImage(), // Ajouté
+            'image' => $club->getImage(),
         ]);
     }
 
