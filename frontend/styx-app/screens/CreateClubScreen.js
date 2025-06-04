@@ -1,10 +1,9 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { createClub } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../contexts/AuthContext';
 
-// Les choix de logos possibles (doivent matcher le backend)
 const CLUB_LOGO_CHOICES = [
   { uri: '/assets/club-imgs/ecusson-1.png', img: require('../assets/club-imgs/ecusson-1.png') },
   { uri: '/assets/club-imgs/ecusson-2.png', img: require('../assets/club-imgs/ecusson-2.png') },
@@ -13,7 +12,7 @@ const CLUB_LOGO_CHOICES = [
 
 export default function CreateClubScreen() {
   const [name, setName] = useState('');
-  const [selectedLogo, setSelectedLogo] = useState(CLUB_LOGO_CHOICES[0].uri); // Par défaut le 1er
+  const [selectedLogo, setSelectedLogo] = useState(CLUB_LOGO_CHOICES[0].uri);
   const navigation = useNavigation();
   const { userInfo } = useContext(AuthContext);
 
@@ -45,84 +44,142 @@ export default function CreateClubScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.stepTitle}>Créer un club</Text>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Nom du club</Text>
-        <TextInput
-          placeholder="Entrez le nom de votre club"
-          placeholderTextColor="#888"
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
-        />
-        <Text style={[styles.cardTitle, { marginTop: 18, marginBottom: 8 }]}>
-          Choisis un logo pour ton club
-        </Text>
-        <ScrollView horizontal contentContainerStyle={{ flexDirection: 'row', justifyContent: 'center' }}>
-          {CLUB_LOGO_CHOICES.map((imgObj) => (
-            <TouchableOpacity
-              key={imgObj.uri}
-              onPress={() => setSelectedLogo(imgObj.uri)}
-              style={[
-                styles.logoChoice,
-                selectedLogo === imgObj.uri ? styles.logoSelected : null,
-              ]}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={50}
+    >
+      <View style={styles.container}>
+        <Text style={styles.stepTitle}>Créer un club</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Nom du club</Text>
+          <TextInput
+            placeholder="Entrez le nom de votre club"
+            placeholderTextColor="#888"
+            value={name}
+            onChangeText={setName}
+            style={styles.input}
+            returnKeyType="done"
+          />
+          <Text style={[styles.cardTitle, { marginTop: 18, marginBottom: 8 }]}>
+            Choisis un logo pour ton club
+          </Text>
+          <View style={styles.logosWrapper}>
+            <ScrollView
+              horizontal
+              contentContainerStyle={styles.logosScroll}
+              showsHorizontalScrollIndicator={false}
             >
-              <Image source={imgObj.img} style={styles.logoImage} resizeMode="contain" />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        <TouchableOpacity style={[styles.nextBtn, { marginTop: 22 }]} onPress={handleCreate}>
-          <Text style={styles.nextText}>Créer</Text>
-        </TouchableOpacity>
+              {CLUB_LOGO_CHOICES.map((imgObj) => (
+                <TouchableOpacity
+                  key={imgObj.uri}
+                  onPress={() => setSelectedLogo(imgObj.uri)}
+                  style={[
+                    styles.logoChoice,
+                    selectedLogo === imgObj.uri ? styles.logoSelected : null,
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Image source={imgObj.img} style={styles.logoImage} resizeMode="contain" />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+          <TouchableOpacity style={[styles.nextBtn, { marginTop: 24 }]} onPress={handleCreate}>
+            <Text style={styles.nextText}>Créer</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050A23', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
-  stepTitle: { color: '#00D9FF', fontSize: 25, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
+  container: {
+    flex: 1,
+    backgroundColor: '#050A23',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  stepTitle: {
+    color: '#00D9FF',
+    fontSize: 25,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 18,
+    marginTop: 12,
+  },
   card: {
     backgroundColor: '#1A1F3D',
-    borderRadius: 16,
-    padding: 30,
-    marginBottom: 30,
+    borderRadius: 18,
+    paddingVertical: 26,
+    paddingHorizontal: 20,
+    marginBottom: 26,
     borderLeftWidth: 4,
     borderLeftColor: '#00D9FF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 7,
     alignItems: 'center',
-    minWidth: 300,
+    width: '100%',
     maxWidth: 340,
   },
-  cardTitle: { color: '#FFF', fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
+  cardTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
   input: {
     backgroundColor: '#2A2A40',
     borderRadius: 10,
-    paddingVertical: 14,
+    paddingVertical: 13,
     paddingHorizontal: 16,
     color: '#FFF',
-    fontSize: 15,
-    width: 240,
+    fontSize: 16,
+    width: '100%',
     marginTop: 10,
+    marginBottom: 2,
     textAlign: 'center',
+    borderWidth: 1,
+    borderColor: '#222645',
   },
   nextBtn: {
     backgroundColor: '#00D9FF',
     borderRadius: 24,
     paddingVertical: 14,
-    paddingHorizontal: 32,
+    paddingHorizontal: 36,
     alignItems: 'center',
-    marginTop: 8,
     minWidth: 180,
+    shadowColor: '#00D9FF',
+    shadowOpacity: 0.24,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  nextText: { color: '#050A23', fontSize: 16, fontWeight: '600', textAlign: 'center' },
-  // Ajout styles logo
+  nextText: {
+    color: '#050A23',
+    fontSize: 17,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  // --- Logos
+  logosWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 6,
+    marginTop: 2,
+  },
+  logosScroll: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
   logoChoice: {
     marginHorizontal: 8,
     borderWidth: 3,
@@ -130,14 +187,23 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 5,
     backgroundColor: '#23284a',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 3,
+    transition: 'all 0.2s',
   },
   logoSelected: {
     borderColor: '#00D9FF',
     backgroundColor: '#181E34',
+    shadowColor: '#00D9FF',
+    shadowOpacity: 0.25,
+    elevation: 8,
   },
   logoImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
   },
 });
