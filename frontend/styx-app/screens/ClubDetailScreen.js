@@ -80,10 +80,16 @@ export default function ClubDetailScreen({ route }) {
   }, [selectedTab, fetchChat]);
 
   useEffect(() => {
-    if (chatScrollRef.current) {
-      setTimeout(() => chatScrollRef.current.scrollToEnd({ animated: true }), 400);
+    // On ne scroll que si l’onglet chat est sélectionné ET que le ref existe
+    if (selectedTab === 'chat' && chatScrollRef.current) {
+      setTimeout(() => {
+        if (chatScrollRef.current) {
+          chatScrollRef.current.scrollToEnd({ animated: true });
+        }
+      }, 400);
     }
-  }, [chatMessages]);
+  }, [chatMessages, selectedTab]);
+
 
   // Envoi message
   const handleSendMessage = async () => {
