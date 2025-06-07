@@ -50,6 +50,12 @@ export default function CreateClubScreen() {
       keyboardVerticalOffset={50}
     >
       <View style={styles.container}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backText}>Retour</Text>
+        </TouchableOpacity>
         <Text style={styles.stepTitle}>Créer un club</Text>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Nom du club</Text>
@@ -97,18 +103,33 @@ export default function CreateClubScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050A23',
+    backgroundColor: '#111',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 12,
+    paddingTop: Platform.OS === 'ios' ? 80 : 36, // grand margin top pour ne pas être collé
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 18,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  backText: {
+    color: '#00D9FF',
+    fontWeight: 'bold',
+    fontSize: 16,
+    letterSpacing: 0.3,
   },
   stepTitle: {
     color: '#00D9FF',
     fontSize: 25,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 18,
-    marginTop: 12,
+    marginBottom: 22,
+    marginTop: 10,
   },
   card: {
     backgroundColor: '#1A1F3D',
@@ -135,7 +156,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
-    backgroundColor: '#2A2A40',
+    backgroundColor: '#23284a',
     borderRadius: 10,
     paddingVertical: 13,
     paddingHorizontal: 16,
@@ -167,7 +188,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.5,
   },
-  // --- Logos
   logosWrapper: {
     width: '100%',
     alignItems: 'center',
