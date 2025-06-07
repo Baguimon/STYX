@@ -1,8 +1,8 @@
-// screens/LoginScreen.js
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../contexts/AuthContext';
 import styxLogo from '../assets/styx-logo.png';
 
@@ -14,35 +14,49 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      const { data } = await axios.post('https://main-bvxea6i-y25mlzc6no7vs.ch-1.platformsh.site/api/login', {
+      // 1. Authentifie-toi sur /api/login_check
+      const { data } = await axios.post('https://main-bvxea6i-y25mlzc6no7vs.ch-1.platformsh.site/api/login_check', {
         email,
         password
       });
 
-      // 👉 Log la réponse pour vérifier TOUT ce que tu reçois
-      console.log('Réponse data.user:', data.user);
-
-      if (!data.user) {
-        Alert.alert('Erreur', 'Réponse du serveur invalide.');
+      if (!data.token) {
+        Alert.alert('Erreur', 'Token JWT non reçu.');
         return;
       }
 
-      await login(data.user); // <-- Tout passe ici, pas besoin de AsyncStorage manuelle
+      // 2. Stocke le token
+      await AsyncStorage.setItem('token', data.token);
+
+      // 3. Récupère le profil utilisateur authentifié via /api/me
+      const userResponse = await axios.get(
+        'https://main-bvxea6i-y25mlzc6no7vs.ch-1.platformsh.site/api/me',
+        {
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          }
+        }
+      );
+
+      const user = userResponse.data;
+      if (!user || user.error) {
+        Alert.alert('Erreur', 'Impossible de récupérer le profil utilisateur');
+        return;
+      }
+
+      await login(user);
 
       Alert.alert('✅ Connexion réussie');
     } catch (error) {
       console.log('Erreur Axios:', error);
-      if (error.response) {
-        console.log('Erreur serveur:', error.response.data);
-        console.log('Code:', error.response.status);
-      }
       if (error.response?.status === 401) {
         Alert.alert('❌ Identifiants incorrects');
       } else {
-        Alert.alert('❌ Erreur', 'Réponse du serveur invalide');
+        Alert.alert('❌ Erreur', 'Connexion impossible');
       }
     }
   };
+
 
   return (
     <KeyboardAvoidingView

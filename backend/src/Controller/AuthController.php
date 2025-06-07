@@ -46,46 +46,4 @@ class AuthController extends AbstractController
 
         return $this->json(['message' => 'Utilisateur créé avec succès'], Response::HTTP_CREATED);
     }
-
-    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
-    public function login(
-        Request $request,
-        EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher
-    ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-
-        if (!isset($data['email'], $data['password'])) {
-            return $this->json(['error' => 'Email et mot de passe requis.'], Response::HTTP_BAD_REQUEST);
-        }
-
-        $user = $em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
-
-        if (!$user) {
-            return $this->json(['error' => 'Utilisateur non trouvé.'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        if (!$passwordHasher->isPasswordValid($user, $data['password'])) {
-            return $this->json(['error' => 'Mot de passe incorrect.'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        // <-- ICI : RÉPONSE COMPLETE
-        return $this->json([
-            'message' => 'Connexion réussie.',
-            'user' => [
-                'id' => $user->getId(),
-                'username' => $user->getUsername(),
-                'email' => $user->getEmail(),
-                'level' => $user->getLevel(),
-                'poste' => $user->getPoste(),
-                'club' => $user->getClub() ? [
-                    'id' => $user->getClub()->getId(),
-                    'name' => $user->getClub()->getName(),
-                    // Ajoute ça :
-                    'playerCount' => $user->getClub()->getMembers()->count(),
-                ] : null,
-                'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
-            ]
-        ]);
-    }
 }

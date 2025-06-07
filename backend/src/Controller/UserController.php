@@ -185,4 +185,33 @@ class UserController extends AbstractController
             'poste' => $user->getPoste(),
         ]);
     }
+    #[Route('/me', name: 'user_me', methods: ['GET'])]
+    public function me(): JsonResponse
+    {
+        /** @var \App\Entity\User|null $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['error' => 'Unauthorized'], 401);
+        }
+        $club = $user->getClub();
+
+        return $this->json([
+            'id' => $user->getId(),
+            'username' => $user->getUsername(),
+            'email' => $user->getEmail(),
+            'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'role' => $user->getRole(),
+            'level' => $user->getLevel(),
+            'poste' => $user->getPoste(),
+            'club' => $club ? [
+                'id' => $club->getId(),
+                'name' => $club->getName(),
+                'createdAt' => $club->getCreatedAt()?->format('Y-m-d H:i:s'),
+                'clubCaptain' => $club->getClubCaptain()?->getId(),
+                'image' => $club->getImage(),
+                'playerCount' => $club->getMembers()->count(),
+            ] : null,
+        ]);
+    }
+
 }

@@ -6,34 +6,34 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
-    const loadUser = async () => {
-      const storedUser = await AsyncStorage.getItem('user');
-      if (storedUser) {
-        setUserInfo(JSON.parse(storedUser));
+    const loadToken = async () => {
+      const storedToken = await AsyncStorage.getItem('token');
+      if (storedToken) {
+        setToken(storedToken);
         setIsAuthenticated(true);
       }
     };
-    loadUser();
+    loadToken();
   }, []);
 
-  const login = async (user) => {
-    if (!user) return;
-    await AsyncStorage.setItem('user', JSON.stringify(user));
-    setUserInfo(user);
+  const login = async (token) => {
+    if (!token) return;
+    await AsyncStorage.setItem('token', token);
+    setToken(token);
     setIsAuthenticated(true);
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('user');
-    setUserInfo(null);
+    await AsyncStorage.removeItem('token');
+    setToken(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userInfo, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
