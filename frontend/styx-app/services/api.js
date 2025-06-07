@@ -25,6 +25,11 @@ export const getUserById = async (userId) => {
   return response.data;
 };
 
+export const getMe = async () => {
+  const res = await api.get('/me'); // le token est déjà ajouté par l'interceptor si tu as suivi la structure plus haut
+  return res.data;
+};
+
 // ========== USERS ==========
 
 export const getUsers = async () => {

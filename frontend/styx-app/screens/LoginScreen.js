@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../contexts/AuthContext';
 import styxLogo from '../assets/styx-logo.png';
+import { getMe } from '../services/api';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useContext(AuthContext);
@@ -14,7 +15,6 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      // 1. Authentifie-toi sur /api/login_check
       const { data } = await axios.post('https://main-bvxea6i-y25mlzc6no7vs.ch-1.platformsh.site/api/login_check', {
         email,
         password
@@ -25,26 +25,17 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
-      // 2. Stocke le token
+      // Stocke le token, puis récupère le user via /me
       await AsyncStorage.setItem('token', data.token);
+      const user = await getMe();
 
-      // 3. Récupère le profil utilisateur authentifié via /api/me
-      const userResponse = await axios.get(
-        'https://main-bvxea6i-y25mlzc6no7vs.ch-1.platformsh.site/api/me',
-        {
-          headers: {
-            Authorization: `Bearer ${data.token}`,
-          }
-        }
-      );
-
-      const user = userResponse.data;
       if (!user || user.error) {
         Alert.alert('Erreur', 'Impossible de récupérer le profil utilisateur');
         return;
       }
 
-      await login(user);
+      // Passe les deux ici :
+      await login(user, data.token);
 
       Alert.alert('✅ Connexion réussie');
     } catch (error) {
@@ -56,7 +47,6 @@ export default function LoginScreen({ navigation }) {
       }
     }
   };
-
 
   return (
     <KeyboardAvoidingView
