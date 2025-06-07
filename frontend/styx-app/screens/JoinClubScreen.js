@@ -200,11 +200,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#111',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 75,
+    paddingTop: 115,
   },
   cancelBtn: {
     position: 'absolute',
-    top: 30,
+    top: 60,
     left: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
