@@ -60,27 +60,24 @@ export default function ClubDetailScreen({ route }) {
 
   // Récupère les messages du chat
   const fetchChat = useCallback(async () => {
-    setChatLoading(true);
     try {
       const msgs = await getClubMessages(clubId);
       setChatMessages(msgs);
     } catch {
       setChatMessages([]);
     }
-    setChatLoading(false);
   }, [clubId]);
 
   // Récupération automatique toutes les 5s quand l’onglet chat est affiché
   useEffect(() => {
     if (selectedTab === 'chat') {
       fetchChat();
-      const interval = setInterval(fetchChat, 5000);
+      const interval = setInterval(fetchChat, 2000); // ← 2s
       return () => clearInterval(interval);
     }
   }, [selectedTab, fetchChat]);
 
   useEffect(() => {
-    // On ne scroll que si l’onglet chat est sélectionné ET que le ref existe
     if (selectedTab === 'chat' && chatScrollRef.current) {
       setTimeout(() => {
         if (chatScrollRef.current) {
@@ -90,8 +87,6 @@ export default function ClubDetailScreen({ route }) {
     }
   }, [chatMessages, selectedTab]);
 
-
-  // Envoi message
   const handleSendMessage = async () => {
     if (chatInput.trim() === '') return;
     try {
@@ -103,7 +98,6 @@ export default function ClubDetailScreen({ route }) {
     }
   };
 
-  // Suppression message
   const handleDeleteMessage = async (msgId) => {
     Alert.alert(
       "Supprimer",

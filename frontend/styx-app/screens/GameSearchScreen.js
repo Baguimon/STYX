@@ -186,7 +186,7 @@ const CARD_RADIUS = 20;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#111", paddingHorizontal: 16, paddingTop: 40 },
-  backButton: { marginBottom: 10 },
+  backButton: { marginBottom: 5, marginTop: 30},
   backText: { color: '#46B3D0', fontSize: 16, fontWeight: 'bold' },
   banner: { width: '100%', height: 90, resizeMode: 'contain', marginBottom: 10 },
   searchBar: { backgroundColor: '#222', color: '#fff', padding: 10, borderRadius: 8, marginBottom: 8 },

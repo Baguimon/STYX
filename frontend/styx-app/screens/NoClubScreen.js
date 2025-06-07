@@ -14,16 +14,31 @@ export default function NoClubScreen() {
       <TouchableOpacity style={styles.nextBtn} onPress={() => navigation.navigate('CreateClub')}>
         <Text style={styles.nextText}>Créer un club</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={[styles.nextBtn, { marginTop: 16 }]} onPress={() => navigation.navigate('JoinClub')}>
-        <Text style={styles.nextText}>Rejoindre un club</Text>
+      <TouchableOpacity
+        style={[styles.nextBtn, styles.secondaryBtn]}
+        onPress={() => navigation.navigate('JoinClub')}
+      >
+        <Text style={[styles.nextText, styles.secondaryText]}>Rejoindre un club</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050A23', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
-  stepTitle: { color: '#00D9FF', fontSize: 25, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
+  container: {
+    flex: 1,
+    backgroundColor: '#111', // Fond ultra sombre comme partout ailleurs
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  stepTitle: {
+    color: '#00D9FF',
+    fontSize: 25,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
   card: {
     backgroundColor: '#1A1F3D',
     borderRadius: 16,
@@ -40,8 +55,19 @@ const styles = StyleSheet.create({
     minWidth: 300,
     maxWidth: 340,
   },
-  cardTitle: { color: '#FFF', fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
-  cardValue: { color: '#AAD4E0', fontSize: 16, textAlign: 'center', marginBottom: 16 },
+  cardTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  cardValue: {
+    color: '#AAD4E0',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
   nextBtn: {
     backgroundColor: '#00D9FF',
     borderRadius: 24,
@@ -51,5 +77,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
     minWidth: 180,
   },
-  nextText: { color: '#050A23', fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  nextText: {
+    color: '#050A23',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  secondaryBtn: {
+    backgroundColor: '#222842',
+    marginTop: 16,
+  },
+  secondaryText: {
+    color: '#00D9FF',
+  },
 });
