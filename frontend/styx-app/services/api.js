@@ -119,4 +119,24 @@ export const updateClub = (clubId, data) =>
 export const kickMember = (clubId, memberId) =>
   api.post(`/clubs/${clubId}/kick-member/${memberId}`);
 
+// Récupérer les messages du club
+// Récupérer les messages
+export const getClubMessages = async (clubId) => {
+  const res = await api.get(`/clubs/${clubId}/messages`);
+  return res.data;
+};
+
+// Envoyer un message
+export const sendClubMessage = async (clubId, { userId, text }) => {
+  const res = await api.post(`/clubs/${clubId}/messages`, { userId, text });
+  return res.data;
+};
+
+// Supprimer un message
+export const deleteClubMessage = async (clubId, messageId) => {
+  const res = await api.delete(`/clubs/${clubId}/messages/${messageId}`);
+  return res.data;
+};
+
+
 export default api;

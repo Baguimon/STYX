@@ -1,7 +1,13 @@
-import React, { useEffect, useState, useContext, useCallback } from 'react';
+import React, { useEffect, useState, useContext, useCallback, useRef } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { View, StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, ScrollView, Alert, Share, RefreshControl, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
-import { getClub, getClubMembers, setUserPoste, leaveClub } from '../services/api';
+import {
+  View, StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, ScrollView,
+  Alert, Share, RefreshControl, TextInput, KeyboardAvoidingView, Platform
+} from 'react-native';
+import {
+  getClub, getClubMembers, setUserPoste, leaveClub,
+  getClubMessages, sendClubMessage, deleteClubMessage
+} from '../services/api'; // <-- Ajoute tes méthodes ici
 import { AuthContext } from '../contexts/AuthContext';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
@@ -43,16 +49,76 @@ export default function ClubDetailScreen({ route }) {
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Nouvel état pour les tabs
+  // Onglet sélectionné
   const [selectedTab, setSelectedTab] = useState('compo');
 
-  // Etat pour le chat (local, démo)
-  const [chatMessages, setChatMessages] = useState([
-    // {id: 1, user: "Capitaine", text: "Bienvenue dans le chat du club !"}
-  ]);
+  // Chat club connecté à l'API
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const chatScrollRef = useRef();
 
-  // Chargement des infos du club
+  // Récupère les messages du chat
+  const fetchChat = useCallback(async () => {
+    setChatLoading(true);
+    try {
+      const msgs = await getClubMessages(clubId);
+      setChatMessages(msgs);
+    } catch {
+      setChatMessages([]);
+    }
+    setChatLoading(false);
+  }, [clubId]);
+
+  // Récupération automatique toutes les 5s quand l’onglet chat est affiché
+  useEffect(() => {
+    if (selectedTab === 'chat') {
+      fetchChat();
+      const interval = setInterval(fetchChat, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedTab, fetchChat]);
+
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      setTimeout(() => chatScrollRef.current.scrollToEnd({ animated: true }), 400);
+    }
+  }, [chatMessages]);
+
+  // Envoi message
+  const handleSendMessage = async () => {
+    if (chatInput.trim() === '') return;
+    try {
+      await sendClubMessage(clubId, { userId: userInfo.id, text: chatInput.trim() });
+      setChatInput('');
+      fetchChat();
+    } catch {
+      Alert.alert('Erreur', "Impossible d'envoyer le message");
+    }
+  };
+
+  // Suppression message
+  const handleDeleteMessage = async (msgId) => {
+    Alert.alert(
+      "Supprimer",
+      "Voulez-vous supprimer ce message ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer", style: "destructive", onPress: async () => {
+            try {
+              await deleteClubMessage(clubId, msgId, userInfo.id);
+              fetchChat();
+            } catch {
+              Alert.alert("Erreur", "Impossible de supprimer le message");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Chargement club/membres
   const fetchClub = useCallback(async () => {
     setLoading(true);
     try {
@@ -99,7 +165,6 @@ export default function ClubDetailScreen({ route }) {
     if (!userInfo?.id) return;
     try {
       await setUserPoste(clubId, userInfo.id, posteKey);
-
       setMembers(prev =>
         prev.map(m =>
           m.id === userInfo.id
@@ -151,8 +216,8 @@ export default function ClubDetailScreen({ route }) {
       'Es-tu sûr de vouloir quitter le club ?',
       [
         { text: 'Annuler', style: 'cancel' },
-        { 
-          text: 'Oui, quitter', 
+        {
+          text: 'Oui, quitter',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -173,23 +238,9 @@ export default function ClubDetailScreen({ route }) {
     );
   };
 
-  // Gestion envoi d’un message (local demo)
-  const handleSendMessage = () => {
-    if (chatInput.trim() === '') return;
-    setChatMessages(msgs => [
-      ...msgs,
-      {
-        id: Date.now(),
-        user: userInfo.username || 'Moi',
-        text: chatInput.trim(),
-      }
-    ]);
-    setChatInput('');
-  };
-
   if (loading) {
     return (
-      <View style={{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#111' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111' }}>
         <ActivityIndicator size="large" color="#00D9FF" />
       </View>
     );
@@ -197,8 +248,8 @@ export default function ClubDetailScreen({ route }) {
 
   if (!club) {
     return (
-      <View style={{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#111' }}>
-        <Text style={{ color:'#fff' }}>Impossible de charger le club.</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111' }}>
+        <Text style={{ color: '#fff' }}>Impossible de charger le club.</Text>
       </View>
     );
   }
@@ -391,23 +442,49 @@ export default function ClubDetailScreen({ route }) {
                 </View>
               </>
             ) : (
-              // Onglet Chat
+              // Onglet Chat CLUB connecté à l’API (complet)
               <View style={styles.chatContainer}>
                 <ScrollView
+                  ref={chatScrollRef}
                   style={styles.chatMessages}
                   contentContainerStyle={{ paddingBottom: 12 }}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                 >
-                  {chatMessages.length === 0 ? (
+                  {chatLoading ? (
+                    <ActivityIndicator color="#00D9FF" />
+                  ) : chatMessages.length === 0 ? (
                     <Text style={{ color: "#aaa", marginBottom: 14 }}>Aucun message pour l’instant…</Text>
                   ) : (
-                    chatMessages.map(msg => (
-                      <View key={msg.id} style={[styles.chatMsgBubble, msg.user === (userInfo.username || 'Moi') ? styles.myChatMsg : styles.otherChatMsg]}>
-                        <Text style={styles.chatMsgUser}>{msg.user} :</Text>
-                        <Text style={styles.chatMsgText}>{msg.text}</Text>
-                      </View>
-                    ))
+                    chatMessages.map(msg => {
+                      const isMine = msg.user.id === userInfo.id;
+                      const isCaptain = userInfo.id === captainId;
+                      return (
+                        <View
+                          key={msg.id}
+                          style={[
+                            styles.chatMsgBubble,
+                            isMine ? styles.myChatMsg : styles.otherChatMsg,
+                          ]}
+                        >
+                          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
+                            <Text style={styles.chatMsgUser}>{msg.user.username} :</Text>
+                            <Text style={{ color: "#aaa", marginLeft: 6, fontSize: 11 }}>
+                              {msg.createdAt.slice(11, 16)}
+                            </Text>
+                            {(isMine || isCaptain) && (
+                              <TouchableOpacity
+                                style={{ marginLeft: 12 }}
+                                onPress={() => handleDeleteMessage(msg.id)}
+                              >
+                                <Ionicons name="trash" size={16} color="#E33232" />
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                          <Text style={styles.chatMsgText}>{msg.text}</Text>
+                        </View>
+                      );
+                    })
                   )}
                 </ScrollView>
                 <View style={styles.chatInputRow}>
