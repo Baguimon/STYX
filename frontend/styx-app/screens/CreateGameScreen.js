@@ -340,10 +340,9 @@ export default function CreateGameScreen() {
 }
 
 const styles = StyleSheet.create({
-  // ... Tes styles inchangés ...
   container: {
     flex: 1,
-    backgroundColor: '#050A23',
+    backgroundColor: '#111', // fond sombre cohérent avec tout le reste
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 130 : 16,
     paddingBottom: Platform.OS === 'ios' ? 50 : 16,
@@ -369,7 +368,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   card: {
-    backgroundColor: '#1A1F3D',
+    backgroundColor: '#242640', // fond carte = même que playerCard ou chatMessages
     borderRadius: 16,
     padding: 35,
     marginBottom: 24,
@@ -383,7 +382,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   cardTitle: {
-    color: '#FFF',
+    color: '#fff',
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
@@ -393,16 +392,23 @@ const styles = StyleSheet.create({
     fontSize: 17,
   },
   input: {
-    backgroundColor: '#2A2A40',
+    backgroundColor: '#23284a', // input bleu foncé comme dans le chat
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    color: '#FFF',
+    color: '#fff',
     fontSize: 15,
     marginTop: 10,
+    borderWidth: 1.5,
+    borderColor: '#00D9FF55', // liseré comme dans le chat input
+    shadowColor: '#00D9FF',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 3,
+    elevation: 1,
   },
   pickerInlineContainer: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#23284a', // pour rester dans la palette sombre
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 20,
@@ -416,7 +422,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickerDoneText: {
-    color: '#050A23',
+    color: '#003249',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -431,9 +437,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 12,
-    backgroundColor: '#050A23',
+    backgroundColor: '#111',
     borderTopWidth: 1,
-    borderTopColor: '#1A1F3D',
+    borderTopColor: '#23284a',
   },
   navCenter: {
     justifyContent: 'center',
@@ -454,12 +460,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextText: {
-    color: '#050A23',
+    color: '#003249',
     fontSize: 16,
     fontWeight: '600',
   },
   summaryCard: {
-    backgroundColor: '#2A2A40',
+    backgroundColor: '#202849',
     borderRadius: 12,
     padding: 20,
     marginHorizontal: 16,
@@ -487,7 +493,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   summaryValue: {
-    color: '#FFF',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
