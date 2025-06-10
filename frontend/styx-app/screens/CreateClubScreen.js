@@ -86,7 +86,9 @@ export default function CreateClubScreen() {
                   ]}
                   activeOpacity={0.8}
                 >
-                  <Image source={imgObj.img} style={styles.logoImage} resizeMode="contain" />
+                  <View style={styles.logoPreviewWrapper}>
+                    <Image source={imgObj.img} style={styles.logoImageZoomed} resizeMode="contain" />
+                  </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -107,7 +109,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 12,
-    paddingTop: Platform.OS === 'ios' ? 80 : 36, // grand margin top pour ne pas être collé
+    paddingTop: Platform.OS === 'ios' ? 80 : 36,
   },
   backBtn: {
     alignSelf: 'flex-start',
@@ -221,9 +223,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     elevation: 8,
   },
-  logoImage: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+  logoPreviewWrapper: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    overflow: 'hidden',
+    backgroundColor: '#222',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoImageZoomed: {
+    width: 140,
+    height: 140,
   },
 });
+
