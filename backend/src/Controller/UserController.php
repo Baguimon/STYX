@@ -185,4 +185,22 @@ class UserController extends AbstractController
             'poste' => $user->getPoste(),
         ]);
     }
+    #[Route('/users/{id}', name: 'user_delete', methods: ['DELETE'])]
+    public function deleteUser(
+        $id,
+        UserRepository $userRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $user = $userRepository->find($id);
+        if (!$user) {
+            return $this->json(['error' => 'User not found'], 404);
+        }
+        // Tu peux ajouter un contrôle pour empêcher de supprimer un admin, etc.
+
+        $em->remove($user);
+        $em->flush();
+
+        return $this->json(['success' => true, 'message' => 'Compte supprimé']);
+    }
+
 }
