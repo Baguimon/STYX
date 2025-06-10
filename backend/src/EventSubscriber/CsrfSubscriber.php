@@ -19,7 +19,7 @@ class CsrfSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (in_array($request->getPathInfo(), ['/api/login', '/api/register', '/api/csrf-token'])) {
+        if (in_array($request->getPathInfo(), ['/api/login', '/api/login-custom', '/api/register', '/api/csrf-token'])) {
             return;
         }
 
