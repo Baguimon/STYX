@@ -7,6 +7,7 @@ use App\Entity\GamePlayer;
 use App\Repository\GameRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Utils\Sanitizer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
@@ -98,8 +99,8 @@ class GameController extends AbstractController
 
         $game = new Game();
         $game->setDate(new \DateTime($data['date']));
-        $game->setLocation($data['location']);
-        $game->setLocationDetails($data['location_details'] ?? null);
+        $game->setLocation(Sanitizer::string($data['location']));
+        $game->setLocationDetails(Sanitizer::string($data['location_details'] ?? null));
         $game->setMaxPlayers($data['max_players']);
         $game->setPlayerCount(1); // Créateur inscrit automatiquement
         $game->setCreatedAt(isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime());
@@ -126,8 +127,8 @@ class GameController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         $game->setDate(new \DateTime($data['date']));
-        $game->setLocation($data['location']);
-        $game->setLocationDetails($data['location_details'] ?? null);
+        $game->setLocation(Sanitizer::string($data['location']));
+        $game->setLocationDetails(Sanitizer::string($data['location_details'] ?? null));
         $game->setMaxPlayers($data['max_players']);
         // Ne pas éditer playerCount ici directement
 

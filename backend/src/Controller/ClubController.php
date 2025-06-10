@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use App\Utils\Sanitizer;
 
 #[Route('/api/clubs', name: 'api_club_')]
 class ClubController extends AbstractController
@@ -78,7 +79,7 @@ class ClubController extends AbstractController
         if (empty($data['name']) || empty($data['clubCaptainId'])) {
             return $this->json(['error' => 'Missing required fields'], 400);
         }
-        $name = trim($data['name']);
+        $name = Sanitizer::string($data['name']);
         if (mb_strlen($name) > 32) {
             return $this->json(['error' => 'Le nom du club ne doit pas dépasser 32 caractères.'], 400);
         }
@@ -208,7 +209,7 @@ class ClubController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['name'])) {
-            $name = trim($data['name']);
+            $name = Sanitizer::string($data['name']);
             if (mb_strlen($name) > 32) {
                 return $this->json(['error' => 'Le nom du club ne doit pas dépasser 32 caractères.'], 400);
             }

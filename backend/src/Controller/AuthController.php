@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Utils\Sanitizer;
 
 class AuthController extends AbstractController
 {
@@ -25,14 +26,17 @@ class AuthController extends AbstractController
             return $this->json(['error' => 'Email, username et password sont requis.'], Response::HTTP_BAD_REQUEST);
         }
 
-        $existing = $em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+        $email = Sanitizer::email($data['email']);
+        $username = Sanitizer::string($data['username']);
+
+        $existing = $em->getRepository(User::class)->findOneBy(['email' => $email]);
         if ($existing) {
             return $this->json(['error' => 'Email déjà utilisé.'], Response::HTTP_CONFLICT);
         }
 
         $user = new User();
-        $user->setEmail($data['email']);
-        $user->setUsername($data['username']);
+        $user->setEmail($email);
+        $user->setUsername($username);
         $user->setCreatedAt(new \DateTimeImmutable());
         $user->setRole('ROLE_USER');
         $user->setLevel('Débutant');
@@ -59,7 +63,8 @@ class AuthController extends AbstractController
             return $this->json(['error' => 'Email et mot de passe requis.'], Response::HTTP_BAD_REQUEST);
         }
 
-        $user = $em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+        $email = Sanitizer::email($data['email']);
+        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
 
         if (!$user) {
             return $this->json(['error' => 'Utilisateur non trouvé.'], Response::HTTP_UNAUTHORIZED);
