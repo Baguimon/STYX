@@ -7,7 +7,6 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Intercepteur pour les tokens (peut être utilisé + tard si tu mets l’auth JWT côté back)
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
   const publicRoutes = ['/register', '/login', '/users','/games', '/clubs'];
@@ -56,13 +55,20 @@ export const getGameById = async (id) => {
   return response.data;
 };
 
-// ----------- Ajout fonction DÉTAILS MATCH -----------
-// Alias pour l’UI, peut pointer sur la même route
 export const getGameDetails = getGameById;
 
-// ** LA BONNE MÉTHODE POUR REJOINDRE **
 export const joinGame = async (gameId, userId, team) => {
   const response = await api.post(`/games/${gameId}/join`, { userId, team });
+  return response.data;
+};
+
+export const leaveGame = async (gameId, userId) => {
+  const response = await api.post(`/games/${gameId}/leave`, { userId });
+  return response.data;
+};
+
+export const switchTeam = async (gameId, userId, team) => {
+  const response = await api.post(`/games/${gameId}/switch-team`, { userId, team });
   return response.data;
 };
 
@@ -86,7 +92,7 @@ export const getClub = async (clubId) => {
 export const getClubs = async () => {
   const response = await api.get('/clubs');
   return response.data;
-}
+};
 
 export const getClubMembers = async (clubId) => {
   const response = await api.get(`/clubs/${clubId}/members`);
@@ -119,24 +125,19 @@ export const updateClub = (clubId, data) =>
 export const kickMember = (clubId, memberId) =>
   api.post(`/clubs/${clubId}/kick-member/${memberId}`);
 
-// Récupérer les messages du club
-// Récupérer les messages
 export const getClubMessages = async (clubId) => {
   const res = await api.get(`/clubs/${clubId}/messages`);
   return res.data;
 };
 
-// Envoyer un message
 export const sendClubMessage = async (clubId, { userId, text }) => {
   const res = await api.post(`/clubs/${clubId}/messages`, { userId, text });
   return res.data;
 };
 
-// Supprimer un message
 export const deleteClubMessage = async (clubId, messageId) => {
   const res = await api.delete(`/clubs/${clubId}/messages/${messageId}`);
   return res.data;
 };
-
 
 export default api;
