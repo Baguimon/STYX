@@ -6,10 +6,24 @@ use App\Controller\AuthController;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectRepository;
+use Doctrine\ORM\EntityRepository;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+
+class TestAuthController extends AuthController
+{
+    protected function json(
+        $data,
+        int $status = 200,
+        array $headers = [],
+        array $context = []
+    ): JsonResponse {
+        return new JsonResponse($data, $status, $headers);
+    }
+}
 
 class AuthControllerTest extends TestCase
 {
@@ -21,6 +35,7 @@ class AuthControllerTest extends TestCase
         $hasher = $this->createMock(UserPasswordHasherInterface::class);
 
         $controller = new AuthController();
+        $controller = new TestAuthController();
         $response = $controller->register($request, $em, $hasher);
 
         $this->assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
@@ -32,6 +47,7 @@ class AuthControllerTest extends TestCase
         $request = new Request([], [], [], [], [], [], json_encode($payload));
 
         $repo = $this->createMock(ObjectRepository::class);
+        $repo = $this->createMock(EntityRepository::class);
         $repo->expects($this->once())
             ->method('findOneBy')
             ->with(['email' => 'a@example.com'])
@@ -43,6 +59,7 @@ class AuthControllerTest extends TestCase
         $hasher = $this->createMock(UserPasswordHasherInterface::class);
 
         $controller = new AuthController();
+        $controller = new TestAuthController();
         $response = $controller->register($request, $em, $hasher);
 
         $this->assertSame(Response::HTTP_CONFLICT, $response->getStatusCode());
@@ -54,6 +71,7 @@ class AuthControllerTest extends TestCase
         $request = new Request([], [], [], [], [], [], json_encode($payload));
 
         $repo = $this->createMock(ObjectRepository::class);
+        $repo = $this->createMock(EntityRepository::class);
         $repo->expects($this->once())
             ->method('findOneBy')
             ->with(['email' => 'a@example.com'])
@@ -70,6 +88,7 @@ class AuthControllerTest extends TestCase
             ->willReturn('hashed');
 
         $controller = new AuthController();
+        $controller = new TestAuthController();
         $response = $controller->register($request, $em, $hasher);
 
         $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());

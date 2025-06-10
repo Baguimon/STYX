@@ -8,6 +8,18 @@ use App\Repository\UserRepository;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+class TestUserController extends UserController
+{
+    protected function json(
+        $data,
+        int $status = 200,
+        array $headers = [],
+        array $context = []
+    ): JsonResponse {
+        return new JsonResponse($data, $status, $headers);
+    }
+}
+
 class UserControllerTest extends TestCase
 {
     public function testListReturnsUsers()
@@ -23,6 +35,7 @@ class UserControllerTest extends TestCase
         $repo->expects($this->once())->method('findAll')->willReturn([$user1]);
 
         $controller = new UserController();
+        $controller = new TestUserController();
         $response = $controller->list($repo);
 
         $this->assertInstanceOf(JsonResponse::class, $response);
