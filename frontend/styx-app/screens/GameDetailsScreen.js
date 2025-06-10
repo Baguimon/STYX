@@ -36,7 +36,6 @@ export default function GameDetailsScreen() {
       .finally(() => setLoading(false));
   };
 
-  // Trouve l'équipe de l'utilisateur connecté
   const myPlayer = game?.players?.find(p => p.id === userInfo.id);
   const myTeam = myPlayer?.team;
   const alreadyJoined = !!myTeam;
@@ -44,53 +43,51 @@ export default function GameDetailsScreen() {
   const team1Players = game?.players?.filter(p => p.team === 1) || [];
   const team2Players = game?.players?.filter(p => p.team === 2) || [];
 
-  // Gestion équipe pleine
   const isFull = game?.playerCount >= game?.maxPlayers;
 
-  // Fonctions d'ouverture des apps de navigation
   const openMaps = () => {
     if (!game?.location) return;
     const query = encodeURIComponent(game.location);
-    const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
-    Linking.openURL(url);
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
+
   const openWaze = () => {
     if (!game?.location) return;
     const query = encodeURIComponent(game.location);
-    const url = `https://waze.com/ul?q=${query}`;
-    Linking.openURL(url);
+    Linking.openURL(`https://waze.com/ul?q=${query}`);
   };
+
   const openCityMapper = () => {
     if (!game?.location) return;
     const query = encodeURIComponent(game.location);
-    const url = `https://citymapper.com/directions?endaddress=${query}`;
-    Linking.openURL(url);
+    Linking.openURL(`https://citymapper.com/directions?endaddress=${query}`);
   };
 
-  // Join/Leave/Switch team
   const handleJoin = async () => {
     try {
       await joinGame(gameId, userInfo.id, teamTab);
       fetchDetails();
     } catch (e) {
-      alert("Impossible de rejoindre le match !");
+      alert(`Erreur détaillée : ${e.response?.data?.error || e.message}`);
     }
   };
+
   const handleLeave = async () => {
     try {
       await leaveGame(gameId, userInfo.id);
       fetchDetails();
     } catch (e) {
-      alert("Impossible de quitter le match !");
+      alert(`Erreur détaillée : ${e.response?.data?.error || e.message}`);
     }
   };
+
   const handleSwitchTeam = async () => {
     try {
       const newTeam = myTeam === 1 ? 2 : 1;
       await switchTeam(gameId, userInfo.id, newTeam);
       fetchDetails();
     } catch (e) {
-      alert("Impossible de changer d'équipe !");
+      alert(`Erreur détaillée : ${e.response?.data?.error || e.message}`);
     }
   };
 
