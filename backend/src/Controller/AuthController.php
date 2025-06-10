@@ -52,7 +52,8 @@ class AuthController extends AbstractController
         return $this->json(['message' => 'Utilisateur créé avec succès'], Response::HTTP_CREATED);
     }
 
-    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
+    // Renamed to avoid conflict with the Symfony security firewall
+    #[Route('/api/login-custom', name: 'api_login_custom', methods: ['POST'])]
     public function login(
         Request $request,
         EntityManagerInterface $em,

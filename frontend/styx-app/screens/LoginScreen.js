@@ -2,6 +2,7 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { loginUser } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
 import styxLogo from '../assets/styx-logo.png';
@@ -24,6 +25,7 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
+      await AsyncStorage.setItem('token', data.token);
       await login({ token: data.token, user: data.user });
 
       Alert.alert('✅ Connexion réussie');

@@ -64,7 +64,10 @@ export const registerUser = async (form) => {
 };
 
 export const loginUser = async (form) => {
-  const { data } = await api.post('/login', form);
+  const { data } = await axios.post(`${API_URL}/login`, form);
+  if (data.token) {
+    await AsyncStorage.setItem('token', data.token);
+  }
   return data;
 };
 
