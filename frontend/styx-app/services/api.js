@@ -25,6 +25,15 @@ export const getUserById = async (userId) => {
   return response.data;
 };
 
+// ========== SUPPRIMER UN UTILISATEUR ==========
+
+export const deleteUser = async (userId) => {
+  // Axios renvoie l’erreur directement si erreur
+  const response = await api.delete(`/users/${userId}`);
+  return response.data; // { success: true, message: ... }
+};
+
+
 // ========== USERS ==========
 
 export const getUsers = async () => {
