@@ -284,7 +284,7 @@ export default function ClubDetailScreen({ route }) {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={90}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           style={{ flex: 1 }}
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'stretch',
     marginHorizontal: 4,
-    minHeight: 490,
+    minHeight: 450,
     marginBottom: 14,
     shadowColor: '#000',
     shadowOpacity: 0.13,
@@ -917,7 +917,7 @@ const styles = StyleSheet.create({
   },
   chatMessages: {
     minHeight: 90,
-    maxHeight: 460,
+    maxHeight: 430,
     marginBottom: 12,
     borderRadius: 12,
     backgroundColor: '#202849',
