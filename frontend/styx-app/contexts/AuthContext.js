@@ -11,7 +11,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadUser = async () => {
       const storedUser = await AsyncStorage.getItem('user');
-      if (storedUser) {
+      const storedToken = await AsyncStorage.getItem('token');
+      if (storedUser && storedToken) {
         setUserInfo(JSON.parse(storedUser));
         setIsAuthenticated(true);
       }
@@ -19,15 +20,18 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  const login = async (user) => {
-    if (!user) return;
-    await AsyncStorage.setItem('user', JSON.stringify(user));
+  const login = async ({ token, user }) => {
+    if (!token || !user) return;
+    await AsyncStorage.multiSet([
+      ['token', token],
+      ['user', JSON.stringify(user)],
+    ]);
     setUserInfo(user);
     setIsAuthenticated(true);
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('user');
+    await AsyncStorage.multiRemove(['user', 'token']);
     setUserInfo(null);
     setIsAuthenticated(false);
   };

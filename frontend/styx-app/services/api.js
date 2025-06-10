@@ -64,7 +64,8 @@ export const registerUser = async (form) => {
 };
 
 export const loginUser = async (form) => {
-  return api.post('/login', form);
+  const { data } = await api.post('/login', form);
+  return data;
 };
 
 // ========== GAMES ==========

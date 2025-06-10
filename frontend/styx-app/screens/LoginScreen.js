@@ -1,7 +1,7 @@
 // screens/LoginScreen.js
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
-import axios from 'axios';
+import { loginUser } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
 import styxLogo from '../assets/styx-logo.png';
@@ -14,20 +14,17 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      const { data } = await axios.post('https://main-bvxea6i-y25mlzc6no7vs.ch-1.platformsh.site/api/login', {
-        email,
-        password
-      });
+      const data = await loginUser({ email, password });
 
       // 👉 Log la réponse pour vérifier TOUT ce que tu reçois
       console.log('Réponse data.user:', data.user);
 
-      if (!data.user) {
+      if (!data.user || !data.token) {
         Alert.alert('Erreur', 'Réponse du serveur invalide.');
         return;
       }
 
-      await login(data.user); // <-- Tout passe ici, pas besoin de AsyncStorage manuelle
+      await login({ token: data.token, user: data.user });
 
       Alert.alert('✅ Connexion réussie');
     } catch (error) {

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -55,7 +56,8 @@ class AuthController extends AbstractController
     public function login(
         Request $request,
         EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        JWTTokenManagerInterface $jwtManager
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
@@ -74,9 +76,11 @@ class AuthController extends AbstractController
             return $this->json(['error' => 'Mot de passe incorrect.'], Response::HTTP_UNAUTHORIZED);
         }
 
-        // <-- ICI : RÉPONSE COMPLETE
+        $token = $jwtManager->create($user);
+
         return $this->json([
             'message' => 'Connexion réussie.',
+            'token' => $token,
             'user' => [
                 'id' => $user->getId(),
                 'username' => $user->getUsername(),
@@ -86,7 +90,6 @@ class AuthController extends AbstractController
                 'club' => $user->getClub() ? [
                     'id' => $user->getClub()->getId(),
                     'name' => $user->getClub()->getName(),
-                    // Ajoute ça :
                     'playerCount' => $user->getClub()->getMembers()->count(),
                 ] : null,
                 'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
