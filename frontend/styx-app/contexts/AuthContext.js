@@ -31,15 +31,18 @@ export const AuthProvider = ({ children }) => {
           setUserInfo(null);
           setIsAuthenticated(false);
         }
+
       }
     };
     loadUser();
   }, []);
 
+
   // login prend maintenant le user (profil), pas juste le token
   const login = async (user, token) => {
     if (!token || !user) return;
     await AsyncStorage.setItem('token', token);
+
     setUserInfo(user);
     setIsAuthenticated(true);
   };

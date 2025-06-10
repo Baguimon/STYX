@@ -185,6 +185,7 @@ class UserController extends AbstractController
             'poste' => $user->getPoste(),
         ]);
     }
+
     #[Route('/me', name: 'user_me', methods: ['GET'])]
     public function me(): JsonResponse
     {

@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
-import axios from 'axios';
+import { loginUser } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../contexts/AuthContext';
@@ -33,10 +34,8 @@ export default function LoginScreen({ navigation }) {
         Alert.alert('Erreur', 'Impossible de récupérer le profil utilisateur');
         return;
       }
-
       // Passe les deux ici :
       await login(user, data.token);
-
       Alert.alert('✅ Connexion réussie');
     } catch (error) {
       console.log('Erreur Axios:', error);

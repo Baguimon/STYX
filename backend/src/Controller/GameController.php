@@ -7,6 +7,7 @@ use App\Entity\GamePlayer;
 use App\Repository\GameRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Utils\Sanitizer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
@@ -98,8 +99,8 @@ class GameController extends AbstractController
 
         $game = new Game();
         $game->setDate(new \DateTime($data['date']));
-        $game->setLocation($data['location']);
-        $game->setLocationDetails($data['location_details'] ?? null);
+        $game->setLocation(Sanitizer::string($data['location']));
+        $game->setLocationDetails(Sanitizer::string($data['location_details'] ?? null));
         $game->setMaxPlayers($data['max_players']);
         $game->setPlayerCount(1); // Créateur inscrit automatiquement
         $game->setCreatedAt(isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime());
@@ -126,8 +127,8 @@ class GameController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         $game->setDate(new \DateTime($data['date']));
-        $game->setLocation($data['location']);
-        $game->setLocationDetails($data['location_details'] ?? null);
+        $game->setLocation(Sanitizer::string($data['location']));
+        $game->setLocationDetails(Sanitizer::string($data['location_details'] ?? null));
         $game->setMaxPlayers($data['max_players']);
         // Ne pas éditer playerCount ici directement
 
@@ -200,6 +201,85 @@ class GameController extends AbstractController
         $em->flush();
 
         return $this->json(['message' => 'Inscription réussie !']);
+    }
+
+    // =================== LEAVE GAME ===================
+    #[Route('/{id}/leave', name: 'game_leave', methods: ['POST'])]
+    public function leave(
+        Request $request,
+        Game $game,
+        EntityManagerInterface $em,
+        UserRepository $userRepository
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        $userId = $data['userId'] ?? null;
+        if (!$userId) {
+            return $this->json(['error' => 'userId requis'], Response::HTTP_BAD_REQUEST);
+        }
+        $user = $userRepository->find($userId);
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_NOT_FOUND);
+        }
+
+        // On cherche le GamePlayer correspondant
+        $gamePlayer = null;
+        foreach ($game->getGamePlayers() as $gp) {
+            if ($gp->getUser() === $user) {
+                $gamePlayer = $gp;
+                break;
+            }
+        }
+        if (!$gamePlayer) {
+            return $this->json(['error' => 'Vous n\'êtes pas inscrit à ce match'], Response::HTTP_NOT_FOUND);
+        }
+
+        $em->remove($gamePlayer);
+        $game->setPlayerCount(max(0, $game->getPlayerCount() - 1));
+        if ($game->getStatus() === 'fermé' && $game->getPlayerCount() < $game->getMaxPlayers()) {
+            $game->setStatus('ouvert'); // réouvre le match si une place se libère
+        }
+        $em->flush();
+
+        return $this->json(['message' => 'Vous avez quitté le match.']);
+    }
+
+    // =================== SWITCH TEAM ===================
+    #[Route('/{id}/switch-team', name: 'game_switch_team', methods: ['POST'])]
+    public function switchTeam(
+        Request $request,
+        Game $game,
+        EntityManagerInterface $em,
+        UserRepository $userRepository
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        $userId = $data['userId'] ?? null;
+        $newTeam = $data['team'] ?? null;
+
+        if (!$userId || !in_array($newTeam, [1, 2])) {
+            return $this->json(['error' => 'userId et team (1 ou 2) requis'], Response::HTTP_BAD_REQUEST);
+        }
+        $user = $userRepository->find($userId);
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_NOT_FOUND);
+        }
+
+        $gamePlayer = null;
+        foreach ($game->getGamePlayers() as $gp) {
+            if ($gp->getUser() === $user) {
+                $gamePlayer = $gp;
+                break;
+            }
+        }
+
+        if (!$gamePlayer) {
+            return $this->json(['error' => 'Vous n\'êtes pas inscrit à ce match'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Change la team
+        $gamePlayer->setTeam($newTeam);
+        $em->flush();
+
+        return $this->json(['message' => 'Équipe changée !']);
     }
 
     // ------------- NOUVEL ENDPOINT : matchs de l'utilisateur -------------

@@ -92,10 +92,25 @@ export default function ClubManageScreen() {
       await fetchClubData();
       Alert.alert('Succès', 'Nom du club mis à jour !');
     } catch (e) {
-      Alert.alert('Erreur', "Impossible de modifier le nom");
+      let msg = "Impossible de modifier le nom du club.";
+      if (e?.response?.data?.error) {
+        msg = e.response.data.error;
+        if (msg.includes('déjà utilisé')) {
+          msg = "Ce nom de club est déjà utilisé, choisis-en un autre.";
+        }
+        if (msg.includes('mot interdit') || msg.includes('insulte')) {
+          msg = "Le nom de club contient un mot interdit ou une insulte. Merci d'en choisir un autre.";
+        }
+        if (msg.includes('doit pas dépasser')) {
+          msg = "Le nom de club est trop long (32 caractères max).";
+        }
+      }
+      Alert.alert('Erreur', msg);
     }
     setLoading(false);
   };
+
+
 
   // Virer un membre
   const handleKick = async (memberId) => {

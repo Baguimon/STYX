@@ -7,7 +7,7 @@ import {
 import {
   getClub, getClubMembers, setUserPoste, leaveClub,
   getClubMessages, sendClubMessage, deleteClubMessage
-} from '../services/api'; // <-- Ajoute tes méthodes ici
+} from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
@@ -58,6 +58,22 @@ export default function ClubDetailScreen({ route }) {
   const [chatInput, setChatInput] = useState('');
   const chatScrollRef = useRef();
 
+  // States pour scroll-to-bottom button
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+
+  // RESET STATE quand user change (pour corriger le bug de club “collant”)
+  useEffect(() => {
+    setClub(null);
+    setMembers([]);
+    setSelectedTab('compo');
+    setChatMessages([]);
+    setChatLoading(false);
+    setChatInput('');
+    setIsAtBottom(true);
+    setShowScrollDown(false);
+  }, [userInfo?.id]);
+
   // Récupère les messages du chat
   const fetchChat = useCallback(async () => {
     try {
@@ -68,7 +84,7 @@ export default function ClubDetailScreen({ route }) {
     }
   }, [clubId]);
 
-  // Récupération automatique toutes les 5s quand l’onglet chat est affiché
+  // Récupération automatique toutes les 2s quand l’onglet chat est affiché
   useEffect(() => {
     if (selectedTab === 'chat') {
       fetchChat();
@@ -77,15 +93,26 @@ export default function ClubDetailScreen({ route }) {
     }
   }, [selectedTab, fetchChat]);
 
+  // Gère le scroll automatique UNIQUEMENT si l'utilisateur est déjà en bas
   useEffect(() => {
-    if (selectedTab === 'chat' && chatScrollRef.current) {
+    if (selectedTab === 'chat' && isAtBottom && chatScrollRef.current) {
       setTimeout(() => {
         if (chatScrollRef.current) {
           chatScrollRef.current.scrollToEnd({ animated: true });
         }
-      }, 400);
+      }, 200);
     }
-  }, [chatMessages, selectedTab]);
+  }, [chatMessages, selectedTab, isAtBottom]);
+
+  // Si pas de club => NoClubScreen (évite bug du club “fantôme”)
+  useEffect(() => {
+    if (!loading && !club) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'NoClubScreen' }]
+      });
+    }
+  }, [loading, club, navigation]);
 
   const handleSendMessage = async () => {
     if (chatInput.trim() === '') return;
@@ -247,11 +274,8 @@ export default function ClubDetailScreen({ route }) {
   }
 
   if (!club) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111' }}>
-        <Text style={{ color: '#fff' }}>Impossible de charger le club.</Text>
-      </View>
-    );
+    // Évite le “flicker” quand on n’a pas de club
+    return null;
   }
 
   const isUserOnField = fieldMemberIds.includes(userInfo?.id);
@@ -284,7 +308,7 @@ export default function ClubDetailScreen({ route }) {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={90}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           style={{ flex: 1 }}
@@ -442,51 +466,91 @@ export default function ClubDetailScreen({ route }) {
                 </View>
               </>
             ) : (
-              // Onglet Chat CLUB connecté à l’API (complet)
+              // Onglet Chat CLUB connecté à l’API (avec scroll down, couleurs “moi” en noir)
               <View style={styles.chatContainer}>
-                <ScrollView
-                  ref={chatScrollRef}
-                  style={styles.chatMessages}
-                  contentContainerStyle={{ paddingBottom: 12 }}
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  {chatLoading ? (
-                    <ActivityIndicator color="#00D9FF" />
-                  ) : chatMessages.length === 0 ? (
-                    <Text style={{ color: "#aaa", marginBottom: 14 }}>Aucun message pour l’instant…</Text>
-                  ) : (
-                    chatMessages.map(msg => {
-                      const isMine = msg.user.id === userInfo.id;
-                      const isCaptain = userInfo.id === captainId;
-                      return (
-                        <View
-                          key={msg.id}
-                          style={[
-                            styles.chatMsgBubble,
-                            isMine ? styles.myChatMsg : styles.otherChatMsg,
-                          ]}
-                        >
-                          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
-                            <Text style={styles.chatMsgUser}>{msg.user.username} :</Text>
-                            <Text style={{ color: "#aaa", marginLeft: 6, fontSize: 11 }}>
-                              {msg.createdAt.slice(11, 16)}
-                            </Text>
-                            {(isMine || isCaptain) && (
-                              <TouchableOpacity
-                                style={{ marginLeft: 12 }}
-                                onPress={() => handleDeleteMessage(msg.id)}
-                              >
-                                <Ionicons name="trash" size={16} color="#E33232" />
-                              </TouchableOpacity>
-                            )}
+                <View style={{ flex: 1 }}>
+                  <ScrollView
+                    ref={chatScrollRef}
+                    style={styles.chatMessages}
+                    contentContainerStyle={{ paddingBottom: 12 }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    onScroll={e => {
+                      const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+                      // Distance from bottom (en px)
+                      const paddingToBottom = 10;
+                      const isBottom =
+                        layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+
+                      setIsAtBottom(isBottom);
+                      setShowScrollDown(!isBottom);
+                    }}
+                    scrollEventThrottle={16}
+                    onContentSizeChange={() => {
+                      if (isAtBottom && chatScrollRef.current) {
+                        chatScrollRef.current.scrollToEnd({ animated: true });
+                      }
+                    }}
+                  >
+                    {chatLoading ? (
+                      <ActivityIndicator color="#00D9FF" />
+                    ) : chatMessages.length === 0 ? (
+                      <Text style={{ color: "#aaa", marginBottom: 14 }}>Aucun message pour l’instant…</Text>
+                    ) : (
+                      chatMessages.map(msg => {
+                        const isMine = msg.user.id === userInfo.id;
+                        const isCaptain = userInfo.id === captainId;
+                        return (
+                          <View
+                            key={msg.id}
+                            style={[
+                              styles.chatMsgBubble,
+                              isMine ? styles.myChatMsg : styles.otherChatMsg,
+                            ]}
+                          >
+                            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
+                              <Text style={[
+                                styles.chatMsgUser,
+                                isMine && { color: '#111' } // Pseudo noir pour toi
+                              ]}>
+                                {msg.user.username} :
+                              </Text>
+                              <Text style={{
+                                color: isMine ? "#111" : "#aaa", // Date noire pour toi
+                                marginLeft: 6,
+                                fontSize: 11,
+                              }}>
+                                {msg.createdAt.slice(11, 16)}
+                              </Text>
+                              {(isMine || isCaptain) && (
+                                <TouchableOpacity
+                                  style={{ marginLeft: 12 }}
+                                  onPress={() => handleDeleteMessage(msg.id)}
+                                >
+                                  <Ionicons name="trash" size={16} color="#E33232" />
+                                </TouchableOpacity>
+                              )}
+                            </View>
+                            <Text style={styles.chatMsgText}>{msg.text}</Text>
                           </View>
-                          <Text style={styles.chatMsgText}>{msg.text}</Text>
-                        </View>
-                      );
-                    })
+                        );
+                      })
+                    )}
+                  </ScrollView>
+                  {showScrollDown && (
+                    <TouchableOpacity
+                      style={styles.scrollToBottomBtn}
+                      onPress={() => {
+                        if (chatScrollRef.current) {
+                          chatScrollRef.current.scrollToEnd({ animated: true });
+                        }
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="arrow-down" size={22} color="#fff" />
+                    </TouchableOpacity>
                   )}
-                </ScrollView>
+                </View>
                 <View style={styles.chatInputRow}>
                   <TextInput
                     style={styles.chatInput}
@@ -907,7 +971,7 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'stretch',
     marginHorizontal: 4,
-    minHeight: 490,
+    minHeight: 450,
     marginBottom: 14,
     shadowColor: '#000',
     shadowOpacity: 0.13,
@@ -917,7 +981,7 @@ const styles = StyleSheet.create({
   },
   chatMessages: {
     minHeight: 90,
-    maxHeight: 460,
+    maxHeight: 430,
     marginBottom: 12,
     borderRadius: 12,
     backgroundColor: '#202849',
@@ -1010,5 +1074,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16.2,
     letterSpacing: 0.18,
+  },
+    scrollToBottomBtn: {
+    position: 'absolute',
+    right: 14,
+    bottom: 90, // adapte selon la hauteur de ta barre d'input
+    backgroundColor: '#000',
+    borderRadius: 22,
+    padding: 9,
+    elevation: 3,
+    zIndex: 10,
+    shadowColor: '#00D9FF',
+    shadowOpacity: 0.23,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
 });

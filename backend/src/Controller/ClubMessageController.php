@@ -8,6 +8,7 @@ use App\Repository\ClubMessageRepository;
 use App\Repository\ClubRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Utils\Sanitizer;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -75,7 +76,7 @@ class ClubMessageController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
         $userId = $data['userId'] ?? null;
-        $text = $data['text'] ?? '';
+        $text = Sanitizer::string($data['text'] ?? '');
 
         if (!$userId || !$text) return $this->json(['error' => 'Missing fields'], 400);
 
