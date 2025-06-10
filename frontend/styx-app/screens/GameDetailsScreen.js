@@ -99,7 +99,8 @@ export default function GameDetailsScreen() {
     );
   }
 
-  // Affichage principal
+  // Affichage principal inchangé
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 36 }}>
       {/* Header */}
