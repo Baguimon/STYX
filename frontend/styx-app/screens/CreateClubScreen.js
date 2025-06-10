@@ -39,15 +39,31 @@ export default function CreateClubScreen() {
       Alert.alert('Succès', 'Club créé !');
       navigation.navigate('ClubHome');
     } catch (e) {
-      Alert.alert('Erreur', "Impossible de créer le club");
+      let msg = "Impossible de créer le club";
+      if (e?.response?.data?.error) {
+        msg = e.response.data.error;
+        // Ajout d'exemples personnalisés
+        if (msg.includes('déjà utilisé')) {
+          msg = "Ce nom de club est déjà utilisé, choisis-en un autre.";
+        }
+        if (msg.includes('mot interdit') || msg.includes('insulte')) {
+          msg = "Le nom de club contient un mot interdit ou une insulte. Merci d'en choisir un autre.";
+        }
+        if (msg.includes('doit pas dépasser')) {
+          msg = "Le nom de club est trop long (32 caractères max).";
+        }
+      }
+      Alert.alert('Erreur', msg);
     }
   };
+
+
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1 }}
-      keyboardVerticalOffset={50}
+      keyboardVerticalOffset={0}
     >
       <View style={styles.container}>
         <TouchableOpacity
@@ -86,7 +102,9 @@ export default function CreateClubScreen() {
                   ]}
                   activeOpacity={0.8}
                 >
-                  <Image source={imgObj.img} style={styles.logoImage} resizeMode="contain" />
+                  <View style={styles.logoPreviewWrapper}>
+                    <Image source={imgObj.img} style={styles.logoImageZoomed} resizeMode="contain" />
+                  </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -107,7 +125,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 12,
-    paddingTop: Platform.OS === 'ios' ? 80 : 36, // grand margin top pour ne pas être collé
+    paddingTop: Platform.OS === 'ios' ? 80 : 36,
   },
   backBtn: {
     alignSelf: 'flex-start',
@@ -221,9 +239,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     elevation: 8,
   },
-  logoImage: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+  logoPreviewWrapper: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    overflow: 'hidden',
+    backgroundColor: '#222',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoImageZoomed: {
+    width: 140,
+    height: 140,
   },
 });
+

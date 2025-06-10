@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView, RefreshControl, ActivityIndicator, Modal, Pressable, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../contexts/AuthContext';
-import { getUserById, getClubMembers, getUserGames } from '../services/api';
+import { getUserById, getClubMembers, getUserGames, deleteUser } from '../services/api';
 
 const DEFAULT_AVATAR = require('../assets/player-default.png');
 const DEFAULT_CLUB = require('../assets/club-default.png');
@@ -29,7 +29,7 @@ function formatDateFR(dateStr) {
 }
 
 export default function ProfileScreen() {
-  const { userInfo } = useContext(AuthContext);
+  const { userInfo, logout } = useContext(AuthContext);
   const [freshUser, setFreshUser] = useState(null);
   const [clubMembers, setClubMembers] = useState([]);
   const [userGames, setUserGames] = useState([]);
@@ -57,7 +57,6 @@ export default function ProfileScreen() {
       // Récupère les matchs à venir
       try {
         const games = await getUserGames(userInfo.id);
-        // Optionnel : Filtre seulement les matchs à venir (date future)
         const now = new Date();
         setUserGames(
           Array.isArray(games)
@@ -83,15 +82,34 @@ export default function ProfileScreen() {
     setRefreshing(false);
   }, [fetchUserAndClub]);
 
-  // Overlay actions
-  const handleEditAccount = () => {
-    setModalVisible(false);
-    Alert.alert('✏️ Modifier', 'Fonction à implémenter.');
-  };
+  // --------- SUPPRESSION COMPTE ---------
   const handleDeleteAccount = () => {
     setModalVisible(false);
-    Alert.alert('❌ Supprimer', 'Fonction à implémenter.');
+    Alert.alert(
+      'Suppression du compte',
+      'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteUser(freshUser.id);
+              logout();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'IntroScreen' }],
+              });
+            } catch (e) {
+              Alert.alert('Erreur', e.message || "Impossible de supprimer le compte.");
+            }
+          }
+        }
+      ]
+    );
   };
+
 
   if (loading) {
     return (
@@ -125,7 +143,6 @@ export default function ProfileScreen() {
   if (!clubName) clubName = '---';
   const nbClubMembers = clubMembers?.length ?? '---';
 
-  // --- Section des matchs à venir (max 3 + bouton voir plus)
   const maxGamesDisplay = 3;
 
   return (
@@ -254,9 +271,6 @@ export default function ProfileScreen() {
         >
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Gérer mon compte</Text>
-            <TouchableOpacity style={styles.modalBtn} onPress={handleEditAccount}>
-              <Text style={styles.modalBtnText}>Modifier le compte</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#E33232' }]} onPress={handleDeleteAccount}>
               <Text style={[styles.modalBtnText, { color: '#fff' }]}>Supprimer le compte</Text>
             </TouchableOpacity>
