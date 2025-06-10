@@ -39,9 +39,25 @@ export default function CreateClubScreen() {
       Alert.alert('Succès', 'Club créé !');
       navigation.navigate('ClubHome');
     } catch (e) {
-      Alert.alert('Erreur', "Impossible de créer le club");
+      let msg = "Impossible de créer le club";
+      if (e?.response?.data?.error) {
+        msg = e.response.data.error;
+        // Ajout d'exemples personnalisés
+        if (msg.includes('déjà utilisé')) {
+          msg = "Ce nom de club est déjà utilisé, choisis-en un autre.";
+        }
+        if (msg.includes('mot interdit') || msg.includes('insulte')) {
+          msg = "Le nom de club contient un mot interdit ou une insulte. Merci d'en choisir un autre.";
+        }
+        if (msg.includes('doit pas dépasser')) {
+          msg = "Le nom de club est trop long (32 caractères max).";
+        }
+      }
+      Alert.alert('Erreur', msg);
     }
   };
+
+
 
   return (
     <KeyboardAvoidingView
