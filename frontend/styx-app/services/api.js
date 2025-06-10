@@ -29,7 +29,7 @@ const fetchCsrfToken = async () => {
 // Intercepteur pour les tokens (peut être utilisé + tard si tu mets l’auth JWT côté back)
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
-  const publicRoutes = ['/register', '/login-custom', '/users', '/games', '/clubs'];
+  const publicRoutes = ['/register', '/login', '/users', '/games', '/clubs'];
   const isPublic = publicRoutes.some(route => config.url.includes(route));
 
   if (token && !isPublic) {
@@ -64,7 +64,7 @@ export const registerUser = async (form) => {
 };
 
 export const loginUser = async (form) => {
-  const { data } = await api.post('/login-custom', form);
+  const { data } = await api.post('/login', form);
   if (data.token) {
     await AsyncStorage.setItem('token', data.token);
   }

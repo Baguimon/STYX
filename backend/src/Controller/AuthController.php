@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -51,50 +50,5 @@ class AuthController extends AbstractController
 
         return $this->json(['message' => 'Utilisateur créé avec succès'], Response::HTTP_CREATED);
     }
-
-    // Renamed to avoid conflict with the Symfony security firewall
-    #[Route('/api/login-custom', name: 'api_login_custom', methods: ['POST'])]
-    public function login(
-        Request $request,
-        EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher,
-        JWTTokenManagerInterface $jwtManager
-    ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-
-        if (!isset($data['email'], $data['password'])) {
-            return $this->json(['error' => 'Email et mot de passe requis.'], Response::HTTP_BAD_REQUEST);
-        }
-
-        $email = Sanitizer::email($data['email']);
-        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
-
-        if (!$user) {
-            return $this->json(['error' => 'Utilisateur non trouvé.'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        if (!$passwordHasher->isPasswordValid($user, $data['password'])) {
-            return $this->json(['error' => 'Mot de passe incorrect.'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        $token = $jwtManager->create($user);
-
-        return $this->json([
-            'message' => 'Connexion réussie.',
-            'token' => $token,
-            'user' => [
-                'id' => $user->getId(),
-                'username' => $user->getUsername(),
-                'email' => $user->getEmail(),
-                'level' => $user->getLevel(),
-                'poste' => $user->getPoste(),
-                'club' => $user->getClub() ? [
-                    'id' => $user->getClub()->getId(),
-                    'name' => $user->getClub()->getName(),
-                    'playerCount' => $user->getClub()->getMembers()->count(),
-                ] : null,
-                'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
-            ]
-        ]);
-    }
+    
 }
