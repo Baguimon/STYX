@@ -7,25 +7,6 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-let csrfToken = null;
-
-const fetchCsrfToken = async () => {
-  if (csrfToken) return csrfToken;
-  try {
-    const saved = await AsyncStorage.getItem('csrfToken');
-    if (saved) {
-      csrfToken = saved;
-    } else {
-      const response = await axios.get(`${API_URL}/csrf-token`);
-      csrfToken = response.data.token;
-      await AsyncStorage.setItem('csrfToken', csrfToken);
-    }
-  } catch (err) {
-    console.error('CSRF token fetch error', err);
-  }
-  return csrfToken;
-};
-
 // Intercepteur pour les tokens (peut être utilisé + tard si tu mets l’auth JWT côté back)
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
@@ -36,12 +17,7 @@ api.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  if (!['get', 'head', 'options'].includes(config.method)) {
-    const csrf = await fetchCsrfToken();
-    if (csrf) {
-      config.headers['X-CSRF-TOKEN'] = csrf;
-    }
-  }
+  // No CSRF protection needed
 
   return config;
 });
