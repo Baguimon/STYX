@@ -9,7 +9,7 @@ const api = axios.create({
 
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
-  const publicRoutes = ['/register', '/login', '/users','/games', '/clubs'];
+  const publicRoutes = ['/register', '/login', '/users', '/games', '/clubs'];
   const isPublic = publicRoutes.some(route => config.url.includes(route));
 
   if (token && !isPublic) {

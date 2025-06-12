@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use App\Utils\Sanitizer;
 
 #[Route('/api/clubs', name: 'api_club_')]
 class ClubController extends AbstractController
@@ -78,10 +79,29 @@ class ClubController extends AbstractController
         if (empty($data['name']) || empty($data['clubCaptainId'])) {
             return $this->json(['error' => 'Missing required fields'], 400);
         }
-        $name = trim($data['name']);
+        $name = Sanitizer::string($data['name']);
         if (mb_strlen($name) > 32) {
             return $this->json(['error' => 'Le nom du club ne doit pas dépasser 32 caractères.'], 400);
         }
+
+        // --- Interdire nom déjà utilisé ---
+        $existingClub = $em->getRepository(Club::class)->findOneBy(['name' => $name]);
+        if ($existingClub) {
+            return $this->json(['error' => "Ce nom de club existe déjà."], 400);
+        }
+
+        // --- Interdire insultes/mots interdits ---
+        $bannedWords = [
+            'pute', 'merde', 'connard', 'enculé', 'fdp', 'batard', 'ntm', 'pd', 'tg', 'salope',
+            'fuck', 'shit', 'asshole', 'bitch', 'slut', 'putain', 'chier'
+            // Ajoute ici tous les mots à bloquer...
+        ];
+        foreach ($bannedWords as $badWord) {
+            if (stripos($name, $badWord) !== false) {
+                return $this->json(['error' => "Le nom du club contient un mot interdit."], 400);
+            }
+        }
+
         $captain = $userRepository->find($data['clubCaptainId']);
         if (!$captain) {
             return $this->json(['error' => 'Club captain not found'], 404);
@@ -128,6 +148,7 @@ class ClubController extends AbstractController
             'image' => $club->getImage(),
         ]);
     }
+
 
     #[Route('/{clubId}/set-poste/{userId}', name: 'set_user_poste', methods: ['POST'])]
     public function setUserPoste(
@@ -208,9 +229,25 @@ class ClubController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['name'])) {
-            $name = trim($data['name']);
+            $name = Sanitizer::string($data['name']);
             if (mb_strlen($name) > 32) {
                 return $this->json(['error' => 'Le nom du club ne doit pas dépasser 32 caractères.'], 400);
+            }
+            // --- Interdire nom déjà utilisé (hors celui du club actuel) ---
+            $existingClub = $em->getRepository(Club::class)->findOneBy(['name' => $name]);
+            if ($existingClub && $existingClub->getId() !== $club->getId()) {
+                return $this->json(['error' => "Ce nom de club existe déjà."], 400);
+            }
+            // --- Interdire insultes/mots interdits ---
+            $bannedWords = [
+                'pute', 'merde', 'connard', 'enculé', 'fdp', 'batard', 'ntm', 'pd', 'tg', 'salope',
+                'fuck', 'shit', 'asshole', 'bitch', 'slut', 'putain', 'chier'
+                // Ajoute ici tous les mots à bloquer...
+            ];
+            foreach ($bannedWords as $badWord) {
+                if (stripos($name, $badWord) !== false) {
+                    return $this->json(['error' => "Le nom du club contient un mot interdit."], 400);
+                }
             }
             $club->setName($name);
         }
@@ -243,6 +280,7 @@ class ClubController extends AbstractController
             ]
         ]);
     }
+
 
     #[Route('/{id}/upload-logo', name: 'api_club_upload_club_logo', methods: ['POST'])]
     public function uploadLogo(Request $request, Club $club, EntityManagerInterface $em): JsonResponse

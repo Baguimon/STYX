@@ -173,10 +173,13 @@ export default function GameDetailsScreen() {
     if (!game?.location) return;
     const query = encodeURIComponent(game.location);
     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
+
   const openWaze = () => {
     if (!game?.location) return;
     const query = encodeURIComponent(game.location);
+    Linking.openURL(`https://waze.com/ul?q=${query}`);
     Linking.openURL(`https://waze.com/ul?q=${query}`);
   };
   const openPlan = () => {
@@ -193,10 +196,12 @@ export default function GameDetailsScreen() {
     try { await joinGame(gameId, userInfo.id, teamTab); fetchDetails(); }
     catch (e) { alert(`Erreur détaillée : ${e.response?.data?.error || e.message}`); }
   };
+
   const handleLeave = async () => {
     try { await leaveGame(gameId, userInfo.id); fetchDetails(); }
     catch (e) { alert(`Erreur détaillée : ${e.response?.data?.error || e.message}`); }
   };
+
   const handleSwitchTeam = async () => {
     try { const newTeam = myTeam === 1 ? 2 : 1; await switchTeam(gameId, userInfo.id, newTeam); fetchDetails(); }
     catch (e) { alert(`Erreur détaillée : ${e.response?.data?.error || e.message}`); }
@@ -218,6 +223,7 @@ export default function GameDetailsScreen() {
     await fetchDetails();
     setRefreshing(false);
   };
+
 
   if (loading || !game) {
     return (
