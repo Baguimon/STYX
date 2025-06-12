@@ -271,9 +271,27 @@ export default function ProfileScreen() {
         >
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Gérer mon compte</Text>
-            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#E33232' }]} onPress={handleDeleteAccount}>
+            
+            {/* Bouton admin visible seulement pour les admins */}
+            {freshUser?.role === 'ROLE_ADMIN' && (
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: '#FFA500' }]}
+                onPress={() => {
+                  setModalVisible(false);
+                  navigation.navigate('AdminScreen'); // Tu dois avoir déclaré cette page dans ta navigation
+                }}
+              >
+                <Text style={[styles.modalBtnText, { color: '#111' }]}>Admin Page</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: '#E33232' }]}
+              onPress={handleDeleteAccount}
+            >
               <Text style={[styles.modalBtnText, { color: '#fff' }]}>Supprimer le compte</Text>
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.modalCancel} onPress={() => setModalVisible(false)}>
               <Text style={styles.modalCancelText}>Annuler</Text>
             </TouchableOpacity>

@@ -38,7 +38,7 @@ class AuthController extends AbstractController
         $user->setEmail($email);
         $user->setUsername($username);
         $user->setCreatedAt(new \DateTimeImmutable());
-        $user->setRole('ROLE_USER');
+        $user->setRoles(['ROLE_USER']); // <- c'est un tableau maintenant !
         $user->setLevel('Débutant');
         $user->setClub(null);
 
@@ -81,12 +81,12 @@ class AuthController extends AbstractController
                 'id' => $user->getId(),
                 'username' => $user->getUsername(),
                 'email' => $user->getEmail(),
+                'roles' => $user->getRoles(), // <- c'est un tableau !
                 'level' => $user->getLevel(),
                 'poste' => $user->getPoste(),
                 'club' => $user->getClub() ? [
                     'id' => $user->getClub()->getId(),
                     'name' => $user->getClub()->getName(),
-                    // Ajoute ça :
                     'playerCount' => $user->getClub()->getMembers()->count(),
                 ] : null,
                 'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),

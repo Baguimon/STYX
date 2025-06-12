@@ -34,8 +34,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToOne(targetEntity: Club::class, inversedBy: "members")]
     private ?Club $club = null;
 
-    #[ORM\Column(length: 100)]
-    private ?string $role = null;
+    #[ORM\Column(type: 'json')]
+    private array $roles = [];
 
     #[ORM\Column(length: 100)]
     private ?string $level = null;
@@ -115,16 +115,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getRole(): ?string
+    public function getRoles(): array
     {
-        return $this->role;
+        $roles = $this->roles;
+        if (!in_array('ROLE_USER', $roles)) {
+            $roles[] = 'ROLE_USER';
+        }
+        return array_unique($roles);
     }
 
-    public function setRole(string $role): static
+    public function setRoles(array $roles): static
     {
-        $this->role = $role;
+        $this->roles = $roles;
         return $this;
     }
+
+
 
     public function getLevel(): ?string
     {
@@ -138,11 +144,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     // ---- Partie pour l'interface UserInterface ----
-
-    public function getRoles(): array
-    {
-        return [$this->role ?? 'ROLE_USER'];
-    }
 
     public function getUserIdentifier(): string
     {

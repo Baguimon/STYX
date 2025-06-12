@@ -6,7 +6,7 @@ import HomeScreen from '../screens/HomeScreen';
 import GameSearchScreen from '../screens/GameSearchScreen'; 
 import CreateGameScreen from '../screens/CreateGameScreen'; 
 import ClubStackNavigator from '../navigation/ClubStackNavigator';
-import ProfileScreen from '../screens/ProfileScreen';
+import ProfileStackNavigator from './ProfileStackNavigator';
 
 // images
 import HomeIcon from '../assets/home-icon.png';
@@ -105,7 +105,7 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Profil"
-        component={ProfileScreen}
+        component={ProfileStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => <CustomTabBarIcon image={ProfileIcon} focused={focused} />,
         }}

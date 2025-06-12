@@ -25,7 +25,7 @@ class UserController extends AbstractController
                 'username' => $user->getUsername(),
                 'email' => $user->getEmail(),
                 'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
-                'role' => $user->getRole(),
+                'roles' => $user->getRoles(), // <- note le S
                 'level' => $user->getLevel(),
                 'clubId' => $user->getClub()?->getId(),
             ];
@@ -103,7 +103,6 @@ class UserController extends AbstractController
                 return $this->json(['success' => true, 'message' => 'Club supprimé car plus aucun membre.']);
             } else {
                 // Il reste des membres : transférer le capitanat
-                // --- Option 1 : automatique (au plus ancien) ---
                 usort($remainingMembers, fn($a, $b) => $a->getCreatedAt() <=> $b->getCreatedAt());
                 $newCaptain = $remainingMembers[0];
 
@@ -130,7 +129,6 @@ class UserController extends AbstractController
         return $this->json(['success' => true]);
     }
 
-
     // ------- LISTE DES MATCHS REJOINTS PAR L'UTILISATEUR -------
     #[Route('/users/{id}/games', name: 'user_games', methods: ['GET'])]
     public function getUserGames($id, UserRepository $userRepository): JsonResponse
@@ -140,7 +138,6 @@ class UserController extends AbstractController
             return $this->json(['error' => 'User not found'], 404);
         }
 
-        // Parcours tous les GamePlayers liés à l'utilisateur
         $matches = [];
         foreach ($user->getGamePlayers() as $gp) {
             $game = $gp->getGame();
@@ -176,15 +173,16 @@ class UserController extends AbstractController
             'username' => $user->getUsername(),
             'email' => $user->getEmail(),
             'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
-            'role' => $user->getRole(),
+            'roles' => $user->getRoles(),
             'level' => $user->getLevel(),
             'clubId' => $club?->getId(),
             'clubName' => $club ? $club->getName() : null,
             'clubMembersCount' => $club ? $club->getMembers()->count() : 0,
-            'clubImage' => $club ? $club->getImage() : null, // <--- AJOUTE CETTE LIGNE
+            'clubImage' => $club ? $club->getImage() : null,
             'poste' => $user->getPoste(),
         ]);
     }
+
     #[Route('/users/{id}', name: 'user_delete', methods: ['DELETE'])]
     public function deleteUser(
         $id,
@@ -195,12 +193,9 @@ class UserController extends AbstractController
         if (!$user) {
             return $this->json(['error' => 'User not found'], 404);
         }
-        // Tu peux ajouter un contrôle pour empêcher de supprimer un admin, etc.
-
         $em->remove($user);
         $em->flush();
 
         return $this->json(['success' => true, 'message' => 'Compte supprimé']);
     }
-
 }

@@ -150,4 +150,25 @@ export const deleteClubMessage = async (clubId, messageId) => {
   return res.data;
 };
 
+export const deleteClub = async (clubId) => {
+  const response = await api.delete(`/clubs/${clubId}`);
+  return response.data;
+};
+
+export const deleteGame = async (gameId) => {
+  const response = await api.delete(`/games/${gameId}`);
+  return response.data;
+};
+
+export const updateUser = async (userId, data) => {
+  const response = await api.patch(`/users/${userId}`, data);
+  return response.data;
+};
+
+
+export const updateGame = async (gameId, data) => {
+  const response = await api.patch(`/games/${gameId}`, data);
+  return response.data;
+};
+
 export default api;
