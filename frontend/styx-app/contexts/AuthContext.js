@@ -1,6 +1,7 @@
 // AuthContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUserById } from '../services/api'; // Ajoute cette ligne !
 
 export const AuthContext = createContext();
 
@@ -32,8 +33,29 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  // AJOUTE CECI :
+  const refreshUserInfo = async () => {
+    try {
+      if (!userInfo?.id) return;
+      const freshUser = await getUserById(userInfo.id);
+      setUserInfo(freshUser);
+      await AsyncStorage.setItem('user', JSON.stringify(freshUser));
+    } catch (e) {
+      // Optionnel : tu peux logout ici si tu veux gérer une erreur grave
+      console.log('Erreur refreshUserInfo:', e);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userInfo, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        userInfo,
+        login,
+        logout,
+        refreshUserInfo // <- expose la fonction ici !
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

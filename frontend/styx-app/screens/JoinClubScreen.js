@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Modal, Pressable, ScrollView, Image } from 'react-native';
 import { getClubs, joinClub, getClubMembers, getClub } from '../services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +15,7 @@ export default function JoinClubScreen() {
   const [overlayLoading, setOverlayLoading] = useState(false);
 
   const navigation = useNavigation();
-  const { userInfo } = useContext(AuthContext);
+  const { userInfo, refreshUserInfo } = useContext(AuthContext);
 
   if (userInfo && userInfo.clubId) {
     return (
@@ -54,9 +53,17 @@ export default function JoinClubScreen() {
   );
 
   const handleJoin = async (clubId) => {
+    const userId = userInfo?.id;
+    if (!userId) {
+      Alert.alert("Erreur", "Utilisateur non identifié.");
+      return;
+    }
     try {
-      const userId = await AsyncStorage.getItem('userId');
       await joinClub(userId, clubId);
+      // <<=== AJOUTE CE REFRESH
+      if (typeof refreshUserInfo === "function") {
+        await refreshUserInfo(); // récupère les nouvelles infos utilisateur depuis le backend
+      }
       Alert.alert('Succès', 'Tu as rejoint le club !');
       navigation.reset({ index: 0, routes: [{ name: 'ClubHome' }] });
     } catch (e) {
@@ -193,6 +200,7 @@ export default function JoinClubScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

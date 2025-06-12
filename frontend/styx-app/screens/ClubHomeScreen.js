@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { getUserClub } from '../services/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthContext } from '../contexts/AuthContext';
 
 export default function ClubHomeScreen() {
   const navigation = useNavigation();
+  const { userInfo, refreshUserInfo } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -14,7 +15,13 @@ export default function ClubHomeScreen() {
       const fetchClub = async () => {
         setLoading(true);
         try {
-          const userId = await AsyncStorage.getItem('userId');
+          // REFRESH userInfo pour être certain d'avoir la version la plus fraîche (optionnel si déjà fait avant)
+          if (typeof refreshUserInfo === "function") {
+            await refreshUserInfo();
+          }
+          const userId = userInfo?.id;
+          if (!userId) throw new Error("Utilisateur non identifié");
+
           const clubData = await getUserClub(userId);
           if (isActive) {
             if (clubData && clubData.id) {
@@ -42,7 +49,7 @@ export default function ClubHomeScreen() {
       };
       fetchClub();
       return () => { isActive = false; };
-    }, [])
+    }, [userInfo?.id]) // <-- dépend de l'id utilisateur à jour
   );
 
   if (loading) {

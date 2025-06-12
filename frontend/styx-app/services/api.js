@@ -7,6 +7,8 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
+
+// Intercepteur pour les tokens (peut être utilisé + tard si tu mets l’auth JWT côté back)
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
   const publicRoutes = ['/register', '/login', '/users', '/games', '/clubs'];
@@ -15,6 +17,8 @@ api.interceptors.request.use(async (config) => {
   if (token && !isPublic) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // No CSRF protection needed
   return config;
 });
 
@@ -23,6 +27,12 @@ export const getUserById = async (userId) => {
   const response = await api.get(`/users/${userId}`);
   return response.data;
 };
+
+export const deleteUser = async (userId) => {
+  const response = await api.delete(`/users/${userId}`);
+  return response.data;
+};
+
 
 // ========== USERS ==========
 
