@@ -99,7 +99,7 @@ export default function ProfileScreen() {
               logout();
               navigation.reset({
                 index: 0,
-                routes: [{ name: 'IntroScreen' }],
+                routes: [{ name: 'Intro' }],
               });
             } catch (e) {
               Alert.alert('Erreur', e.message || "Impossible de supprimer le compte.");
