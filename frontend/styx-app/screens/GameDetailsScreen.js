@@ -21,7 +21,6 @@ import planLogo from '../assets/plan-logo.png';
 import wazeLogo from '../assets/waze-logo.png';
 
 import { Share } from 'react-native';
-
 import { getGameById, joinGame, leaveGame, switchTeam } from '../services/api';
 
 const TEAM_COLORS = {
@@ -30,11 +29,12 @@ const TEAM_COLORS = {
 };
 
 // ----------- AnimatedButton ----------- //
-function AnimatedButton({ onPress, children, style, animateOnPress }) {
+function AnimatedButton({ onPress, children, style, animateOnPress, disabled }) {
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
+    opacity: disabled ? 0.5 : 1,
     transform: [
       { scale: scale.value },
       animateOnPress && { rotate: `${rotation.value}deg` }
@@ -45,9 +45,11 @@ function AnimatedButton({ onPress, children, style, animateOnPress }) {
     <Animated.View style={animatedStyle}>
       <TouchableOpacity
         activeOpacity={0.76}
-        onPressIn={() => { scale.value = withTiming(0.92); }}
-        onPressOut={() => { scale.value = withTiming(1); }}
+        disabled={disabled}
+        onPressIn={() => { if (!disabled) scale.value = withTiming(0.92); }}
+        onPressOut={() => { if (!disabled) scale.value = withTiming(1); }}
         onPress={() => {
+          if (disabled) return;
           if (animateOnPress) {
             rotation.value = 0;
             rotation.value = withTiming(360, { duration: 440 }, () => {
@@ -139,8 +141,14 @@ export default function GameDetailsScreen() {
   const [coords, setCoords] = useState(null);
   const [coordsLoading, setCoordsLoading] = useState(false);
 
+  // -------- Adresse affichée (précise > ville) et ville pour la map --------
+  const displayAddress = game?.location_details?.trim() || game?.location?.trim() || "";
+  const displayCity = game?.location?.trim() || "";
+
   useEffect(() => { fetchDetails(); }, []);
-  useEffect(() => { if (game?.location) fetchCoords(game.location); }, [game?.location]);
+  // Pour la MAP, on géocode toujours la ville uniquement !
+  useEffect(() => { if (displayCity) fetchCoords(displayCity); }, [displayCity]);
+
   const fetchDetails = async () => {
     setLoading(true);
     try {
@@ -169,22 +177,27 @@ export default function GameDetailsScreen() {
   const team2Players = game?.players?.filter(p => p.team === 2) || [];
   const isFull = game?.playerCount >= game?.maxPlayers;
 
+  // -------- LIMITES PAR ÉQUIPE --------
+  const teamMax = Math.floor((game?.maxPlayers || 2) / 2) || 1;
+  const team1Full = team1Players.length >= teamMax;
+  const team2Full = team2Players.length >= teamMax;
+  const selectedTeamFull = teamTab === 1 ? team1Full : team2Full;
+
+  // --- Ouvre Maps, Plan, Waze sur l'adresse exacte (ou ville) ---
   const openMaps = () => {
-    if (!game?.location) return;
-    const query = encodeURIComponent(game.location);
-    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
+    if (!displayAddress) return;
+    const query = encodeURIComponent(displayAddress);
     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
   const openWaze = () => {
-    if (!game?.location) return;
-    const query = encodeURIComponent(game.location);
-    Linking.openURL(`https://waze.com/ul?q=${query}`);
+    if (!displayAddress) return;
+    const query = encodeURIComponent(displayAddress);
     Linking.openURL(`https://waze.com/ul?q=${query}`);
   };
   const openPlan = () => {
-    if (!game?.location) return;
-    const query = encodeURIComponent(game.location);
+    if (!displayAddress) return;
+    const query = encodeURIComponent(displayAddress);
     Linking.openURL(`http://maps.apple.com/?q=${query}`);
   };
 
@@ -203,14 +216,23 @@ export default function GameDetailsScreen() {
   };
 
   const handleSwitchTeam = async () => {
-    try { const newTeam = myTeam === 1 ? 2 : 1; await switchTeam(gameId, userInfo.id, newTeam); fetchDetails(); }
+    try {
+      const newTeam = myTeam === 1 ? 2 : 1;
+      // On bloque le switch si l'équipe est full
+      if ((newTeam === 1 && team1Full) || (newTeam === 2 && team2Full)) {
+        alert("Impossible de rejoindre cette équipe : équipe complète !");
+        return;
+      }
+      await switchTeam(gameId, userInfo.id, newTeam); fetchDetails();
+    }
     catch (e) { alert(`Erreur détaillée : ${e.response?.data?.error || e.message}`); }
   };
 
+  // --- Partage avec adresse exacte ---
   const handleShareInvite = async () => {
     try {
       await Share.share({
-        message: `⚽️ Rejoins notre match sur Styx !\nLieu : ${game.location}\nDate : ${formatShortDate(game.date)}\n\nId du match : ${gameId}\nOu lien : https://styxapp.com/match/${gameId}`
+        message: `⚽️ Rejoins notre match sur Styx !\nLieu : ${displayAddress}\nDate : ${formatShortDate(game.date)}\n\nId du match : ${gameId}\nOu lien : https://styxapp.com/match/${gameId}`
       });
     } catch (error) {
       alert('Erreur lors du partage du lien');
@@ -223,7 +245,6 @@ export default function GameDetailsScreen() {
     await fetchDetails();
     setRefreshing(false);
   };
-
 
   if (loading || !game) {
     return (
@@ -251,7 +272,7 @@ export default function GameDetailsScreen() {
         />
       }
     >
-      {/* Header: flèche + logo sur la même ligne */}
+      {/* Header */}
       <View style={styles.headerRow}>
         <AnimatedButton onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Image source={require('../assets/back-arrow.png')} style={{ width: 22, height: 22, tintColor: '#fff' }} />
@@ -262,7 +283,7 @@ export default function GameDetailsScreen() {
         <View style={{ width: 28 }} />
       </View>
 
-      {/* Sous-header: date + joueurs sur la même ligne */}
+      {/* Sous-header */}
       <View style={styles.subHeaderRow}>
         <Text style={styles.topBarText}>Date: {formatShortDate(game.date)}</Text>
         <Text style={styles.headerRight}>
@@ -270,9 +291,9 @@ export default function GameDetailsScreen() {
         </Text>
       </View>
 
-      {/* Localisation */}
+      {/* ----------- Localisation ----------- */}
       <View style={styles.locationBox}>
-        <Text style={styles.locationTextBig}>{game.location}</Text>
+        <Text style={styles.locationTextBig}>{displayAddress}</Text>
         <View style={styles.locationBtns}>
           <AnimatedButton onPress={openMaps} style={styles.locAppBtn}>
             <Image source={mapsLogo} style={styles.locLogo} />
@@ -291,18 +312,27 @@ export default function GameDetailsScreen() {
         ) : (
           <Text style={{ color: '#bbb', marginTop: 12 }}>Carte non disponible</Text>
         )}
+        {(game.location_details && game.location && game.location_details.trim() !== game.location.trim()) && (
+          <Text style={styles.locationCityText}>
+            {game.location}
+          </Text>
+        )}
       </View>
 
-      {/* Joueurs + Invite */}
+      {/* ----------- Bloc Joueurs / Invite ----------- */}
       <View style={styles.rowBetween}>
         <Text style={styles.sectionTitle}>Joueurs</Text>
-        <AnimatedButton style={styles.inviteBtnRow} onPress={handleShareInvite}>
+        <AnimatedButton
+          style={styles.inviteBtnRow}
+          onPress={handleShareInvite}
+          disabled={isFull}
+        >
           <Image source={require('../assets/person-add.png')} style={styles.inviteIcon} />
-          <Text style={styles.inviteBtnTxt}>Inviter</Text>
+          <Text style={styles.inviteBtnTxt}>{isFull ? "Match plein" : "Inviter"}</Text>
         </AnimatedButton>
       </View>
 
-      {/* Onglets équipes */}
+      {/* ----------- Équipes : Tabs + message équipe complète ----------- */}
       <View style={styles.teamsTabs}>
         <AnimatedButton
           style={[styles.teamTab, teamTab === 1 && styles.teamTabActiveBlue]}
@@ -317,8 +347,9 @@ export default function GameDetailsScreen() {
           <Text style={[styles.teamTabText, teamTab === 2 && { color: TEAM_COLORS[2] }]}>Équipe 2</Text>
         </AnimatedButton>
       </View>
+      
 
-      {/* Liste joueurs (fade/slide in) */}
+      {/* ----------- Liste joueurs ----------- */}
       <View>
         {(teamTab === 1 ? team1Players : team2Players).length === 0 && (
           <Text style={styles.noPlayerTxt}>Aucun joueur dans cette équipe.</Text>
@@ -356,12 +387,22 @@ export default function GameDetailsScreen() {
         })}
       </View>
 
-      {/* Actions bas */}
+      {/* ----------- Actions bas ----------- */}
       <View style={styles.actionsRow}>
         {alreadyJoined && (
           <>
-            <AnimatedButton style={styles.switchBtn} onPress={handleSwitchTeam}>
-              <Text style={styles.switchBtnText}>Changer d'équipe</Text>
+            <AnimatedButton
+              style={styles.switchBtn}
+              onPress={handleSwitchTeam}
+              disabled={myTeam === 1 ? team2Full : team1Full}
+            >
+              <Text style={styles.switchBtnText}>
+                {myTeam === 1 && team2Full
+                  ? "Équipe 2 complète"
+                  : myTeam === 2 && team1Full
+                  ? "Équipe 1 complète"
+                  : "Changer d'équipe"}
+              </Text>
             </AnimatedButton>
             <AnimatedButton style={styles.quitBtn} onPress={handleLeave}>
               <Text style={styles.quitBtnText}>Quitter le match</Text>
@@ -369,8 +410,14 @@ export default function GameDetailsScreen() {
           </>
         )}
         {!alreadyJoined && !isFull && (
-          <AnimatedButton style={[styles.joinBtn, { backgroundColor: TEAM_COLORS[teamTab] }]} onPress={handleJoin}>
-            <Text style={styles.joinBtnText}>Rejoindre {teamTab === 1 ? "Équipe 1" : "Équipe 2"}</Text>
+          <AnimatedButton
+            style={[styles.joinBtn, { backgroundColor: TEAM_COLORS[teamTab] }]}
+            onPress={handleJoin}
+            disabled={selectedTeamFull}
+          >
+            <Text style={styles.joinBtnText}>
+              {selectedTeamFull ? "Équipe complète" : `Rejoindre ${teamTab === 1 ? "Équipe 1" : "Équipe 2"}`}
+            </Text>
           </AnimatedButton>
         )}
       </View>
@@ -385,8 +432,15 @@ function formatShortDate(dateStr) {
   return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
 }
 
+// ----------- STYLES SÉPARÉS PAR SECTIONS ----------- //
 const styles = StyleSheet.create({
+  // --- Main/Containers
   container: { flex: 1, backgroundColor: "#14171a" },
+  loadingScreen: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#14171a' },
+  loadingLogo: { width: 160, height: 80, resizeMode: 'contain', marginBottom: 8 },
+  loadingText: { color: '#00D9FF', fontWeight: 'bold', marginTop: 18, fontSize: 19, letterSpacing: 1.2 },
+
+  // --- Header
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -406,40 +460,70 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginRight: 5,
   },
-  subHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 10, paddingBottom: 10, backgroundColor: "#14171a" },
+  subHeaderRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 18, paddingTop: 10, paddingBottom: 10, backgroundColor: "#14171a"
+  },
   headerRight: { color: "#fff", fontSize: 17, fontWeight: 'bold' },
   topBarText: { color: "#fff", fontWeight: "bold", fontSize: 17 },
-  sectionTitle: { color: "#fff", fontWeight: "bold", fontSize: 25, marginTop: 22, marginBottom: 9, marginLeft: 14 },
-  locationBox: { backgroundColor: "#232834", borderRadius: 25, marginHorizontal: 16, marginBottom: 12, padding: 18, alignItems: "center", marginTop: 25 },
+
+  // --- Localisation (map, bouton, ville)
+  locationBox: {
+    backgroundColor: "#232834", borderRadius: 25,
+    marginHorizontal: 16, marginBottom: 5, padding: 18, alignItems: "center", marginTop: 25
+  },
   locationTextBig: { color: "#fff", fontSize: 21, textAlign: "center", marginBottom: 14 },
   locationBtns: { flexDirection: "row", marginBottom: 8, gap: 22, justifyContent: "center" },
   locAppBtn: { marginHorizontal: 10, padding: 8, borderRadius: 18, backgroundColor: "#181d22" },
   locLogo: { width: 54, height: 54, borderRadius: 13, backgroundColor: "#232834" },
   mapImg: { width: 320, height: 250, borderRadius: 15, marginTop: 10, resizeMode: "cover", opacity: 0.99 },
-  rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 16, marginTop: 15, marginBottom: 2 },
-  inviteBtnRow: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#fff", borderRadius: 10, paddingHorizontal: 13, paddingVertical: 7, backgroundColor: "#181d22", marginTop: 14 },
+  locationCityText: { color: '#b6c4da', marginTop: 10, marginBottom: -7, fontSize: 15, fontWeight: "bold" },
+
+  // --- Bloc joueurs/inviter
+  rowBetween: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginHorizontal: 19, marginTop: 15, marginLeft:8, marginBottom: 2
+  },
+  sectionTitle: { color: "#fff", fontWeight: "bold", fontSize: 25, marginTop: 22, marginBottom: 9, marginLeft: 14 },
+  inviteBtnRow: {
+    flexDirection: "row", alignItems: "center",
+    borderWidth: 1, borderColor: "#fff", borderRadius: 10,
+    paddingHorizontal: 13, paddingVertical: 7, backgroundColor: "#181d22", marginTop: 14
+  },
   inviteIcon: { width: 22, height: 22, marginRight: 7, tintColor: "#fff" },
   inviteBtnTxt: { color: "#fff", fontWeight: "bold" },
-  teamsTabs: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 14, marginBottom: 10, paddingHorizontal: 10 },
-  teamTab: { flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 10, marginHorizontal: 8, backgroundColor: "#232834", width: 170 },
+
+  // --- Equipes / Tabs
+  teamsTabs: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    marginTop: 14, marginBottom: 10, paddingHorizontal: 10
+  },
+  teamTab: {
+    flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 10,
+    marginHorizontal: 8, backgroundColor: "#232834", width: 170
+  },
   teamTabActiveBlue: { borderWidth: 2, borderColor: "#2196F3", backgroundColor: "#1a2636" },
   teamTabActiveRed: { borderWidth: 2, borderColor: "#e74c3c", backgroundColor: "#331a1a" },
   teamTabText: { color: "#bbb", fontWeight: "bold", fontSize: 17 },
+  teamFullText: { color: "#f44", fontWeight: "bold", textAlign: "center", marginBottom: 6 },
+
+  // --- Joueurs / Liste
   noPlayerTxt: { color: "#bbb", fontSize: 15, textAlign: "center", marginVertical: 12 },
-  playerRow: { flexDirection: "row", alignItems: "center", backgroundColor: "#232834", borderRadius: 10, marginHorizontal: 18, marginBottom: 8, padding: 8, paddingHorizontal: 12, marginTop: 4, borderWidth: 2, borderColor: "#41B2D1" },
+  playerRow: {
+    flexDirection: "row", alignItems: "center", backgroundColor: "#232834", borderRadius: 10,
+    marginHorizontal: 18, marginBottom: 8, padding: 8, paddingHorizontal: 12, marginTop: 4, borderWidth: 2, borderColor: "#41B2D1"
+  },
   playerAvatar: { width: 34, height: 34, borderRadius: 17, marginRight: 10, backgroundColor: "#333" },
   playerName: { color: "#fff", fontWeight: "600", fontSize: 15, flex: 1, marginLeft: 8 },
   playerProfileBtn: { borderWidth: 1, borderColor: "#41B2D1", borderRadius: 8, paddingVertical: 4, paddingHorizontal: 11, marginLeft: 10 },
   profileBtnTxt: { color: "#41B2D1", fontWeight: "bold" },
-  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginVertical: 23 },
+
+  // --- Actions Bas
+  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginVertical: 3 },
   joinBtn: { borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24, margin: 8 },
   joinBtnText: { color: "#fff", fontWeight: "bold", fontSize: 17 },
   quitBtn: { backgroundColor: "#f44", borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24, margin: 8, width: 210 },
   quitBtnText: { color: "#fff", fontWeight: "bold", fontSize: 17, textAlign: "center" },
   switchBtn: { backgroundColor: "#41B2D1", borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24, margin: 8, marginTop: 40, width: 210 },
   switchBtnText: { color: "#232834", fontWeight: "bold", fontSize: 17, textAlign: "center" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  loadingScreen: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#14171a' },
-  loadingLogo: { width: 160, height: 80, resizeMode: 'contain', marginBottom: 8, },
-  loadingText: { color: '#00D9FF', fontWeight: 'bold', marginTop: 18, fontSize: 19, letterSpacing: 1.2, },
 });
