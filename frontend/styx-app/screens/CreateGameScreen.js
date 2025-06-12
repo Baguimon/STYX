@@ -191,10 +191,10 @@ export default function CreateGameScreen() {
       )
     },
     {
-      title: 'Lieu',
+      title: 'Lieu du match',
       content: (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Lieu</Text>
+          <Text style={styles.cardTitle}>Ville</Text>
           <LocationInput
             value={form.location}
             onSelect={({ name, lat, lon, details }) => {
@@ -216,7 +216,7 @@ export default function CreateGameScreen() {
           />
           <TextInput
             style={[styles.input, { marginTop: 18 }]}
-            placeholder="Détail du lieu (ex : Parc, terrain, salle...)"
+            placeholder="Adresse exacte"
             placeholderTextColor="#888"
             value={form.location_details}
             maxLength={50}
@@ -281,7 +281,13 @@ export default function CreateGameScreen() {
     switch (step) {
       case 0: return !!date;
       case 1: return !!date;
-      case 2: return !!form.location && form.location.trim().length > 0;
+      case 2:
+        return (
+          form.location &&
+          form.location.trim().length > 0 &&
+          form.location_details &&
+          form.location_details.trim().length > 0
+        );
       case 3: return form.max_players && parseInt(form.max_players, 10) >= 2;
       default: return true;
     }
@@ -320,7 +326,15 @@ export default function CreateGameScreen() {
           style={styles.nextBtn}
           onPress={() => {
             if (!isStepValid()) {
-              Alert.alert('Attention', 'Merci de compléter ce champ avant de continuer.');
+              let message = 'Merci de compléter ce champ avant de continuer.';
+              if (step === 2) {
+                if (!form.location || form.location.trim().length === 0) {
+                  message = 'Merci d’indiquer la ville du match.';
+                } else if (!form.location_details || form.location_details.trim().length === 0) {
+                  message = "Merci de renseigner l'adresse exacte";
+                }
+              }
+              Alert.alert('Attention', message);
               return;
             }
             if (isLast) {
@@ -342,7 +356,7 @@ export default function CreateGameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111', // fond sombre cohérent avec tout le reste
+    backgroundColor: '#111',
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 130 : 16,
     paddingBottom: Platform.OS === 'ios' ? 50 : 16,
@@ -368,7 +382,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   card: {
-    backgroundColor: '#242640', // fond carte = même que playerCard ou chatMessages
+    backgroundColor: '#242640',
     borderRadius: 16,
     padding: 35,
     marginBottom: 24,
@@ -392,7 +406,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
   },
   input: {
-    backgroundColor: '#23284a', // input bleu foncé comme dans le chat
+    backgroundColor: '#23284a',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -400,7 +414,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginTop: 10,
     borderWidth: 1.5,
-    borderColor: '#00D9FF55', // liseré comme dans le chat input
+    borderColor: '#00D9FF55',
     shadowColor: '#00D9FF',
     shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 1 },
@@ -408,7 +422,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   pickerInlineContainer: {
-    backgroundColor: '#23284a', // pour rester dans la palette sombre
+    backgroundColor: '#23284a',
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 20,
