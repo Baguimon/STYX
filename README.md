@@ -1,126 +1,167 @@
-# STYX 
+# ⚽ STYX – Application mobile de gestion de matchs de football
+<p align="center"> <img src="frontend/assets/styx-logo.png" alt="STYX logo" width="120" /> </p>
 
-Application fullstack pour organiser et rejoindre des événements sportifs entre amis.  
-Développée avec **Symfony** (backend), **React Native via Expo** (frontend), et **MySQL** via Docker.
+
+## 🚀 Présentation
+STYX est une application mobile pensée pour les passionnés de football, qui permet de :
+
+    - Rejoindre ou organiser des matchs facilement dans sa région
+
+    - Gérer ses équipes et ses participations
+
+    - Visualiser ses matchs à venir ou passés dans une interface moderne et intuitive
+
+L’application est développée en React Native (Expo) pour le front et Symfony pour l’API backend.
 
 ---
 
-## Technologies utilisées
+## ✨ Fonctionnalités principales
+    
+    - 🔑 Inscription et authentification utilisateur
 
-- 🐘 **PHP 8.1+**
-- ⚙️ **Symfony 6.x** (API REST)
-- 📱 **React Native** (Expo)
-- 🐳 **Docker** + **MySQL**
-- 🌐 **ngrok** (accès mobile local)
+    - 🗺️ Découverte et inscription à des matchs
+
+    - 📋 Gestion de ses propres matchs (“Mes Matchs”)
+
+    - 🏆 Création et gestion de clubs/équipes
+
+    - 🔎 Filtres avancés (date, niveau, proximité…)
+
+    - 🎨 UI mobile responsive et direction artistique sur mesure
+
+---    
+
+## 🛠️ Stack technique
+
+    - Frontend : React Native (Expo)
+
+    - Backend : Symfony (API REST)
+
+    - Base de données : MySQL (Docker en local)
+
+    - Déploiement : Platform SH (backend), Expo Go/TestFlight (frontend)
 
 ---
 
-## Installation du projet
+## 🌐 Démo en ligne
+
+    - Backend API : https://main-bvxea6i-y25mlzc6no7vs.ch-1.platformsh.site/
+
+    - Frontend : (Déploiement sur Store en cours – testable via Expo)
+
+---
+
+
+## 🏗️ Installation locale
+**Prérequis**
+    - Node.js, npm/yarn
+
+    - Docker
+
+    - Expo CLI
+
+    - PHP 8+, Composer
+
 
 ### 1. Cloner le projet
-
-```bash
+```
 git clone https://github.com/Baguimon/STYX.git
 cd STYX
 ```
 
----
 
-### 2. Lancer l’environnement Docker (base de données)
-
-```bash
-cd docker
+### 2. Lancer la base de données
+```
+cd backend
 docker compose up -d
 ```
 
-Vérification rapide :
-- phpMyAdmin : http://localhost:8080  
-- MySQL dispo sur le port `3309`  
-- Exemple de `DATABASE_URL` (dans `.env` ou `.env.local`) :
+**Accès phpMyAdmin : http://localhost:8080**
 
-```dotenv
-DATABASE_URL="mysql://styx:styxpass@127.0.0.1:3309/styxdb?serverVersion=8.0"
+
+### 3. Lancer le backend (Symfony)
+
 ```
-
----
-
-### 3. Installer les dépendances backend
-
-```bash
-cd backend
 composer install
+php bin/console doctrine:migrations:migrate
+symfony serve
 ```
+
+
+### 4. Lancer le frontend (Expo)
+```
+cd frontend
+npm install
+npx expo start
+```
+
+---  
+
+
+## 🚢 Déploiement production
+
+    - Backend : déployé sur Platform SH: https://main-bvxea6i-y25mlzc6no7vs.ch-1.platformsh.site/
+
+    - Frontend : prévu pour publication sur App Store/Play Store via Expo
 
 ---
 
-### 4. Lancer le serveur Symfony
+## 🔒 Sécurité & RGPD
+    
+    - Authentification en cours d’amélioration (intégration JWT prévue)
 
-```bash
-symfony serve --no-tls --allow-http --port=8000
-```
+    - Données utilisateurs protégées, suppression sur demande possible
 
-L'API est alors dispo sur : http://127.0.0.1:8000
+    - Mise en conformité RGPD prévue (mentions légales, anonymisation)
 
----
-
-## Accès depuis mobile (React Native)
-
-### 5. Installer et configurer ngrok
-
-```bash
-npm install -g ngrok
-ngrok http 8000
-```
-
-🔗 Copie l’URL générée par ngrok (ex: `https://xxxx.ngrok-free.app`)  
-Et remplace la constante `API_URL` dans `frontend/styx-app/api.js` :
-
-```js
-const API_URL = 'https://xxxx.ngrok-free.app/api';
-```
-
-Vérifie aussi que `CORS_ALLOW_ORIGIN` dans `.env` backend est bien :
-
-```dotenv
-CORS_ALLOW_ORIGIN=https://xxxx.ngrok-free.app
-```
 
 ---
 
-### 6. Lancer l’application mobile
 
-```bash
-cd frontend/styx-app
-npm install @react-navigation/native
-npm install @react-navigation/bottom-tabs
-npm install @react-navigation/native-stack
-npx expo start --tunnel
-```
+## 👥 Contributeurs
+    
+    - Yoann LE CHEVALIER — Front principal, UI/UX, backend partiel
 
-Scanne le QR Code avec **Expo Go** sur ton téléphone.  
-L’authentification et l’accès API doivent maintenant fonctionner via l'URL ngrok.
+    - Mathis TRUONG — Backend principal, DevOps
+
+    - Timothé WINKLER — Fullstack, gestion projet
+
 
 ---
 
-## Structure du projet
+## 🗺️ Roadmap
+    
+    - Intégration sécurité JWT + gestion rôles
 
-```
-STYX/
-├── backend/           → Symfony API
-├── frontend/styx-app/ → React Native (Expo)
-├── docker/            → Docker & MySQL
-```
+    - Notifications push mobiles
+
+    - Tests unitaires backend et frontend
+
+    - Publication sur App Store / Play Store
+
+
+---
+
+## 🐞 Bugs connus
+    
+    - Quelques lenteurs d’affichage en cas de mauvaise connexion
+
+    - Sécurité API à renforcer (prochaine release)
+
+## 📄 Licence
+
+Projet privé — usage pédagogique (CDA 2024)
+
 
 ---
 
-## Endpoints API disponibles
+## 📸 Aperçu de l’application
 
-| Méthode | URL              | Description                          |
-|:--------|:-----------------|:-------------------------------------|
-| GET     | `/api/users`     | Liste des utilisateurs               |
-| POST    | `/api/register`  | Créer un nouvel utilisateur          |
-| POST    | `/api/login`     | Se connecter                         |
-| GET     | `/api/games`     | Liste des matchs disponibles         |
-| POST    | `/api/games`     | Créer un nouveau match               |
-
----
+<p align="center">
+  <img src="frontend/assets/screen-app-1.png" width="250"/>
+  <img src="frontend/assets/screen-app-2.png" width="250"/>
+  <img src="frontend/assets/screen-app-3.png" width="250"/>
+  <img src="frontend/assets/screen-app-4.png" width="250"/>
+  <img src="frontend/assets/screen-app-5.png" width="250"/>
+  <img src="frontend/assets/screen-app-6.png" width="250"/>
+</p>
