@@ -1,5 +1,5 @@
 # ⚽ STYX – Application mobile de gestion de matchs de football
-<p align="center"> <img src="frontend/assets/styx-logo.png" alt="STYX logo" width="120" /> </p>
+<p align="center"> <img src="frontend/styx-app/assets/styx-logo.png" alt="STYX logo" width="120" /> </p>
 
 
 ## 🚀 Présentation
@@ -158,10 +158,11 @@ Projet privé — usage pédagogique (CDA 2024)
 ## 📸 Aperçu de l’application
 
 <p align="center">
-  <img src="frontend/assets/screen-app-1.png" width="250"/>
-  <img src="frontend/assets/screen-app-2.png" width="250"/>
-  <img src="frontend/assets/screen-app-3.png" width="250"/>
-  <img src="frontend/assets/screen-app-4.png" width="250"/>
-  <img src="frontend/assets/screen-app-5.png" width="250"/>
-  <img src="frontend/assets/screen-app-6.png" width="250"/>
+  <img src="frontend/styx-app/assets/screen-app-1.png" width="250"/>
+  <img src="frontend/styx-app/assets/screen-app-2.png" width="250"/>
+  <img src="frontend/styx-app/assets/screen-app-3.png" width="250"/>
+  <img src="frontend/styx-app/assets/screen-app-4.png" width="250"/>
+  <img src="frontend/styx-app/assets/screen-app-5.png" width="250"/>
+  <img src="frontend/styx-app/assets/screen-app-6.png" width="250"/>
 </p>
+
