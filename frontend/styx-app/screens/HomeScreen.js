@@ -61,7 +61,7 @@ export default function HomeScreen() {
     scrollRef.current?.scrollTo({ y: screenHeight, animated: true });
   };
 
-  // --- NEW: Filtrage et tri des matchs à venir ---
+  // --- Filtrage et tri des matchs à venir ---
   const upcomingGames = userGames
     .filter(g => new Date(g.date) > new Date())
     .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -159,30 +159,36 @@ export default function HomeScreen() {
               {upcomingGames.length === 0 ? (
                 <Text style={styxV3.empty}>Aucun match à venir.</Text>
               ) : (
-                upcomingGames.slice(0, 2).map((g) => (
-                  <TouchableOpacity
-                    key={g.id}
-                    style={styxV3.matchCard}
-                    activeOpacity={0.85}
-                    onPress={() => navigation.navigate('GameDetails', { game: g })}
-                  >
-                    <View style={styxV3.leftIcon}>
-                      <Image
-                        source={matchIcon}
-                        style={{ width: 38, height: 38 }}
-                        resizeMode="contain"
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styxV3.matchMain}>{formatDateFR(g.date)}</Text>
-                      <Text style={styxV3.matchSub} numberOfLines={1}>{g.location}</Text>
-                    </View>
-                    <View style={styxV3.rightInfo}>
-                      <Text style={styxV3.matchPlayers}>{g.playerCount} / {g.maxPlayers}</Text>
-                      <View style={styxV3.greenDot} />
-                    </View>
-                  </TouchableOpacity>
-                ))
+                upcomingGames.slice(0, 2).map((g) => {
+                  const isFull = g.playerCount >= g.maxPlayers;
+                  return (
+                    <TouchableOpacity
+                      key={g.id}
+                      style={styxV3.matchCard}
+                      activeOpacity={0.85}
+                      onPress={() => navigation.navigate('GameDetails', { game: g })}
+                    >
+                      <View style={styxV3.leftIcon}>
+                        <Image
+                          source={matchIcon}
+                          style={{ width: 38, height: 38 }}
+                          resizeMode="contain"
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styxV3.matchMain}>{formatDateFR(g.date)}</Text>
+                        <Text style={styxV3.matchSub} numberOfLines={1}>{g.location}</Text>
+                      </View>
+                      <View style={styxV3.rightInfo}>
+                        <Text style={styxV3.matchPlayers}>{g.playerCount} / {g.maxPlayers}</Text>
+                        <View style={[
+                          styxV3.greenDot,
+                          { backgroundColor: isFull ? '#f44' : '#27D34D' }
+                        ]} />
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
               )}
             </View>
             <View style={{ height: 38 }} />
