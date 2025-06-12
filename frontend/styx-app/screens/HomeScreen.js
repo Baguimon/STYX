@@ -61,6 +61,11 @@ export default function HomeScreen() {
     scrollRef.current?.scrollTo({ y: screenHeight, animated: true });
   };
 
+  // --- NEW: Filtrage et tri des matchs à venir ---
+  const upcomingGames = userGames
+    .filter(g => new Date(g.date) > new Date())
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
   return (
     <View style={{ flex: 1 }}>
       <ImageBackground
@@ -151,10 +156,10 @@ export default function HomeScreen() {
                   <Text style={styxV3.seeMoreText}>Voir plus</Text>
                 </TouchableOpacity>
               </View>
-              {userGames.length === 0 ? (
+              {upcomingGames.length === 0 ? (
                 <Text style={styxV3.empty}>Aucun match à venir.</Text>
               ) : (
-                userGames.slice(0, 2).map((g) => (
+                upcomingGames.slice(0, 2).map((g) => (
                   <TouchableOpacity
                     key={g.id}
                     style={styxV3.matchCard}
@@ -281,7 +286,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: Platform.OS === 'ios' ? 42 : 32,
+    bottom: Platform.OS === 'ios' ? 40 : 32,
     alignItems: 'center',
     zIndex: 9999,
   },
@@ -319,7 +324,7 @@ const styxV3 = StyleSheet.create({
     alignSelf: 'center',
     letterSpacing: 1,
     marginBottom: -5,
-    marginTop: -22,
+    marginTop: -15,
     zIndex: 2,
   },
   upcomingBlock: {
@@ -327,7 +332,7 @@ const styxV3 = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     marginHorizontal: CARD_PADDING,
-    marginTop: 18,
+    marginTop: 10,
     marginBottom: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },

@@ -35,13 +35,15 @@ export default function GameSearchScreen() {
       .catch(console.error);
   }, []);
 
-  // Filtrer les games ouverts uniquement
-  const filteredGames = games.filter(
-    (game) =>
-      game.status === 'ouvert' &&
-      (searchCity === '' ||
-        (game.location && game.location.toLowerCase().includes(searchCity.toLowerCase())))
-  );
+  // Filtrer les games ouverts et TRIER du plus proche au plus lointain
+  const filteredGames = games
+    .filter(
+      (game) =>
+        game.status === 'ouvert' &&
+        (searchCity === '' ||
+          (game.location && game.location.toLowerCase().includes(searchCity.toLowerCase())))
+    )
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const formatDateFR = (dateStr) => {
     if (!dateStr) return "";
@@ -129,9 +131,12 @@ export default function GameSearchScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Text style={styles.backText}>← Retour</Text>
-      </TouchableOpacity>
+      {/* BOUTON RETOUR, position absolue, TOUJOURS CLIQUABLE */}
+      <View style={styles.absoluteBackBtn}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backText}>← Retour</Text>
+        </TouchableOpacity>
+      </View>
 
       <Image source={require('../assets/styx-logo.png')} style={styles.banner} />
 
@@ -186,9 +191,16 @@ const CARD_RADIUS = 20;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#111", paddingHorizontal: 16, paddingTop: 40 },
-  backButton: { marginBottom: 5, marginTop: 30},
-  backText: { color: '#46B3D0', fontSize: 16, fontWeight: 'bold' },
-  banner: { width: '100%', height: 90, resizeMode: 'contain', marginBottom: 10 },
+  absoluteBackBtn: {
+    position: 'absolute',
+    top: 38,
+    left: 8,
+    zIndex: 50,
+    // adapt paddingTop if your statusbar is higher (ex: iPhone X)
+  },
+  backButton: { marginBottom: 5 },
+  backText: { color: '#39b5d4', fontSize: 16, fontWeight: 'bold', paddingVertical: 7, paddingHorizontal: 6 },
+  banner: { width: '100%', height: 200, marginBottom: -50, marginTop: -35, alignSelf: 'center' },
   searchBar: { backgroundColor: '#222', color: '#fff', padding: 10, borderRadius: 8, marginBottom: 8 },
   card: {
     backgroundColor: "#272930",
