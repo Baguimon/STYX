@@ -157,10 +157,10 @@ Projet privé — usage pédagogique (CDA 2024)
 
 ## 📸 Aperçu de l’application
 
-<p align="center">
-  <img src="frontend/styx-app/assets/screen-app-1.png" width="250"/>
+<p align="center">  
   <img src="frontend/styx-app/assets/screen-app-2.png" width="250"/>
   <img src="frontend/styx-app/assets/screen-app-3.png" width="250"/>
+  <img src="frontend/styx-app/assets/screen-app-1.png" width="250"/>
   <img src="frontend/styx-app/assets/screen-app-4.png" width="250"/>
   <img src="frontend/styx-app/assets/screen-app-5.png" width="250"/>
   <img src="frontend/styx-app/assets/screen-app-6.png" width="250"/>
