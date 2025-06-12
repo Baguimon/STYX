@@ -7,6 +7,7 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
+
 // Intercepteur pour les tokens (peut être utilisé + tard si tu mets l’auth JWT côté back)
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
@@ -18,7 +19,6 @@ api.interceptors.request.use(async (config) => {
   }
 
   // No CSRF protection needed
-
   return config;
 });
 

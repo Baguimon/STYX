@@ -6,6 +6,7 @@ import IntroScreen from '../screens/IntroScreen';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import { AuthContext } from '../contexts/AuthContext';
+import PlayerProfileScreen from '../screens/PlayerProfileScreen';
 
 // === Ajoute cette ligne pour la screen "UpcomingGameScreen" ===
 
@@ -48,6 +49,11 @@ export default function RootNavigator() {
       {/* 5) (Optionnel) Détails d'un match */}
       {isAuthenticated && (
         <Stack.Screen name="GameDetails" component={GameDetailsScreen} />
+      )}
+
+      {/* 6) Profil d'un joueur */}
+      {isAuthenticated && (
+        <Stack.Screen name="PlayerProfile" component={PlayerProfileScreen} />
       )}
     </Stack.Navigator>
   );
