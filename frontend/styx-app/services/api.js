@@ -150,4 +150,15 @@ export const deleteClubMessage = async (clubId, messageId) => {
   return res.data;
 };
 
+export async function updateUserAvatarIndex(userId, avatarIndex) {
+  const res = await fetch(`https://main-bvxea6i-y25mlzc6no7vs.ch-1.platformsh.site/users/${userId}/avatar`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatarIndex }),
+  });
+  if (!res.ok) throw new Error('Erreur serveur');
+  return res.json();
+}
+
+
 export default api;
