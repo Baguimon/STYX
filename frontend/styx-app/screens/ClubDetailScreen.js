@@ -45,7 +45,7 @@ export default function ClubDetailScreen({ route }) {
   const [loading, setLoading] = useState(true);
   const [club, setClub] = useState(null);
   const [members, setMembers] = useState([]);
-  const { userInfo } = useContext(AuthContext);
+  const { userInfo, refreshUserInfo } = useContext(AuthContext);
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -250,6 +250,9 @@ export default function ClubDetailScreen({ route }) {
             try {
               const userId = userInfo?.id;
               await leaveClub(userId);
+              if (typeof refreshUserInfo === 'function') {
+                await refreshUserInfo(); // <-- AJOUTE CETTE LIGNE !!
+              }
               Alert.alert('Tu as quitté le club');
               navigation.reset({
                 index: 0,
@@ -264,6 +267,7 @@ export default function ClubDetailScreen({ route }) {
       { cancelable: true }
     );
   };
+
 
   if (loading) {
     return (

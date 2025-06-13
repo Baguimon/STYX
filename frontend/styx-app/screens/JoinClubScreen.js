@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 const defaultPlayerImage = require('../assets/player-default.png');
 
 export default function JoinClubScreen() {
+  // TOUS LES HOOKS EN HAUT !!
   const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [overlayClub, setOverlayClub] = useState(null);
@@ -16,22 +17,6 @@ export default function JoinClubScreen() {
 
   const navigation = useNavigation();
   const { userInfo, refreshUserInfo } = useContext(AuthContext);
-
-  if (userInfo && userInfo.clubId) {
-    return (
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelText}>Retour</Text>
-        </TouchableOpacity>
-        <Text style={styles.stepTitle}>Déjà membre d’un club</Text>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            Tu dois quitter ton club actuel pour en rejoindre un autre.
-          </Text>
-        </View>
-      </View>
-    );
-  }
 
   useFocusEffect(
     React.useCallback(() => {
@@ -52,6 +37,46 @@ export default function JoinClubScreen() {
     }, [])
   );
 
+  // APPEL DE TOUS LES HOOKS TERMINÉ → MAINTENANT RETOUR COND
+  if (userInfo && userInfo.clubId) {
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.cancelText}>Retour</Text>
+        </TouchableOpacity>
+        <Text style={styles.stepTitle}>Déjà membre d’un club</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            Tu dois quitter ton club actuel pour en rejoindre un autre.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#00D9FF" />
+      </View>
+    );
+  }
+
+  if (!clubs.length) {
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.cancelText}>Retour</Text>
+        </TouchableOpacity>
+        <Text style={styles.stepTitle}>Aucun club disponible</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Aucun club n’est disponible pour l’instant.</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Les handlers
   const handleJoin = async (clubId) => {
     const userId = userInfo?.id;
     if (!userId) {
@@ -60,9 +85,8 @@ export default function JoinClubScreen() {
     }
     try {
       await joinClub(userId, clubId);
-      // <<=== AJOUTE CE REFRESH
       if (typeof refreshUserInfo === "function") {
-        await refreshUserInfo(); // récupère les nouvelles infos utilisateur depuis le backend
+        await refreshUserInfo();
       }
       Alert.alert('Succès', 'Tu as rejoint le club !');
       navigation.reset({ index: 0, routes: [{ name: 'ClubHome' }] });
@@ -91,28 +115,7 @@ export default function JoinClubScreen() {
     setOverlayLoading(false);
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#00D9FF" />
-      </View>
-    );
-  }
-
-  if (!clubs.length) {
-    return (
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelText}>Retour</Text>
-        </TouchableOpacity>
-        <Text style={styles.stepTitle}>Aucun club disponible</Text>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Aucun club n’est disponible pour l’instant.</Text>
-        </View>
-      </View>
-    );
-  }
-
+  // Le render principal
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
@@ -200,7 +203,6 @@ export default function JoinClubScreen() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
