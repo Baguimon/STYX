@@ -147,7 +147,7 @@ export default function AdminScreen() {
         )}
         </View>
     );
-    }
+}
 
 
 
