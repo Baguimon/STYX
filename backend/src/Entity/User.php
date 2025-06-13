@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 use App\Entity\GamePlayer;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -47,6 +48,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $gamePlayers;
 
     #[ORM\Column(type: 'string', length: 10, nullable: true)]
+    #[Groups(['user:read', 'club:read', 'game:read'])]
     private ?string $poste = null;
 
 
