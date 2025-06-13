@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "styx-app",
-    "slug": "styx-app",
+    "name": "styx",
+    "slug": "styx",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tonorganisation.styxapp",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Permet de trouver des matchs près de chez vous.",
+        "NSCameraUsageDescription": "Permet d'ajouter une photo de profil."
+      }
+
+
     },
     "android": {
       "adaptiveIcon": {
