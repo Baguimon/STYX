@@ -12,9 +12,11 @@ use Symfony\Component\Routing\Annotation\Route;
 use App\Repository\GamePlayerRepository;
 
 #[Route('/api', name: 'api_')]
+// Contrôleur gérant les opérations sur les utilisateurs
 class UserController extends AbstractController
 {
     #[Route('/users', name: 'users_list', methods: ['GET'])]
+    // Retourne la liste de tous les utilisateurs
     public function list(UserRepository $userRepository): JsonResponse
     {
         $users = $userRepository->findAll();
@@ -34,6 +36,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/users/{id}/club', name: 'user_club', methods: ['GET'])]
+    // Retourne le club auquel appartient un utilisateur
     public function getUserClub($id, UserRepository $userRepository): JsonResponse
     {
         $user = $userRepository->find($id);
@@ -53,6 +56,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/users/{id}/join-club', name: 'user_join_club', methods: ['POST'])]
+    // Permet à un utilisateur de rejoindre un club
     public function joinClub($id, Request $request, UserRepository $userRepository, ClubRepository $clubRepository, EntityManagerInterface $em): JsonResponse
     {
         $user = $userRepository->find($id);
@@ -74,6 +78,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/users/{id}/leave-club', name: 'user_leave_club', methods: ['POST'])]
+    // Quitter son club actuel
     public function leaveClub($id, UserRepository $userRepository, ClubRepository $clubRepository, EntityManagerInterface $em, Request $request): JsonResponse
     {
         $user = $userRepository->find($id);
@@ -133,6 +138,7 @@ class UserController extends AbstractController
 
     // ------- LISTE DES MATCHS REJOINTS PAR L'UTILISATEUR -------
     #[Route('/users/{id}/games', name: 'user_games', methods: ['GET'])]
+    // Renvoie tous les matchs auxquels participe l'utilisateur
     public function getUserGames($id, UserRepository $userRepository): JsonResponse
     {
         $user = $userRepository->find($id);
@@ -162,6 +168,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/users/{id}', name: 'user_detail', methods: ['GET'])]
+    // Informations détaillées sur un utilisateur
     public function userDetail($id, UserRepository $userRepository): JsonResponse
     {
         $user = $userRepository->find($id);
@@ -186,6 +193,7 @@ class UserController extends AbstractController
         ]);
     }
     #[Route('/users/{id}', name: 'user_delete', methods: ['DELETE'])]
+    // Suppression d'un utilisateur
     public function deleteUser(
         $id,
         UserRepository $userRepository,

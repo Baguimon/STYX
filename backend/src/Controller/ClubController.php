@@ -15,11 +15,14 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use App\Utils\Sanitizer;
 
 #[Route('/api/clubs', name: 'api_club_')]
+// Ce contrôleur permet de gérer les clubs (création, modification, membres...)
 class ClubController extends AbstractController
 {
     #[Route('', name: 'list', methods: ['GET'])]
+    // Retourne la liste complète des clubs
     public function list(ClubRepository $clubRepository): JsonResponse
     {
+        // On récupère tous les clubs en base de données
         $clubs = $clubRepository->findAll();
         $data = [];
         foreach ($clubs as $club) {
@@ -28,15 +31,17 @@ class ClubController extends AbstractController
                 'name' => $club->getName(),
                 'createdAt' => $club->getCreatedAt()?->format('Y-m-d H:i:s'),
                 'clubCaptain' => $club->getClubCaptain()?->getId(),
-                'image' => $club->getImage(), // Ajouté
+                'image' => $club->getImage(),
             ];
         }
         return $this->json($data);
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'])]
+    // Affiche le détail d'un club précis
     public function show($id, ClubRepository $clubRepository): JsonResponse
     {
+        // On cherche le club par son identifiant
         $club = $clubRepository->find($id);
         if (!$club) {
             return $this->json(['error' => 'Club not found'], 404);
@@ -46,13 +51,15 @@ class ClubController extends AbstractController
             'name' => $club->getName(),
             'createdAt' => $club->getCreatedAt()?->format('Y-m-d H:i:s'),
             'clubCaptain' => $club->getClubCaptain()?->getId(),
-            'image' => $club->getImage(), // Ajouté
+            'image' => $club->getImage(),
         ]);
     }
 
     #[Route('/{id}/members', name: 'club_members', methods: ['GET'])]
+    // Récupère la liste des membres d'un club
     public function getClubMembers($id, ClubRepository $clubRepository): JsonResponse
     {
+        // Recherche du club puis de ses membres
         $club = $clubRepository->find($id);
         if (!$club) {
             return $this->json(['error' => 'Club not found'], 404);
@@ -73,28 +80,30 @@ class ClubController extends AbstractController
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
+    // Création d'un nouveau club
     public function create(Request $request, EntityManagerInterface $em, UserRepository $userRepository): JsonResponse
     {
+        // Données envoyées par le client
         $data = json_decode($request->getContent(), true);
         if (empty($data['name']) || empty($data['clubCaptainId'])) {
             return $this->json(['error' => 'Missing required fields'], 400);
         }
+        // Nettoyage et validations sur le nom du club
         $name = Sanitizer::string($data['name']);
         if (mb_strlen($name) > 32) {
             return $this->json(['error' => 'Le nom du club ne doit pas dépasser 32 caractères.'], 400);
         }
 
-        // --- Interdire nom déjà utilisé ---
+        // Vérifie qu'aucun autre club n'a déjà ce nom
         $existingClub = $em->getRepository(Club::class)->findOneBy(['name' => $name]);
         if ($existingClub) {
             return $this->json(['error' => "Ce nom de club existe déjà."], 400);
         }
 
-        // --- Interdire insultes/mots interdits ---
+        // Liste de mots interdits pour éviter les insultes
         $bannedWords = [
             'pute', 'merde', 'connard', 'enculé', 'fdp', 'batard', 'ntm', 'pd', 'tg', 'salope',
             'fuck', 'shit', 'asshole', 'bitch', 'slut', 'putain', 'chier'
-            // Ajoute ici tous les mots à bloquer...
         ];
         foreach ($bannedWords as $badWord) {
             if (stripos($name, $badWord) !== false) {
@@ -103,10 +112,12 @@ class ClubController extends AbstractController
         }
 
         $captain = $userRepository->find($data['clubCaptainId']);
+        // On récupère le futur capitaine du club
         if (!$captain) {
             return $this->json(['error' => 'Club captain not found'], 404);
         }
         if ($captain->getClub()) {
+            // Il ne doit pas déjà appartenir à un club
             return $this->json(['error' => 'Vous êtes déjà membre d\'un club'], 400);
         }
         $existingCaptain = $em->getRepository(Club::class)->findOneBy(['clubCaptain' => $captain]);
@@ -114,7 +125,7 @@ class ClubController extends AbstractController
             return $this->json(['error' => 'Vous êtes déjà capitaine d’un club'], 400);
         }
 
-        // === Ajout gestion logo prédéfini dès la création ===
+        // Gestion optionnelle d'un logo prédéfini lors de la création
         $image = $data['image'] ?? null;
         if ($image !== null && $image !== '') {
             $allowed = [
@@ -129,6 +140,7 @@ class ClubController extends AbstractController
 
         $club = new Club();
         $club->setName($name);
+        // Création de l'entité Club et enregistrement en base
         $club->setCreatedAt(new \DateTime());
         $club->setClubCaptain($captain);
         if ($image) { // Si le logo est bien passé et autorisé
@@ -140,6 +152,7 @@ class ClubController extends AbstractController
         $captain->setClub($club);
         $em->flush();
 
+        // Le capitaine rejoint automatiquement son club
         return $this->json([
             'id' => $club->getId(),
             'name' => $club->getName(),
@@ -151,6 +164,7 @@ class ClubController extends AbstractController
 
 
     #[Route('/{clubId}/set-poste/{userId}', name: 'set_user_poste', methods: ['POST'])]
+    // Définit le poste d'un joueur dans son club
     public function setUserPoste(
         Request $request,
         UserRepository $userRepository,
@@ -159,6 +173,7 @@ class ClubController extends AbstractController
         int $clubId,
         int $userId
     ): JsonResponse {
+        // Récupère la valeur du poste depuis le corps de la requête
         $data = json_decode($request->getContent(), true);
 
         if (!array_key_exists('poste', $data)) {
@@ -177,7 +192,7 @@ class ClubController extends AbstractController
             return $this->json(['error' => 'Ce joueur n\'est pas dans ce club'], 403);
         }
 
-        // Un seul joueur par poste... sauf pour les remplaçants !
+        // On s'assure qu'un seul joueur occupe chaque poste (sauf remplaçants)
         if ($poste !== null && $poste !== 'REMPLACANT') {
             $usersDuClub = $userRepository->findBy(['club' => $club]);
             foreach ($usersDuClub as $membre) {
@@ -194,6 +209,7 @@ class ClubController extends AbstractController
     }
 
     #[Route('/{clubId}/transfer-captain', name: 'transfer_captain', methods: ['POST'])]
+    // Permet de désigner un nouveau capitaine pour le club
     public function transferCaptain(
         $clubId,
         Request $request,
@@ -201,6 +217,7 @@ class ClubController extends AbstractController
         UserRepository $userRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+        // On récupère l'identifiant du futur capitaine dans le corps de la requête
         $data = json_decode($request->getContent(), true);
         $newCaptainId = $data['newCaptainId'] ?? null;
         $club = $clubRepository->find($clubId);
@@ -213,6 +230,7 @@ class ClubController extends AbstractController
             return $this->json(['error' => 'Ce membre ne fait pas partie du club'], 400);
         }
 
+        // Attribution du nouveau capitaine et sauvegarde
         $club->setClubCaptain($newCaptain);
         $em->persist($club);
         $em->flush();
@@ -221,14 +239,18 @@ class ClubController extends AbstractController
     }
 
     #[Route('/{id}', name: 'update_club', methods: ['PATCH', 'POST'])]
+    // Mise à jour du nom ou du logo d'un club
     public function updateClub($id, Request $request, ClubRepository $clubRepository, EntityManagerInterface $em): JsonResponse
     {
+        // On récupère le club à modifier
         $club = $clubRepository->find($id);
         if (!$club) return $this->json(['error' => 'Club not found'], 404);
 
+        // Données envoyées dans la requête
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['name'])) {
+            // Nouveau nom proposé pour le club
             $name = Sanitizer::string($data['name']);
             if (mb_strlen($name) > 32) {
                 return $this->json(['error' => 'Le nom du club ne doit pas dépasser 32 caractères.'], 400);
@@ -283,18 +305,22 @@ class ClubController extends AbstractController
 
 
     #[Route('/{id}/upload-logo', name: 'api_club_upload_club_logo', methods: ['POST'])]
+    // Upload d'un logo personnalisé pour le club
     public function uploadLogo(Request $request, Club $club, EntityManagerInterface $em): JsonResponse
     {
         /** @var UploadedFile $file */
+        // Le fichier envoyé s'appelle "logo"
         $file = $request->files->get('logo');
         if (!$file) {
             return $this->json(['error' => 'Aucun fichier reçu'], 400);
         }
 
         $uploadDir = $this->getParameter('club_logos_dir');
+        // On génère un nom unique pour éviter les collisions
         $filename = uniqid().'.'.$file->guessExtension();
 
         try {
+            // On déplace le fichier puis on enregistre le chemin public
             $file->move($uploadDir, $filename);
             $club->setImage('/uploads/club-logos/'.$filename); // Chemin public
             $em->flush();
@@ -305,6 +331,7 @@ class ClubController extends AbstractController
     }
 
     #[Route('/{clubId}/kick-member/{userId}', name: 'kick_member', methods: ['POST'])]
+    // Retire un membre du club
     public function kickMember($clubId, $userId, ClubRepository $clubRepository, UserRepository $userRepository, EntityManagerInterface $em): JsonResponse
     {
         $club = $clubRepository->find($clubId);
@@ -313,7 +340,7 @@ class ClubController extends AbstractController
         if (!$club || !$user) return $this->json(['error' => 'Club ou utilisateur non trouvé'], 404);
         if ($user->getClub()?->getId() !== $club->getId()) return $this->json(['error' => 'Ce membre n\'est pas dans ce club'], 400);
 
-        // Sécurité : on ne peut pas kicker le capitaine
+        // Sécurité : le capitaine ne peut pas être expulsé
         if ($club->getClubCaptain()->getId() == $userId) {
             return $this->json(['error' => 'Impossible de kicker le capitaine !'], 400);
         }
