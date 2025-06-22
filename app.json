@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "c42620f9-367d-4d29-b89b-eeabf9c24e2c"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.yukiokami.styx",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
