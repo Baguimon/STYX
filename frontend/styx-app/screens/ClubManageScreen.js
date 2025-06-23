@@ -8,57 +8,57 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
 
-// === Mapping logos prédéfinis club ===
+// --- Liste des logos prédéfinis disponibles ---
 const CLUB_LOGO_CHOICES = [
   { uri: '/assets/club-imgs/ecusson-1.png', img: require('../assets/club-imgs/ecusson-1.png') },
   { uri: '/assets/club-imgs/ecusson-2.png', img: require('../assets/club-imgs/ecusson-2.png') },
   { uri: '/assets/club-imgs/ecusson-3.png', img: require('../assets/club-imgs/ecusson-3.png') },
 ];
+// Permet de récupérer la bonne source image pour un logo club (local fallback si besoin)
 function getClubLogoSource(image) {
   if (!image) return require('../assets/club-default.png');
   const imgName = image.split('/').pop()?.toLowerCase()?.trim();
-  // On matche sur la fin du nom
   const found = CLUB_LOGO_CHOICES.find(c => c.uri.toLowerCase().endsWith(imgName));
   if (found) return found.img;
-  console.log('[LOGO] AUCUN MATCH POUR:', image, '(imgName:', imgName, ')');
+  // Sinon fallback sur un logo par défaut
   return require('../assets/club-default.png');
 }
 
 const defaultPlayerImage = require('../assets/player-default.png');
+// Liste des postes possibles pour attribuer à un joueur
 const POSTES_11 = [
   { key: 'GB', label: 'GB' }, { key: 'DG', label: 'DG' }, { key: 'DC1', label: 'DC1' }, { key: 'DC2', label: 'DC2' }, { key: 'DD', label: 'DD' },
   { key: 'MG', label: 'MG' }, { key: 'MC', label: 'MC' }, { key: 'MD', label: 'MD' }, { key: 'AG', label: 'AG' }, { key: 'BU', label: 'BU' }, { key: 'AD', label: 'AD' }, { key: 'REMPLACANT', label: 'REMPLACANT' },
 ];
 
 export default function ClubManageScreen() {
+  // Navigation et récupère le club et les membres depuis la navigation ou props
   const navigation = useNavigation();
   const route = useRoute();
   const initialClub = route.params?.club || null;
   const initialMembers = route.params?.members || [];
+
+  // États principaux du club, membres, nom, etc
   const [club, setClub] = useState(initialClub);
   const [members, setMembers] = useState(initialMembers);
   const [name, setName] = useState(initialClub?.name || '');
   const [loading, setLoading] = useState(false);
 
-  // Pour la mini-fenêtre de changement de poste
+  // Mini-fenêtre pour choisir un poste (modal)
   const [posteModal, setPosteModal] = useState({ open: false, member: null });
-  // Pour la modal de sélection de logo
+  // Modal de sélection de logo club
   const [logoModalVisible, setLogoModalVisible] = useState(false);
-
-  // Pull to refresh
+  // Etat pour "pull to refresh"
   const [refreshing, setRefreshing] = useState(false);
 
   const { userInfo } = useContext(AuthContext);
 
-  // LOG CLUB.IMAGE CHAQUE FOIS QU'IL CHANGE
-  useEffect(() => {
-  }, [club]);
-
-  // Rafraîchir club et membres
+  // Permet de rafraîchir le club et ses membres
   const fetchClubData = useCallback(async () => {
     if (!club?.id) return;
     setLoading(true);
     try {
+      // Récupère club + membres en même temps
       const [freshClub, freshMembers] = await Promise.all([
         getClub(club.id),
         getClubMembers(club.id)
@@ -72,6 +72,7 @@ export default function ClubManageScreen() {
     setLoading(false);
   }, [club?.id]);
 
+  // Pour le "pull to refresh"
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchClubData();
@@ -80,7 +81,7 @@ export default function ClubManageScreen() {
 
   useEffect(() => { fetchClubData(); }, [fetchClubData]);
 
-  // Nom du club
+  // --- Modifier le nom du club ---
   const handleSaveName = async () => {
     if (!name || name.trim().length < 2) {
       Alert.alert('Erreur', 'Le nom du club est trop court.');
@@ -92,6 +93,7 @@ export default function ClubManageScreen() {
       await fetchClubData();
       Alert.alert('Succès', 'Nom du club mis à jour !');
     } catch (e) {
+      // Gestion personnalisée des erreurs courantes
       let msg = "Impossible de modifier le nom du club.";
       if (e?.response?.data?.error) {
         msg = e.response.data.error;
@@ -110,9 +112,7 @@ export default function ClubManageScreen() {
     setLoading(false);
   };
 
-
-
-  // Virer un membre
+  // --- Exclure un membre du club ---
   const handleKick = async (memberId) => {
     Alert.alert(
       "Exclure ce joueur",
@@ -142,12 +142,12 @@ export default function ClubManageScreen() {
     );
   };
 
-  // Changement de poste via mini fenetre
+  // --- Changer le poste d'un membre ---
   const handleSelectPosteBtn = async (memberId, posteKey) => {
     setLoading(true);
     try {
       await setUserPoste(club.id, memberId, posteKey);
-      setPosteModal({ open: false, member: null }); // ferme la modal
+      setPosteModal({ open: false, member: null }); // Ferme la modal
       await fetchClubData();
     } catch (e) {
       Alert.alert('Erreur', e?.response?.data?.error || "Impossible de changer le poste");
@@ -156,7 +156,7 @@ export default function ClubManageScreen() {
     setLoading(false);
   };
 
-  // Transfert de capitanat
+  // --- Transférer le capitanat à un autre membre ---
   const handleTransferCaptain = (member) => {
     Alert.alert(
       "Donner le capitanat",
@@ -170,7 +170,6 @@ export default function ClubManageScreen() {
             try {
               await transferCaptain(club.id, member.id);
               setLoading(false);
-              // Redirige directement vers la page Club
               navigation.navigate('Club');
               Alert.alert("Succès", "Le capitanat a été transféré.");
             } catch (e) {
@@ -183,7 +182,7 @@ export default function ClubManageScreen() {
     );
   };
 
-  // Gestion du choix du logo
+  // --- Modifier le logo du club ---
   const handleChooseLogo = async (imgObj) => {
     setLoading(true);
     try {
@@ -198,6 +197,7 @@ export default function ClubManageScreen() {
     setLoading(false);
   };
 
+  // Affiche un spinner de chargement si une action est en cours
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111' }}>
@@ -206,6 +206,7 @@ export default function ClubManageScreen() {
     );
   }
 
+  // --- Affichage principal (club, membres, modals, etc) ---
   return (
     <View style={{ flex: 1, backgroundColor: '#111' }}>
       <ScrollView
@@ -219,17 +220,18 @@ export default function ClubManageScreen() {
           />
         }
       >
+        {/* Header avec logo club + nom éditable */}
         <View style={styles.header}>
-          {/* Affichage du logo du club, on ouvre la modal de sélection */}
+          {/* Logo club cliquable pour changer */}
           <TouchableOpacity onPress={() => setLogoModalVisible(true)} style={styles.clubLogoWrapper}>
             <Image
-
               source={club?.image ? getClubLogoSource(club.image) : require('../assets/club-default.png')}
               style={styles.clubImageZoomed}
               resizeMode="contain"
             />
             <Ionicons name="camera" size={22} color="#00D9FF" style={styles.editIcon} />
           </TouchableOpacity>
+          {/* Champ nom club + bouton sauvegarder */}
           <View style={{ flex: 1, marginLeft: 16 }}>
             <TextInput
               value={name}
@@ -245,6 +247,7 @@ export default function ClubManageScreen() {
           </View>
         </View>
 
+        {/* Liste des membres et actions */}
         <Text style={styles.sectionTitle}>Gestion des membres</Text>
         {members.map((m) => (
           <View key={m.id} style={styles.memberRow}>
@@ -257,6 +260,7 @@ export default function ClubManageScreen() {
               <Text style={{ color: '#82E482', fontSize: 13 }}>
                 Poste : {m.poste === null ? 'Aucun' : m.poste}
               </Text>
+              {/* Bouton pour ouvrir la modal de choix de poste */}
               <TouchableOpacity
                 style={styles.editPosteBtn}
                 onPress={() => setPosteModal({ open: true, member: m })}
@@ -265,15 +269,17 @@ export default function ClubManageScreen() {
                 <Text style={{ color: '#00D9FF', marginLeft: 4, fontWeight: 'bold' }}>Changer poste</Text>
               </TouchableOpacity>
             </View>
-            {/* Actions membres */}
+            {/* Actions sur un membre (exclure ou transférer capitanat) */}
             {userInfo?.id !== m.id && (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {/* Exclure membre */}
                 <TouchableOpacity
                   style={styles.iconBtn}
                   onPress={async () => await handleKick(m.id)}
                 >
                   <Ionicons name="person-remove" size={19} color="#e23030" />
                 </TouchableOpacity>
+                {/* Transférer le capitanat */}
                 {club.clubCaptain?.id !== m.id && (
                   <TouchableOpacity
                     style={styles.iconBtn}
@@ -289,17 +295,14 @@ export default function ClubManageScreen() {
         <View style={{ height: 60 }} />
       </ScrollView>
 
-      {/* MODAL - Sélection du logo */}
+      {/* --- Modal pour changer le logo du club --- */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={logoModalVisible}
         onRequestClose={() => setLogoModalVisible(false)}
       >
-        <Pressable
-          style={styles.overlay}
-          onPress={() => setLogoModalVisible(false)}
-        />
+        <Pressable style={styles.overlay} onPress={() => setLogoModalVisible(false)} />
         <View style={styles.logoModalContainer}>
           <Text style={styles.logoModalTitle}>Choisis un logo pour ton club</Text>
           <ScrollView contentContainerStyle={styles.logoGrid} horizontal>
@@ -329,20 +332,18 @@ export default function ClubManageScreen() {
         </View>
       </Modal>
 
-      {/* MODAL Mini BottomSheet pour choisir le poste */}
+      {/* --- Mini bottom sheet pour changer le poste d'un membre --- */}
       <Modal
         animationType="fade"
         transparent={true}
         visible={posteModal.open}
         onRequestClose={() => setPosteModal({ open: false, member: null })}
       >
-        <Pressable
-          style={styles.overlay}
-          onPress={() => setPosteModal({ open: false, member: null })}
-        />
+        <Pressable style={styles.overlay} onPress={() => setPosteModal({ open: false, member: null })} />
         <View style={styles.bottomSheet}>
           <Text style={styles.bottomSheetTitle}>Choisir un poste pour {posteModal.member?.username || posteModal.member?.nom}</Text>
           <View style={styles.bottomSheetContent}>
+            {/* Liste de tous les postes disponibles */}
             {POSTES_11.map(p => (
               <TouchableOpacity
                 key={p.key}
@@ -358,7 +359,7 @@ export default function ClubManageScreen() {
                 ]}>{p.label}</Text>
               </TouchableOpacity>
             ))}
-            {/* Aucun */}
+            {/* Bouton aucun poste */}
             <TouchableOpacity
               style={[
                 styles.bottomSheetPosteBtn,
@@ -370,10 +371,7 @@ export default function ClubManageScreen() {
               <Text style={styles.bottomSheetPosteBtnText}>Aucun</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.closeSheetBtn}
-            onPress={() => setPosteModal({ open: false, member: null })}
-          >
+          <TouchableOpacity style={styles.closeSheetBtn} onPress={() => setPosteModal({ open: false, member: null })}>
             <Text style={{ color: '#00D9FF', fontWeight: 'bold' }}>Fermer</Text>
           </TouchableOpacity>
         </View>
@@ -382,217 +380,34 @@ export default function ClubManageScreen() {
   );
 }
 
+// ---------- Styles compactés ----------
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#171a24',
-    padding: 20,
-    paddingBottom: 10,
-    paddingTop: 10,
-    marginTop: 50,
-    borderRadius: 12,
-    margin: 14,
-    marginBottom: 8
-  },
-  clubLogoWrapper: {
-  width: 82,
-  height: 82,
-  borderRadius: 50,
-  borderWidth: 3,
-  borderColor: '#00D9FF',
-  backgroundColor: '#222',
-  alignItems: 'center',
-  justifyContent: 'center',
-  overflow: 'hidden', // INDISPENSABLE pour “cropper” le logo zoomé
-  position: 'relative',
-  },
-  clubImageZoomed: {
-    width: 140, // tu peux essayer plus ou moins, genre 140/150
-    height: 140,
-    // Tu peux rajouter un petit marginLeft/marginTop si besoin pour mieux centrer
-  },
-  editIcon: {
-    position: 'absolute',
-    right: 5,
-    bottom: 7,
-    backgroundColor: '#111',
-    padding: 4,
-    borderRadius: 20
-  },
-  nameInput: {
-    color: '#fff',
-    fontSize: 23,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-    borderBottomWidth: 1,
-    borderColor: '#222',
-    marginBottom: 8,
-    backgroundColor: '#23284a',
-    borderRadius: 6,
-    padding: 8,
-  },
-  saveBtn: {
-    backgroundColor: '#00D9FF',
-    paddingVertical: 7,
-    borderRadius: 9,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 20,
-    marginTop: 3,
-  },
-  saveBtnText: {
-    color: '#181818',
-    fontWeight: '700'
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#00D9FF',
-    marginVertical: 18,
-    marginLeft: 18,
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#23284a',
-    marginHorizontal: 13,
-    marginBottom: 12,
-    borderRadius: 12,
-    padding: 13,
-  },
-  memberAvatar: {
-    width: 43,
-    height: 43,
-    borderRadius: 22,
-    marginRight: 13,
-    backgroundColor: '#222'
-  },
-  editPosteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,217,255,0.11)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 7,
-  },
-  iconBtn: {
-    marginHorizontal: 2,
-    padding: 6,
-    borderRadius: 16,
-    backgroundColor: '#161D2C',
-    marginLeft: 4,
-  },
-  // Mini bottom sheet styles
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.37)',
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    zIndex: 1,
-  },
-  bottomSheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#191B2B',
-    borderTopLeftRadius: 19,
-    borderTopRightRadius: 19,
-    padding: 20,
-    zIndex: 2,
-    elevation: 5,
-  },
-  bottomSheetTitle: {
-    color: '#00D9FF',
-    fontWeight: '700',
-    fontSize: 19,
-    marginBottom: 12,
-    textAlign: 'center'
-  },
-  bottomSheetContent: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 7,
-    marginBottom: 16,
-  },
-  bottomSheetPosteBtn: {
-    backgroundColor: '#23284a',
-    borderRadius: 15,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#888',
-    margin: 3,
-  },
-  selectedSheetPosteBtn: {
-    backgroundColor: '#00D9FF',
-    borderColor: '#00D9FF',
-  },
-  bottomSheetPosteBtnText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  selectedSheetPosteBtnText: {
-    color: '#181818'
-  },
-  closeSheetBtn: {
-    marginTop: 6,
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  logoModalContainer: {
-    position: 'absolute',
-    left: 0, right: 0, bottom: 0,
-    backgroundColor: '#191B2B',
-    borderTopLeftRadius: 19,
-    borderTopRightRadius: 19,
-    padding: 20,
-    zIndex: 10,
-    elevation: 10,
-    alignItems: 'center',
-  },
-  logoModalTitle: {
-    color: '#00D9FF',
-    fontWeight: '700',
-    fontSize: 21,
-    marginBottom: 15,
-    textAlign: 'center'
-  },
-  logoGrid: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 18,
-    paddingBottom: 8,
-  },
-  logoChoice: {
-    marginHorizontal: 8,
-    borderWidth: 3,
-    borderColor: 'transparent',
-    borderRadius: 60,
-    padding: 6,
-    backgroundColor: '#191B2B',
-  },
-  logoSelected: {
-    borderColor: '#00D9FF',
-    backgroundColor: '#23284a',
-  },
-  logoPreviewWrapper: {
-  width: 78,
-  height: 78,
-  borderRadius: 39,
-  overflow: 'hidden',
-  backgroundColor: '#222',
-  alignItems: 'center',
-  justifyContent: 'center',
-  },
-  logoImageZoomed: {
-    width: 140,    // <--- Plus grand que le wrapper, donc zoomé
-    height: 140,
-  },
+  header:{flexDirection:'row',alignItems:'center',backgroundColor:'#171a24',padding:20,paddingBottom:10,paddingTop:10,marginTop:50,borderRadius:12,margin:14,marginBottom:8},
+  clubLogoWrapper:{width:82,height:82,borderRadius:50,borderWidth:3,borderColor:'#00D9FF',backgroundColor:'#222',alignItems:'center',justifyContent:'center',overflow:'hidden',position:'relative'},
+  clubImageZoomed:{width:140,height:140},
+  editIcon:{position:'absolute',right:5,bottom:7,backgroundColor:'#111',padding:4,borderRadius:20},
+  nameInput:{color:'#fff',fontSize:23,fontWeight:'bold',letterSpacing:0.5,borderBottomWidth:1,borderColor:'#222',marginBottom:8,backgroundColor:'#23284a',borderRadius:6,padding:8},
+  saveBtn:{backgroundColor:'#00D9FF',paddingVertical:7,borderRadius:9,alignSelf:'flex-start',paddingHorizontal:20,marginTop:3},
+  saveBtnText:{color:'#181818',fontWeight:'700'},
+  sectionTitle:{fontSize:20,fontWeight:'700',color:'#00D9FF',marginVertical:18,marginLeft:18},
+  memberRow:{flexDirection:'row',alignItems:'center',backgroundColor:'#23284a',marginHorizontal:13,marginBottom:12,borderRadius:12,padding:13},
+  memberAvatar:{width:43,height:43,borderRadius:22,marginRight:13,backgroundColor:'#222'},
+  editPosteBtn:{flexDirection:'row',alignItems:'center',marginTop:4,alignSelf:'flex-start',backgroundColor:'rgba(0,217,255,0.11)',paddingHorizontal:10,paddingVertical:4,borderRadius:7},
+  iconBtn:{marginHorizontal:2,padding:6,borderRadius:16,backgroundColor:'#161D2C',marginLeft:4},
+  overlay:{flex:1,backgroundColor:'rgba(0,0,0,0.37)',position:'absolute',width:'100%',height:'100%',zIndex:1},
+  bottomSheet:{position:'absolute',left:0,right:0,bottom:0,backgroundColor:'#191B2B',borderTopLeftRadius:19,borderTopRightRadius:19,padding:20,zIndex:2,elevation:5},
+  bottomSheetTitle:{color:'#00D9FF',fontWeight:'700',fontSize:19,marginBottom:12,textAlign:'center'},
+  bottomSheetContent:{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:7,marginBottom:16},
+  bottomSheetPosteBtn:{backgroundColor:'#23284a',borderRadius:15,paddingHorizontal:14,paddingVertical:8,borderWidth:1,borderColor:'#888',margin:3},
+  selectedSheetPosteBtn:{backgroundColor:'#00D9FF',borderColor:'#00D9FF'},
+  bottomSheetPosteBtnText:{color:'#fff',fontWeight:'700',fontSize:15},
+  selectedSheetPosteBtnText:{color:'#181818'},
+  closeSheetBtn:{marginTop:6,alignSelf:'center',paddingVertical:8,paddingHorizontal:16},
+  logoModalContainer:{position:'absolute',left:0,right:0,bottom:0,backgroundColor:'#191B2B',borderTopLeftRadius:19,borderTopRightRadius:19,padding:20,zIndex:10,elevation:10,alignItems:'center'},
+  logoModalTitle:{color:'#00D9FF',fontWeight:'700',fontSize:21,marginBottom:15,textAlign:'center'},
+  logoGrid:{flexDirection:'row',justifyContent:'center',gap:18,paddingBottom:8},
+  logoChoice:{marginHorizontal:8,borderWidth:3,borderColor:'transparent',borderRadius:60,padding:6,backgroundColor:'#191B2B'},
+  logoSelected:{borderColor:'#00D9FF',backgroundColor:'#23284a'},
+  logoPreviewWrapper:{width:78,height:78,borderRadius:39,overflow:'hidden',backgroundColor:'#222',alignItems:'center',justifyContent:'center'},
+  logoImageZoomed:{width:140,height:140},
 });
