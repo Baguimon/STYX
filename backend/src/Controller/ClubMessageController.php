@@ -15,6 +15,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 #[Route('/api/clubs/{clubId}/messages', name: 'api_club_messages_')]
+// Gère l'envoi et la récupération des messages d'un club
 class ClubMessageController extends AbstractController
 {
     // Liste des messages (pagination simple possible via ?afterId=xx)
@@ -25,6 +26,7 @@ class ClubMessageController extends AbstractController
         ClubRepository $clubRepository,
         Request $request
     ): JsonResponse {
+        // On vérifie l'existence du club
         $club = $clubRepository->find($clubId);
         if (!$club) return $this->json(['error' => 'Club not found'], 404);
 
@@ -55,14 +57,14 @@ class ClubMessageController extends AbstractController
                 'user' => [
                     'id' => $user->getId(),
                     'username' => $user->getUsername(),
-                    'image' => method_exists($user, 'getImage') ? $user->getImage() : null, // si tu ajoutes un avatar
+                    'image' => method_exists($user, 'getImage') ? $user->getImage() : null,
                 ],
             ];
         }
         return $this->json($data);
     }
 
-    // Envoyer un message
+    // Envoyer un message dans le club
     #[Route('', name: 'send', methods: ['POST'])]
     public function send(
         $clubId,
@@ -71,6 +73,7 @@ class ClubMessageController extends AbstractController
         ClubRepository $clubRepository,
         UserRepository $userRepository
     ): JsonResponse {
+        // Vérifie que le club existe
         $club = $clubRepository->find($clubId);
         if (!$club) return $this->json(['error' => 'Club not found'], 404);
 
@@ -106,6 +109,7 @@ class ClubMessageController extends AbstractController
         ]);
     }
     #[Route('/{messageId}', name: 'delete', methods: ['DELETE'])]
+    // Suppression d'un message du club
     public function delete($clubId, $messageId, ClubMessageRepository $repo, EntityManagerInterface $em): JsonResponse
     {
         $message = $repo->find($messageId);

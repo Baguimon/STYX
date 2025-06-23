@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "styx",
-    "slug": "styx",
-    "version": "1.0.0",
+    "slug": "styx-app",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,15 +13,14 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.tonorganisation.styxapp",
-      "buildNumber": "1",
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yukiokami.styxapp",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Permet de trouver des matchs près de chez vous.",
-        "NSCameraUsageDescription": "Permet d'ajouter une photo de profil."
+        "NSCameraUsageDescription": "Permet d'ajouter une photo de profil.",
+        "ITSAppUsesNonExemptEncryption": false
       }
-
-
     },
     "android": {
       "adaptiveIcon": {
@@ -31,6 +30,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "23718a80-57ae-4a38-9391-0e2b3c5557c8"
+      }
     }
   }
 }

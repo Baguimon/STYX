@@ -15,11 +15,14 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 
 #[Route('/api/games')]
+// Contrôleur chargé de la gestion des matchs
 class GameController extends AbstractController
 {
     #[Route('', name: 'game_index', methods: ['GET'])]
+    // Liste l'ensemble des matchs
     public function index(GameRepository $gameRepository, EntityManagerInterface $em): JsonResponse
     {
+        // Récupération de tous les matchs existants
         $games = $gameRepository->findAll();
         $now = new \DateTime();
 
@@ -47,6 +50,7 @@ class GameController extends AbstractController
     }
 
     #[Route('/{id}', name: 'game_show', methods: ['GET'])]
+    // Détails d'un match précis
     public function show(Game $game, EntityManagerInterface $em): JsonResponse
     {
         // Ferme le match si la date est passée
@@ -83,8 +87,10 @@ class GameController extends AbstractController
     }
 
     #[Route('', name: 'game_create', methods: ['POST'])]
+    // Création d'un nouveau match
     public function create(Request $request, EntityManagerInterface $em, UserRepository $userRepository): JsonResponse
     {
+        // Données décrivant le match à créer
         $data = json_decode($request->getContent(), true);
 
         // L'utilisateur qui crée le match doit être transmis (id) dans le payload
@@ -147,6 +153,7 @@ class GameController extends AbstractController
     }
 
     #[Route('/{id}/join', name: 'game_join', methods: ['POST'])]
+    // Permet à un joueur de s'inscrire à un match
     public function join(
         Request $request,
         Game $game,
@@ -205,6 +212,7 @@ class GameController extends AbstractController
 
     // =================== LEAVE GAME ===================
     #[Route('/{id}/leave', name: 'game_leave', methods: ['POST'])]
+    // Permet à un joueur de quitter un match
     public function leave(
         Request $request,
         Game $game,
@@ -245,6 +253,7 @@ class GameController extends AbstractController
 
     // =================== SWITCH TEAM ===================
     #[Route('/{id}/switch-team', name: 'game_switch_team', methods: ['POST'])]
+    // Permet à un joueur de changer d'équipe
     public function switchTeam(
         Request $request,
         Game $game,
@@ -282,9 +291,10 @@ class GameController extends AbstractController
         return $this->json(['message' => 'Équipe changée !']);
     }
 
-    // ------------- NOUVEL ENDPOINT : matchs de l'utilisateur -------------
+    // --------------- Matchs de l'utilisateur ---------------
 
     #[Route('/user/{userId}', name: 'games_by_user', methods: ['GET'])]
+    // Liste les matchs auxquels un utilisateur participe
     public function gamesByUser(
         int $userId,
         UserRepository $userRepository,
